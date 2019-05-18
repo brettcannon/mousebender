@@ -9,7 +9,7 @@ The goal is to provide a package which could install all dependencies as frozen 
 
 1. Check if package is already installed ([spec](https://packaging.python.org/specifications/recording-installed-packages/) / [`importlib-metadata`](https://pypi.org/project/importlib-metadata/))
 1. Check local wheel cache (? / ?; [how pip does it](https://pip.pypa.io/en/stable/reference/pip_install/#caching))
-1. Check PyPI/index for package ([spec](https://packaging.python.org/specifications/simple-repository-api/ / ?)
+1. Check PyPI/index for package ([spec](https://packaging.python.org/specifications/simple-repository-api/) / ?)
 1. Choose appropriate file
    1. Get the list of files ([spec](https://packaging.python.org/specifications/simple-repository-api/) / ?)
    1. Calculate best-fitting wheel ([spec](https://packaging.python.org/specifications/platform-compatibility-tags/) / `packaging.tags`)
