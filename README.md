@@ -7,6 +7,8 @@ The goal is to provide a package which could install all dependencies as frozen 
 
 ### If you requested `mousebender` 1.0.0
 
+[[PyPA specifications](https://packaging.python.org/specifications/)]
+
 1. Check if package is already installed ([spec](https://packaging.python.org/specifications/recording-installed-packages/) / [`importlib-metadata`](https://pypi.org/project/importlib-metadata/))
 1. Check local wheel cache (? / ?; [how pip does it](https://pip.pypa.io/en/stable/reference/pip_install/#caching))
 1. Check PyPI/index for package ([spec](https://packaging.python.org/specifications/simple-repository-api/) / ?)
