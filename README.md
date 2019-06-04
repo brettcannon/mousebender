@@ -18,7 +18,7 @@ The goal is to provide a package which could install all dependencies as frozen 
 1. Cache the wheel locally (? / ?; see local cache check for potential details)
 1. Install the wheel
    1. Choose which directory to install the files to (e.g. user versus system/virtual environment; ? / ?)
-   1. Install the files ([spec](https://packaging.python.org/specifications/distribution-formats/) / ?)
+   1. Install the files ([spec](https://packaging.python.org/specifications/distribution-formats/) / [`distlib.wheel`](https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels))
    1. Record the installation ([spec](https://packaging.python.org/specifications/recording-installed-packages/) / ?)
 
   
