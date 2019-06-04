@@ -12,7 +12,7 @@ The goal is to provide a package which could install all dependencies as frozen 
 1. Check if package is already installed ([spec](https://packaging.python.org/specifications/recording-installed-packages/) / [`importlib-metadata`](https://pypi.org/project/importlib-metadata/))
 1. Check local wheel cache (? / ?; [how pip does it](https://pip.pypa.io/en/stable/reference/pip_install/#caching))
 1. Choose appropriate file from PyPI/index
-   1. Get the list of files ([Simple repository spec](https://packaging.python.org/specifications/simple-repository-api/) / ?; [PyPI JSON API](https://warehouse.pypa.io/api-reference/json/) / ?)
+   1. Process the list of files ([Simple repository spec](https://packaging.python.org/specifications/simple-repository-api/) / ?; [PyPI JSON API](https://warehouse.pypa.io/api-reference/json/) / ?)
    1. Calculate best-fitting wheel ([spec](https://packaging.python.org/specifications/platform-compatibility-tags/) / `packaging.tags`)
 1. Download the wheel
 1. Cache the wheel locally (? / ?; see local cache check for potential details)
@@ -30,6 +30,7 @@ These might be added in the future, but they are not considered requirements for
 * Translate `mousebender=1.0.0` to `mousebender` 1.0.0
 * Install from an sdist
 * Install dependencies (i.e. read dependencies from wheel, solve dependency graph)
+* Networking (everything is sans-I/O as it's easier for you to do the actual networking and rely on this package to handle what was downloaded appropriately)
 
 ## Where does the name come from?
 The customer from [Monty Python's cheese shop sketch](https://en.wikipedia.org/wiki/Cheese_Shop_sketch) is named "Mr. Mousebender". And in case you don't know, the original name of [PyPI](https://pypi.org/) was the Cheeseshop after the Monty Python sketch.
