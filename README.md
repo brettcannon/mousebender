@@ -1,7 +1,7 @@
 # mousebender
 A package for installing fully-specified Python packages
 
-The goal is to provide a package which could install all dependencies as frozen by a tool like [pip-tools](https://pypi.org/project/pip-tools/) via an API. This avoids relying on pip's CLI to do installations but instead provide a more programmatic API. It also helps discover any holes in specifications and/or packages for providing such a feature. 
+The goal is to provide a package which could install all dependencies as frozen by a tool like [pip-tools](https://pypi.org/project/pip-tools/) via an API (or put another way, what is required to bootstrap install `pip` via code). This avoids relying on pip's CLI to do installations but instead provide a more programmatic API. It also helps discover any holes in specifications and/or packages for providing such a feature. 
 
 ## The steps to installing a package
 
