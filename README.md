@@ -17,7 +17,6 @@ The goal is to provide a package which could install all dependencies as frozen 
 1. Download the wheel
 1. Cache the wheel locally (? / ?; see local cache check for potential details)
 1. Install the wheel
-   1. Choose which directory to install the files to (e.g. user versus system/virtual environment; ? / ?)
    1. Install the files ([spec](https://packaging.python.org/specifications/distribution-formats/) / [`distlib.wheel`](https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels))
    1. Record the installation ([spec](https://packaging.python.org/specifications/recording-installed-packages/) / ?)
 
@@ -31,6 +30,7 @@ These might be added in the future, but they are not considered requirements for
 * Install from an sdist
 * Install dependencies (i.e. read dependencies from wheel, solve dependency graph)
 * Networking (everything is sans-I/O as it's easier for you to do the actual networking and rely on this package to handle what was downloaded appropriately)
+* Install somewhere other than in a `venv`-created virtual environment
 
 ## Where does the name come from?
 The customer from [Monty Python's cheese shop sketch](https://en.wikipedia.org/wiki/Cheese_Shop_sketch) is named "Mr. Mousebender". And in case you don't know, the original name of [PyPI](https://pypi.org/) was the Cheeseshop after the Monty Python sketch.
