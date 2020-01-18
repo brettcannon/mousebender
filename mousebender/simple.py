@@ -74,6 +74,7 @@ class ProjectFileInfo:
 
     @classmethod
     def _fromfiledetails(cls, file_details):
+        """Parses the extra 'combined fields' from file details that the data class uses as constructor arguments."""
         url = file_details["url"]
         url, _, hash_info = url.partition("#")
         hash_algo, _, hash_val = hash_info.partition("=")

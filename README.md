@@ -34,3 +34,7 @@ These might be added in the future, but they are not considered requirements for
 
 ## Where does the name come from?
 The customer from [Monty Python's cheese shop sketch](https://en.wikipedia.org/wiki/Cheese_Shop_sketch) is named "Mr. Mousebender". And in case you don't know, the original name of [PyPI](https://pypi.org/) was the Cheeseshop after the Monty Python sketch.
+
+
+---
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
