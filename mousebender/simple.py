@@ -49,19 +49,17 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
 # input: bytes of a simple index file
 # output: `package-index`: dict containing key:`project-name` and val:`project-url`
 def parse_projects_index(index_html):
-    # parse this index_html expecting n package names. Each package has associated to it:
-    # - A url (to the project-index)
     parser = _SimpleIndexHTMLParser()
     parser.feed(index_html)
     return parser.mapping
 
 
-##  Data to store for the simple project index
-# filename
-# url
-# hash? (algorithm, digest)
-# data-gpg-sig (bool)
-# data-requires-python (python_version escaped)
+# Data to store for the simple project index:
+# - filename
+# - url
+# - hash? (algorithm, digest)
+# - data-gpg-sig (bool)
+# - data-requires-python (python_version escaped)
 
 
 @dataclasses.dataclass
@@ -74,7 +72,10 @@ class ProjectFileInfo:
 
     @classmethod
     def _fromfiledetails(cls, file_details):
-        """Parses the extra 'combined fields' from file details that the data class uses as constructor arguments."""
+        """
+        Parses the extra 'combined fields' from file details that the data class uses
+        as constructor arguments.
+        """
         url = file_details["url"]
         url, _, hash_info = url.partition("#")
         hash_algo, _, hash_val = hash_info.partition("=")
@@ -97,7 +98,7 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
         self._parsing_anchor = True
         attrs = dict(attrs_list)
         self._file["url"] = attrs.get("href")
-        if gpg_sig := attrs.get("data-gpg-sig"):
+        if gpg_sig := attrs.get("data-gpg-sig"):  # noqa: E203,E701,E231
             self._file["gpg_sig"] = gpg_sig == "true"
         self._file["requires_python"] = attrs.get("data-requires-python")
 
