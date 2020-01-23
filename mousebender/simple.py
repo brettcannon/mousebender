@@ -98,7 +98,11 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
         self._parsing_anchor = True
         attrs = dict(attrs_list)
         self._file["url"] = attrs.get("href")
-        if gpg_sig := attrs.get("data-gpg-sig"):  # noqa: E203,E701,E231
+        # DEK: Note that pyflakes cannot handle this, see
+        #      https://github.com/PyCQA/pyflakes/pull/457#issuecomment-555714836
+        # if gpg_sig := attrs.get("data-gpg-sig"):  # noqa: E203,E701,E231
+        gpg_sig = attrs.get("data-gpg-sig")
+        if gpg_sig:
             self._file["gpg_sig"] = gpg_sig == "true"
         self._file["requires_python"] = attrs.get("data-requires-python")
 
@@ -122,11 +126,13 @@ def parse_file_index(index_html):
     # href, cdata, and attributes, construct a ProjectFileInfo
     # and add it to the set of files contained in a version member
     # of a dict
-    parser = _ProjectFileHTMLParser()
-    parser.feed(index_html)
-    file_info = {}
-    for file_ in parser.files:
-        version = parse_version(file_["filename"])
-        file_info.setdefault(version, set()).add(
-            ProjectFileInfo._fromfiledetails(file_)
-        )
+    pass
+
+    # parser = _ProjectFileHTMLParser()
+    # parser.feed(index_html)
+    # file_info = {}
+    # for file_ in parser.files:
+    #     version = parse_version(file_["filename"])
+    #     file_info.setdefault(version, set()).add(
+    #         ProjectFileInfo._fromfiledetails(file_)
+    #     )
