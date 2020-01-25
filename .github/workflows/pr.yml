@@ -2,8 +2,7 @@ name: PR
 
 on:
   pull_request:
-    branches:
-    - master
+  push:
 
 jobs:
   build_linux_3_8:
