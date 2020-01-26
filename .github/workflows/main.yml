@@ -1,4 +1,4 @@
-name: PR
+name: main
 
 on:
   pull_request:
@@ -30,4 +30,4 @@ jobs:
         python -m black --check .
     - name: Test with pytest
       run: |
-        python -m pytest
+        python -m pytest --cov
