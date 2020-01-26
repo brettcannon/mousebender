@@ -98,11 +98,7 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
         self._parsing_anchor = True
         attrs = dict(attrs_list)
         self._file["url"] = attrs.get("href")
-        # DEK: Note that pyflakes cannot handle this, see
-        #      https://github.com/PyCQA/pyflakes/pull/457#issuecomment-555714836
-        # if gpg_sig := attrs.get("data-gpg-sig"):  # noqa: E203,E701,E231
-        gpg_sig = attrs.get("data-gpg-sig")
-        if gpg_sig:
+        if gpg_sig := attrs.get("data-gpg-sig"):
             self._file["gpg_sig"] = gpg_sig == "true"
         self._file["requires_python"] = attrs.get("data-requires-python")
 
