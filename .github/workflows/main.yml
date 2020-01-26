@@ -22,9 +22,10 @@ jobs:
     - name: Lint with mypy
       run: |
         python -m mypy mousebender
-    - name: Lint with flake8
-      run: |
-        python -m flake8
+    # No Flake8 until support for := (py3.8) is present...
+    # - name: Lint with flake8
+    #   run: |
+    #     python -m flake8
     - name: Format with Black
       run: |
         python -m black --check .
