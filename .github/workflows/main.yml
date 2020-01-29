@@ -1,17 +1,16 @@
-name: main
+name: CI
 
 on:
   pull_request:
   push:
 
 jobs:
-  build_linux_3_8:
-    name: Linux_3.8
+  tests:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.8
+    - name: Set up Python
       uses: actions/setup-python@v1
       with:
         python-version: 3.8
@@ -22,10 +21,6 @@ jobs:
     - name: Lint with mypy
       run: |
         python -m mypy mousebender
-    # No Flake8 until support for := (py3.8) is present...
-    # - name: Lint with flake8
-    #   run: |
-    #     python -m flake8
     - name: Format with Black
       run: |
         python -m black --check .

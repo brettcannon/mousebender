@@ -1,4 +1,4 @@
-"""Tests for the simple.py module"""
+"""Tests for mousebender.simple."""
 import importlib.resources
 
 from mousebender import simple

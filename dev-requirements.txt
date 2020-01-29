@@ -1,5 +1,4 @@
 black
-# flake8 - disable until support for := (Py3.8+)
 mypy
 pytest
 pytest-cov
