@@ -14,7 +14,7 @@ The goal is to provide a package which could install all dependencies as frozen 
 1. Choose appropriate file from PyPI/index
    1. Process the list of files ([Simple repository spec](https://packaging.python.org/specifications/simple-repository-api/) / ?; [PyPI JSON API](https://warehouse.pypa.io/api-reference/json/) / ?)
    1. Calculate best-fitting wheel ([spec](https://packaging.python.org/specifications/platform-compatibility-tags/) / `packaging.tags`)
-1. Download the wheel
+1. _Download the wheel_
 1. Cache the wheel locally (? / ?; see local cache check for potential details)
 1. Install the wheel
    1. Install the files ([spec](https://packaging.python.org/specifications/distribution-formats/) / [`distlib.wheel`](https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels))
