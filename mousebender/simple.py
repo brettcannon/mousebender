@@ -113,7 +113,6 @@ class ArchiveLink:
         hash_algo, _, hash_val = hash_info.partition("=")
         if hash_algo and hash_val:
             file_details["hash"] = hash_algo, hash_val
-        file_details["gpg_sig"] = None
 
         return cls(**file_details)
 
@@ -131,8 +130,11 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
         self._parsing_anchor = True
         attrs = dict(attrs_list)
         self._file["url"] = attrs.get("href")
-        if gpg_sig := attrs.get("data-gpg-sig"):
-            self._file["gpg_sig"] = gpg_sig == "true"
+
+        if gpg_sig := attrs.get("data-gpg-sig", None):
+            gpg_sig = gpg_sig == "true"
+        self._file["gpg_sig"] = gpg_sig
+
         self._file["requires_python"] = attrs.get("data-requires-python")
 
     def handle_endtag(self, tag):
