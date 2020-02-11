@@ -113,6 +113,7 @@ class ArchiveLink:
         hash_algo, _, hash_val = hash_info.partition("=")
         if hash_algo and hash_val:
             file_details["hash"] = hash_algo, hash_val
+        file_details["gpg_sig"] = None
 
         return cls(**file_details)
 
@@ -155,7 +156,7 @@ def extract_version(file_uri):
     """Extract the file version for a single file from a simple package index."""
     chunks = []
     if file_uri.lower().endswith(".whl"):
-        # TODO: This is only a naive implementation, intend to make use of the Packaging package...
+        # naive implementation, use Packaging package...
         chunks = file_uri.split("-")
 
     if len(chunks) > 1:
