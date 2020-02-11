@@ -113,7 +113,6 @@ class ArchiveLink:
         hash_algo, _, hash_val = hash_info.partition("=")
         if hash_algo and hash_val:
             file_details["hash"] = hash_algo, hash_val
-        file_details["gpg_sig"] = None
 
         return cls(**file_details)
 
