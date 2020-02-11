@@ -161,6 +161,14 @@ class TestPackageIndexParsing:
             for pkg_file in index[version]:
                 assert pkg_file.gpg_sig is expected_gpg
 
+    def test_python_version_required(self):
+        """All package files require python >=3.7, >=3.8, or >=3.8.1."""
+        index = simple.parse_file_index(self.dummy_data)
+
+        for version in index:
+            for pkg_file in index[version]:
+                assert pkg_file.requires_python in [">=3.7", ">=3.8", ">=3.8.1"]
+
     def test_get_package_index_real_data(self):
         index_html = importlib.resources.read_text(data, "simple.numpy.html")
         index = simple.parse_file_index(index_html)
