@@ -140,7 +140,7 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
         elif self._file.get("url") and self._file.get("filename"):
             self.files.append(self._file)
 
-        self._file = None
+        self._file = {}
         self._parsing_anchor = False
 
     def handle_data(self, data):
@@ -153,13 +153,11 @@ def parse_archive_links(index_html):
     # href, cdata, and attributes, construct a ProjectFileInfo
     # and add it to the set of files contained in a version member
     # of a dict
-    pass
-
-    # parser = _ProjectFileHTMLParser()
-    # parser.feed(index_html)
-    # file_info = {}
-    # for file_ in parser.files:
-    #     version = parse_version(file_["filename"])
-    #     file_info.setdefault(version, set()).add(
-    #         ProjectFileInfo._fromfiledetails(file_)
-    #     )
+    parser = _ProjectFileHTMLParser()
+    parser.feed(index_html)
+    file_info = {}
+    for file_ in parser.files:
+        version = extract_version(file_["filename"])
+        file_info.setdefault(version, set()).add(
+            ProjectFileInfo._fromfiledetails(file_)
+        )
