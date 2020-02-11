@@ -155,7 +155,7 @@ def extract_version(file_uri):
     """Extract the file version for a single file from a simple package index."""
     chunks = []
     if file_uri.lower().endswith(".whl"):
-        # naive implementation, use Packaging package...
+        # TODO: This is only a naive implementation, intend to make use of the Packaging package...
         chunks = file_uri.split("-")
 
     if len(chunks) > 1:
