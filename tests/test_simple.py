@@ -87,17 +87,17 @@ class TestPackageIndexParsing:
         </head>
         <body>
             <h1>Links for test_package</h1>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=windows100">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux100">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac100">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=windows100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
 
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=windows200">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux200">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac200">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=windows200" data-requires-python="&gt;=3.8">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux200" data-requires-python="&gt;=3.8">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac200" data-requires-python="&gt;=3.8">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
 
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=windows300">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux300">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac300">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=windows300" data-requires-python="&gt;=3.8.1">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux300" data-requires-python="&gt;=3.8.1">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac300" data-requires-python="&gt;=3.8.1">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
         </body>
         </html>
         <!--SERIAL 6405382-->"""
@@ -131,6 +131,14 @@ class TestPackageIndexParsing:
         ver_files = index["3.0.0"]
         for pkg_file in ver_files:
             assert pkg_file.hash[1] in ["windows300", "linux300", "mac300"]
+
+    def test_python_version_required(self):
+        """All package files require python >=3.7, >=3.8, or >=3.8.1."""
+        index = simple.parse_file_index(self.dummy_data)
+
+        for version in index:
+            for pkg_file in index[version]:
+                assert pkg_file.requires_python in [">=3.7", ">=3.8", ">=3.8.1"]
 
     def test_get_package_index_real_data(self):
         index_html = importlib.resources.read_text(data, "simple.numpy.html")
