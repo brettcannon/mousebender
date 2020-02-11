@@ -66,39 +66,62 @@ def test_ensure_normalization_called():
     assert index["package-name"] == "/project/package-name/"
 
 
-def test_get_num_versions_extracted():
-    index_html = """<!DOCTYPE html>
-    <html>
-    <head>
-        <title>Links for test_package</title>
-    </head>
-    <body>
-        <h1>Links for test_package</h1>
-        <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=111">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-        <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=222">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-        <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=333">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+class TestPackageIndexParsing:
 
-        <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=444">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-        <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=555">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-        <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=666">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+    dummy_data = """<!DOCTYPE html>
+        <html>
+        <head>
+            <title>Links for test_package</title>
+        </head>
+        <body>
+            <h1>Links for test_package</h1>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=windows100">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux100">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac100">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
 
-        <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=777">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-        <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=888">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-        <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=999">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
-    </body>
-    </html>
-    <!--SERIAL 6405382-->"""
-    index = simple.parse_file_index(index_html)
-    assert (
-        len(index) == 3
-    )  # 3 versions, so the index for this package should have 3 entries, one for each version.
-    assert len(index["1.0.0"]) == 3
-    assert len(index["2.0.0"]) == 3
-    assert len(index["3.0.0"]) == 3
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=windows200">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux200">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac200">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
 
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=windows300">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux300">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac300">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+        </body>
+        </html>
+        <!--SERIAL 6405382-->"""
 
-def test_get_package_index():
-    index_html = importlib.resources.read_text(data, "simple.numpy.html")
-    index = simple.parse_file_index(index_html)
-    assert len(index) == 75
-    assert len(index["1.18.0"]) == len(index["1.18.1"]) == 20
+    def test_get_num_versions_extracted(self):
+        """3 versions in dummy data, so the index for this package should have 3 entries, one for each version."""
+        index_html = self.dummy_data
+        index = simple.parse_file_index(index_html)
+        assert len(index) == 3
+
+    def test_get_num_files_per_version_extracted(self):
+        """Each version contains 3 files."""
+
+        index = simple.parse_file_index(self.dummy_data)
+        assert len(index["1.0.0"]) == 3
+        assert len(index["2.0.0"]) == 3
+        assert len(index["3.0.0"]) == 3
+
+    def test_signature_values_extracted(self):
+        """Each package has a hash that coincides with the OS and version of the file."""
+        index = simple.parse_file_index(self.dummy_data)
+
+        ver_files = index["1.0.0"]
+        for pkg_file in ver_files:
+            assert pkg_file.hash[1] in ["windows100", "linux100", "mac100"]
+
+        ver_files = index["2.0.0"]
+        for pkg_file in ver_files:
+            assert pkg_file.hash[1] in ["windows200", "linux200", "mac200"]
+
+        ver_files = index["3.0.0"]
+        for pkg_file in ver_files:
+            assert pkg_file.hash[1] in ["windows300", "linux300", "mac300"]
+
+    def test_get_package_index_real_data(self):
+        index_html = importlib.resources.read_text(data, "simple.numpy.html")
+        index = simple.parse_file_index(index_html)
+        assert len(index) == 75
+        assert len(index["1.18.0"]) == len(index["1.18.1"]) == 20
