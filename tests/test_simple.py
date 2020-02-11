@@ -74,7 +74,7 @@ class TestRepoIndexParsing:
                 </body>
             </html>
         """
-        index = simple.parse_repo_index(index_html)
+        index = simple.parse_projects_index(index_html)
         assert index["PACKAGE-NAME"] == "/project/package-name/"
 
 
