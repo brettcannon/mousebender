@@ -81,6 +81,7 @@ class ProjectFileInfo:
         hash_algo, _, hash_val = hash_info.partition("=")
         if hash_algo and hash_val:
             file_details["hash"] = hash_algo, hash_val
+        file_details["gpg_sig"] = None
 
         return cls(**file_details)
 
@@ -118,7 +119,15 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
 
 def extract_version(file_uri):
     """Extract the file version for a single file from a simple package index."""
-    return "0.0.0"
+    chunks = []
+    if file_uri.lower().endswith(".whl"):
+        # naive implementation, use Packaging package...
+        chunks = file_uri.split("-")
+
+    if len(chunks) > 1:
+        return chunks[1]
+
+    return None
 
 
 def parse_file_index(index_html):
@@ -132,6 +141,9 @@ def parse_file_index(index_html):
     file_info = {}
     for file_ in parser.files:
         version = extract_version(file_["filename"])
-        file_info.setdefault(version, set()).add(
-            ProjectFileInfo._fromfiledetails(file_)
-        )
+        # get the file_info group for this version, or create it.
+        files = file_info.get(version, [])
+        files.append(ProjectFileInfo._fromfiledetails(file_))
+        file_info[version] = files
+
+    return file_info
