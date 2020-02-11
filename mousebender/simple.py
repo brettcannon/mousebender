@@ -151,7 +151,13 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
             self._file["filename"] = data
 
 
+def extract_version(file_uri):
+    """Extract the file version for a single file from a simple package index."""
+    return "0.0.0"
+
+
 def parse_archive_links(index_html):
+    """Translate a simple file index into a map of filename:file-data."""
     # for each simple file anchor set, consisting of
     # href, cdata, and attributes, construct a ProjectFileInfo
     # and add it to the set of files contained in a version member
