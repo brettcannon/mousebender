@@ -116,6 +116,18 @@ class TestPackageIndexParsing:
         assert len(index["2.0.0"]) == 3
         assert len(index["3.0.0"]) == 3
 
+    def test_get_expected_file(self):
+        """Ensure the file name is present in the list."""
+        index = simple.parse_file_index(self.dummy_data)
+        index["1.0.0"]
+        found_a_file = False
+        for pkg_file in index["1.0.0"]:
+            found_a_file = (
+                found_a_file
+                or pkg_file.filename == "test_package-1.0.0-cp37-cp37m-win_amd64.whl"
+            )
+        assert found_a_file
+
     def test_signature_values_extracted(self):
         """Each package has a hash that coincides with the OS and version of the file."""
         index = simple.parse_file_index(self.dummy_data)
