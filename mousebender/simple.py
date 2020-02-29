@@ -75,6 +75,7 @@ def parse_repo_index(index_html):
     parser.feed(index_html)
     return parser.mapping
 
+
 # XXX Draft code for archive links parsing =====================================
 
 # Data to store for the simple project index:
