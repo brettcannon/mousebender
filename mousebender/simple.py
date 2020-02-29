@@ -1,4 +1,4 @@
-"""Simple index parsing module"""
+"""Parsing for PEP 503 -- Simple Repository API."""
 from __future__ import annotations
 
 import dataclasses
@@ -6,19 +6,39 @@ import html.parser
 import re
 from typing import Optional, Tuple
 
-# Regex to normalize project names for packages (see pep-0503).
+
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
 
 def normalize_project_url(name):
-    """Returns a normalized project url as per PEP 503."""
+    """Normalizes a project URL found in a repository index."""
     name = name.rstrip("/")
     name_prefix, sep, project = name.rpartition("/")
-    normalized_project = _NORMALIZE_RE.sub("-", project).lower()
+    # PEP 503:
+    # The format of this URL is /<project>/ where the <project> is replaced by
+    # thenormalized name for that project, so a project named "HolyGrail" would
+    # have a URL like /holygrail/.
+
+    # # https://www.python.org/dev/peps/pep-0503/#normalized-names
+    normalized_project = _NORMALIZE_RE.sub("-", name).lower()
+    # PEP 503:
+    # All URLs which respond with an HTML5 page MUST end with a / and the
+    # repository SHOULD redirect the URLs without a / to add a / to the end.
+    #
+    # Repositories MAY redirect unnormalized URLs to the canonical normalized
+    # URL (e.g. /Foobar/ may redirect to /foobar/), however clients MUST NOT
+    # rely on this redirection and MUST request the normalized URL.
     return "".join([name_prefix, sep, normalized_project, "/"])
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
+
+    """Parse the HTML of a repository index page."""
+
+    # PEP 503:
+    # Within a repository, the root URL (/) MUST be a valid HTML5 page with a
+    # single anchor element per project in the repository.
+
     def __init__(self):
         super().__init__()
         self._parsing_anchor = False
@@ -27,6 +47,9 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
         self.mapping = {}
 
     def handle_starttag(self, tag, attrs):
+        # PEP 503:
+        # There may be any other HTML elements on the API pages as long as the
+        # required anchor elements exist.
         if tag != "a":
             return
         self._parsing_anchor = True
