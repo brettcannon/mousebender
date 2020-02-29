@@ -69,13 +69,13 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
             self._name = data
 
 
-# input: bytes of a simple index file
-# output: `package-index`: dict containing key:`project-name` and val:`project-url`
-def parse_projects_index(index_html):
+def parse_repo_index(index_html):
+    """Parse the HTML for a repository index page."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(index_html)
     return parser.mapping
 
+# XXX Draft code for archive links parsing =====================================
 
 # Data to store for the simple project index:
 # - filename
@@ -86,11 +86,11 @@ def parse_projects_index(index_html):
 
 
 @dataclasses.dataclass
-class ProjectFileInfo:
+class ArchiveLink:
     filename: str
     url: str
     hash: Optional[Tuple[str, str]]
-    requires_python: Optional[str]
+    requires_python: Optional[str]  # XXX packaging.specifiers.SpecifierSet?
     gpg_sig: Optional[bool]
 
     @classmethod
@@ -139,8 +139,7 @@ class _ProjectFileHTMLParser(html.parser.HTMLParser):
             self._file["filename"] = data
 
 
-def parse_file_index(index_html):
-    """Brett will never rename this amazing function name. --Derek"""
+def parse_archive_links(index_html):
     # for each simple file anchor set, consisting of
     # href, cdata, and attributes, construct a ProjectFileInfo
     # and add it to the set of files contained in a version member
