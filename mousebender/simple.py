@@ -19,7 +19,7 @@ def normalize_project_url(name):
     # the normalized name for that project, so a project named "HolyGrail" would
     # have a URL like /holygrail/.
 
-    # # https://www.python.org/dev/peps/pep-0503/#normalized-names
+    # https://www.python.org/dev/peps/pep-0503/#normalized-names
     normalized_project = _NORMALIZE_RE.sub("-", name).lower()
     # PEP 503:
     # All URLs which respond with an HTML5 page MUST end with a / and the
