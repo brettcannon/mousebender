@@ -16,7 +16,7 @@ def normalize_project_url(name):
     name_prefix, sep, project = name.rpartition("/")
     # PEP 503:
     # The format of this URL is /<project>/ where the <project> is replaced by
-    # thenormalized name for that project, so a project named "HolyGrail" would
+    # the normalized name for that project, so a project named "HolyGrail" would
     # have a URL like /holygrail/.
 
     # # https://www.python.org/dev/peps/pep-0503/#normalized-names
