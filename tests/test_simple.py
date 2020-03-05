@@ -29,9 +29,7 @@ class TestProjectURLConstruction:
         url = simple.create_project_url(
             "https://terribly_awesome.com/So/Simple/", "THE_project.name.-_.-_here"
         )
-        assert (
-            url == "https://terribly_awesome.com/So/Simple/the-project-name-here/"
-        )
+        assert url == "https://terribly_awesome.com/So/Simple/the-project-name-here/"
 
 
 class TestRepoIndexParsing:
