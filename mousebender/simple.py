@@ -10,25 +10,33 @@ from typing import Optional, Tuple
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
 
-def normalize_project_url(name):
-    """Normalizes a project URL found in a repository index."""
-    name = name.rstrip("/")
-    name_prefix, sep, project = name.rpartition("/")
+def create_project_url(base_url, project_name):
+    """Construct the project URL for a repository following PEP 503."""
+    if not base_url.endswith("/"):
+        base_url += "/"
+    # https://www.python.org/dev/peps/pep-0503/#normalized-names
+    normalized_project_name = _NORMALIZE_RE.sub("-", project_name).lower()
     # PEP 503:
     # The format of this URL is /<project>/ where the <project> is replaced by
     # the normalized name for that project, so a project named "HolyGrail" would
     # have a URL like /holygrail/.
-
-    # https://www.python.org/dev/peps/pep-0503/#normalized-names
-    normalized_project = _NORMALIZE_RE.sub("-", name).lower()
-    # PEP 503:
+    #
     # All URLs which respond with an HTML5 page MUST end with a / and the
     # repository SHOULD redirect the URLs without a / to add a / to the end.
-    #
-    # Repositories MAY redirect unnormalized URLs to the canonical normalized
-    # URL (e.g. /Foobar/ may redirect to /foobar/), however clients MUST NOT
-    # rely on this redirection and MUST request the normalized URL.
-    return "".join([name_prefix, sep, normalized_project, "/"])
+    return "".join([base_url, normalized_project_name, "/"])
+
+
+def _normalize_project_url(url):
+    """Normalizes a project URL found in a repository index.
+
+    If a repository is fully-compliant with PEP 503 this will be a no-op.
+    If a repository is reasonably compliant with PEP 503 then the resulting URL
+    will be usable.
+
+    """
+    url_no_trailing_slash = url.rstrip("/")  # Explicitly added back later.
+    base_url, _, project_name = url_no_trailing_slash.rpartition("/")
+    return create_project_url(base_url, project_name)
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
@@ -59,7 +67,7 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
         if tag != "a":
             return
         elif self._name and self._url:
-            self.mapping[self._name] = normalize_project_url(self._url)
+            self.mapping[self._name] = _normalize_project_url(self._url)
 
         self._name = self._url = None
         self._parsing_anchor = False

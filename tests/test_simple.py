@@ -1,38 +1,37 @@
 """Tests for mousebender.simple."""
 import importlib.resources
 
+import pytest
+
 from mousebender import simple
 
 from . import data
 
 
-class TestProjectURLNormalization:
+class TestProjectURLConstruction:
 
-    """Tests for mousebender.simple.normalize_project_url()."""
+    """Tests for mousebender.simple.create_project_url()."""
 
-    def test_project_url_lowercased(self):
-        project_url = "/THEPROJECTNAME/"
-        normal_url = simple.normalize_project_url(project_url)
-        assert normal_url == project_url.lower()
+    @pytest.mark.parametrize("base_url", ["/simple/", "/simple"])
+    def test_url_joining(self, base_url):
+        url = simple.create_project_url(base_url, "hello")
+        assert url == "/simple/hello/"
 
-    def test_project_url_gets_trailing_slash(self):
-        project_url = "/the-project-name"
-        normal_url = simple.normalize_project_url(project_url)
-        assert normal_url == f"{project_url}/"
+    def test_project_name_lowercased(self):
+        url = simple.create_project_url("/", "THEPROJECTNAME")
+        assert url == "/theprojectname/"
 
-    def test_project_url_name_normalized_by_substitution(self):
-        project_url = "/the_project.name.-_.-_here/"
-        expected_url = "/the-project-name-here/"
-        normal_url = simple.normalize_project_url(project_url)
-        assert normal_url == expected_url
+    def test_project_name_normalized(self):
+        normal_url = simple.create_project_url("/", "the_project.name.-_.-_here")
+        assert normal_url == "/the-project-name-here/"
 
     def test_only_project_name_in_url_normalized(self):
-        project_url = (
-            "https://terribly_awesome.com/So/Simple/THE_project.name.-_.-_here"
+        url = simple.create_project_url(
+            "https://terribly_awesome.com/So/Simple/", "THE_project.name.-_.-_here"
         )
-        expected_url = "https://terribly_awesome.com/So/Simple/the-project-name-here/"
-        normal_url = simple.normalize_project_url(project_url)
-        assert normal_url == expected_url
+        assert (
+            url == "https://terribly_awesome.com/So/Simple/the-project-name-here/"
+        )
 
 
 class TestRepoIndexParsing:
