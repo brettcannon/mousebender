@@ -182,3 +182,33 @@ def parse_archive_links(index_html):
         file_info[version] = files
 
     return file_info
+
+
+
+# Data to store for the simple project index:
+# - filename
+# - url
+# - hash? (algorithm, digest)
+# - data-gpg-sig (bool)
+# - data-requires-python (python_version escaped)
+
+
+@dataclasses.dataclass
+class ProjectFileInfo:
+    filename: str
+    url: str
+    hash: Optional[Tuple[str, str]]
+    requires_python: Optional[str]
+    gpg_sig: Optional[bool]
+
+    @classmethod
+    def _fromfiledetails(cls, file_details):
+        """
+        Parses the extra 'combined fields' from file details that the data class uses
+        as constructor arguments.
+        """
+        url = file_details["url"]
+        url, _, hash_info = url.partition("#")
+        hash_algo, _, hash_val = hash_info.partition("=")
+        if hash_algo and hash_val:
+            file_details["hash"] = hash_algo, hash_val
