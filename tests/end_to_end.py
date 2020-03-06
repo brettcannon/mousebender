@@ -11,6 +11,52 @@
    1. Install the files ([spec](https://packaging.python.org/specifications/distribution-formats/) / [`distlib.wheel`](https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels))
    1. Record the installation ([spec](https://packaging.python.org/specifications/recording-installed-packages/) / ?)
 """
+
+
+"""
+url = simple.create_project_url("https://pypi.org/simple", "interesting_pkg")
+
+blob = await read_index(url)
+pkg_index = simple.parse_repo_index:
+if "interesting_pkg" in pkg_index:
+    blob = await read_index(pkg_index["interesting_pkg"])
+else:
+    return None
+
+
+achive_links = simple.parse_archive_links(blob)
+
+# Now we have everything available for "interesting_pkg", or nothing.
+
+relevant_links = filter_to_wheels(archive_links) # get all wheels only, disregard other files
+tags_to_links = filter_wheels_to_version(relevant_links, "1.2.3") # get all the wheels at this version
+
+for tag in packaging.tags.sys_tags():
+    if link := tags_to_links.get(tag):
+        return link
+else:
+    return None
+
+
+def filter_to_wheels(archive_links: Iterable[simple.ArchiveLink]) -> Generator[simple.ArchiveLink]:
+    return (a for a in archive_links if a.file_name.endswith(".whl"))
+
+def filter_wheels_to_version(wheels_links: Iterable[simple.ArchiveLink], version: str) -> Generator[simple.ArchiveLink]:
+    tag_to_links = {}
+    for link in wheels_links:
+        _, whl_ver, compressed_tags = pathlib.Path(link.file_name).stem.split("-", 2)
+        if whl_ver != version:
+            continue
+        all_tags = packaging.tags.parse_tag(compressed_tags)
+        for tag in all_tags:
+            tag_to_links[tag] = link
+    return tag_to_links
+
+# tags_to_links |= { tag : ln for tag in all_tags }
+# TODO: Add doc string to packaging.tags.parse_tag
+
+"""
+
 import os
 import packaging.specifiers
 import packaging.tags
