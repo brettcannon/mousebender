@@ -113,12 +113,11 @@ class ArchiveLink:
         hash_algo, _, hash_val = hash_info.partition("=")
         if hash_algo and hash_val:
             file_details["hash"] = hash_algo, hash_val
-        file_details["gpg_sig"] = None
 
         return cls(**file_details)
 
 
-class _ProjectFileHTMLParser(html.parser.HTMLParser):
+class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self):
         super().__init__()
         self._parsing_anchor = False
@@ -168,47 +167,17 @@ def extract_version(file_uri):
 def parse_archive_links(index_html):
     """Translate a simple file index into a map of filename:file-data."""
     # for each simple file anchor set, consisting of
-    # href, cdata, and attributes, construct a ProjectFileInfo
+    # href, cdata, and attributes, construct an ArchiveLink
     # and add it to the set of files contained in a version member
     # of a dict
-    parser = _ProjectFileHTMLParser()
+    parser = _ArchiveLinkHTMLParser()
     parser.feed(index_html)
     file_info = {}
     for file_ in parser.files:
         version = extract_version(file_["filename"])
         # get the file_info group for this version, or create it.
         files = file_info.get(version, [])
-        files.append(ProjectFileInfo._fromfiledetails(file_))
+        files.append(ArchiveLink._fromfiledetails(file_))
         file_info[version] = files
 
     return file_info
-
-
-
-# Data to store for the simple project index:
-# - filename
-# - url
-# - hash? (algorithm, digest)
-# - data-gpg-sig (bool)
-# - data-requires-python (python_version escaped)
-
-
-@dataclasses.dataclass
-class ProjectFileInfo:
-    filename: str
-    url: str
-    hash: Optional[Tuple[str, str]]
-    requires_python: Optional[str]
-    gpg_sig: Optional[bool]
-
-    @classmethod
-    def _fromfiledetails(cls, file_details):
-        """
-        Parses the extra 'combined fields' from file details that the data class uses
-        as constructor arguments.
-        """
-        url = file_details["url"]
-        url, _, hash_info = url.partition("#")
-        hash_algo, _, hash_val = hash_info.partition("=")
-        if hash_algo and hash_val:
-            file_details["hash"] = hash_algo, hash_val
