@@ -1,4 +1,5 @@
 black
+docopt
 mypy
 pytest
 pytest-cov
