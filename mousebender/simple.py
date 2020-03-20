@@ -172,12 +172,5 @@ def parse_archive_links(index_html):
     # of a dict
     parser = _ArchiveLinkHTMLParser()
     parser.feed(index_html)
-    file_info = {}
-    for file_ in parser.files:
-        version = extract_version(file_["filename"])
-        # get the file_info group for this version, or create it.
-        files = file_info.get(version, [])
-        files.append(ArchiveLink._fromfiledetails(file_))
-        file_info[version] = files
-
+    file_info = [ArchiveLink._fromfiledetails(file_) for file_ in parser.files]
     return file_info

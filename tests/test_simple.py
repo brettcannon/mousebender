@@ -106,75 +106,74 @@ class TestPackageIndexParsing:
         """3 versions in dummy data, so the index for this package should have 3 entries, one for each version."""
         index_html = self.dummy_data
         index = simple.parse_archive_links(index_html)
-        assert len(index) == 3
+        assert len(index) == 9
 
     def test_get_num_files_per_version_extracted(self):
         """Each version contains 3 files."""
 
         index = simple.parse_archive_links(self.dummy_data)
-        assert len(index["1.0.0"]) == 3
-        assert len(index["2.0.0"]) == 3
-        assert len(index["3.0.0"]) == 3
+        ver_1 = [al for al in index if "1.0.0" in al.filename]
+        ver_2 = [al for al in index if "2.0.0" in al.filename]
+        ver_3 = [al for al in index if "3.0.0" in al.filename]
+
+        assert len(ver_1) == 3
+        assert len(ver_2) == 3
+        assert len(ver_3) == 3
 
     def test_get_expected_file(self):
         """Ensure the file name is present in the list."""
         index = simple.parse_archive_links(self.dummy_data)
-        index["1.0.0"]
-        found_a_file = False
-        for pkg_file in index["1.0.0"]:
-            found_a_file = (
-                found_a_file
-                or pkg_file.filename == "test_package-1.0.0-cp37-cp37m-win_amd64.whl"
-            )
-        assert found_a_file
+        expected_file = "test_package-1.0.0-cp37-cp37m-win_amd64.whl"
+        found_file = [al for al in index if al.filename == expected_file]
+
+        assert len(found_file) == 1
 
     def test_signature_values_extracted(self):
         """Each package has a hash that coincides with the OS and version of the file."""
         index = simple.parse_archive_links(self.dummy_data)
 
-        for version in index:
-            if version == "1.0.0":
-                hash_list = ["windows100", "linux100", "mac100"]
-            elif version == "2.0.0":
-                hash_list = ["windows200", "linux200", "mac200"]
-            elif version == "3.0.0":
-                hash_list = ["windows300", "linux300", "mac300"]
-            else:
-                assert False  # need a new version?
-
-            for pkg_file in index[version]:
-                assert pkg_file.hash[1] in hash_list
+        for al in index:
+            assert al.hash[1] in [
+                "windows100",
+                "windows200",
+                "windows300",
+                "linux100",
+                "linux200",
+                "linux300",
+                "mac100",
+                "mac200",
+                "mac300",
+            ]
 
     def test_python_version_required(self):
         """All package files require python >=3.7, >=3.8, or >=3.8.1."""
         index = simple.parse_archive_links(self.dummy_data)
 
-        for version in index:
-            for pkg_file in index[version]:
-                assert pkg_file.requires_python in [">=3.7", ">=3.8", ">=3.8.1"]
+        for pkg_file in index:
+            assert pkg_file.requires_python in [">=3.7", ">=3.8", ">=3.8.1"]
 
     def test_gpg_sig_extracted(self):
         """Determine if a gpg-sig is available for the file."""
         index = simple.parse_archive_links(self.dummy_data)
 
-        for version in index:
-            if version == "1.0.0":
+        for pkg in index:
+            if "1.0.0" in pkg.filename:
                 # Version 1.0.0 files don't have it specified, should be None
                 expected_gpg = None
-            elif version == "2.0.0":
+            elif "2.0.0" in pkg.filename:index["1.18.1"]
                 # Version 2.0.0 files have data-gpg-sig set to False
                 expected_gpg = False
-            elif version == "3.0.0":
+            elif "3.0.0" in pkg.filename:
                 # Version 3.0.0 files have data-gpg-sig set to True
                 expected_gpg = True
             else:
                 assert False  # Did we add another version to the dummy data?
 
-            for pkg_file in index[version]:
-                assert pkg_file.gpg_sig is expected_gpg
+            assert pkg.gpg_sig is expected_gpg
 
     def test_get_package_index_real_data(self):
         index_html = importlib.resources.read_text(data, "simple.numpy.html")
         index = simple.parse_archive_links(index_html)
-        assert len(index) == 75
-        assert len(index["1.18.0"]) == len(index["1.18.1"]) == 20
+        assert len(index) == 1402
+        assert len([al for al in index if "1.18.0" in al.filename]) == 42
+        assert len([al for al in index if "1.18.1" in al.filename]) == 21
