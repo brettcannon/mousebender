@@ -160,7 +160,7 @@ class TestPackageIndexParsing:
             if "1.0.0" in pkg.filename:
                 # Version 1.0.0 files don't have it specified, should be None
                 expected_gpg = None
-            elif "2.0.0" in pkg.filename:index["1.18.1"]
+            elif "2.0.0" in pkg.filename:
                 # Version 2.0.0 files have data-gpg-sig set to False
                 expected_gpg = False
             elif "3.0.0" in pkg.filename:
