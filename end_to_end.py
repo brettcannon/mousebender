@@ -170,12 +170,18 @@ def filter_wheels_to_version(
 
 def give_r():
     this_file = pathlib.Path(__file__)
-    simple_index_path = f"file:///{this_file.parent.joinpath('tests/data')}"
+    print(f"This file: {this_file}")
+
+    simple_index_path = f"file:///{this_file.parent.absolute().joinpath('tests/data')}"
+    print(f"The index path: {simple_index_path}")
+
     index_name = "simple.index.html"
     interesting_pkg = "numpy"
-    # url = simple.create_project_url(simple_index_path, index_name)
+
     url = f"{simple_index_path}/{index_name}"
     url = url.replace("\\", "//")
+    print(f"The URI to load the repo index from: {url}")
+
     with urllib.request.urlopen(url) as response:
         blob = response.read().decode("utf-8")
 
