@@ -2,7 +2,11 @@
 
 Sample script to describe how to use the mousebender.simple library.
 Run this from the root of this repo by:
-> PYTHONPATH=$PYTHONPATH:$PWD python end_to_end.py [opts]
+> PYTHONPATH=$PYTHONPATH:$PWD python end_to_end.py
+
+Try pulling directly from pypi like so:
+> PYTHONPATH=$PYTHONPATH:$PWD python end_to_end.py -r https://pypi.org -i simple
+
 
 Usage:
   end_to_end.py --help
@@ -17,7 +21,7 @@ Options:
   -p [PKG] --package-name=PKG       Name of the package to find for installation. [default: numpy]
   -V [VER] --package-version=VER    Version of the package to find for installation. [default: 1.17.3]
   -r [URL] --repo-index-base=URL    The root URL to pull the repo index and package indexes from. 
-                                    [default: ./data/]
+                                    [default: tests/data/]
   -i [PATH] --repo-index-name=PATH  The repo index path. This is appended to the repo-index-base to find the
                                     repo information. [default: simple/index.html]
 """
@@ -70,8 +74,10 @@ def find_package(
 
     pkg_index = simple.parse_repo_index(blob)
     if package_name in pkg_index:
-        suffix_url = pkg_index[package_name].replace("\\", "/").replace("/", "//")
-        pkg_url = f"{simple_index_path}{suffix_url}//index.html"
+        suffix_url = pkg_index[package_name].replace("\\", "/").replace("//", "/")
+        pkg_url = f"{repo_index}{suffix_url}"
+        if pkg_url.startswith("file:"):
+            pkg_url += "index.html"
         with urllib.request.urlopen(pkg_url) as response:
             blob = response.read().decode("utf-8")
     else:
@@ -106,10 +112,17 @@ if __name__ == "__main__":
 
     # found = find_package("numpy", "1.17.3", simple_index_path, index_name)
     # found = find_package("numpy", "1.17.3", "https://pypi.org", "simple")
+
+    base = pathlib.Path(opts["--repo-index-base"])
+    if base.is_dir():
+        base_uri = str(base.absolute().as_uri())
+    else:
+        base_uri = opts["--repo-index-base"].strip()
+
     found = find_package(
-        opts["--package-name"],
-        opts["--package-version"],
-        str(pathlib.Path(opts["--repo-index-base"]).absolute()),
-        opts["--repo-index-name"],
+        opts["--package-name"].strip(),
+        opts["--package-version"].strip(),
+        str(base_uri),
+        opts["--repo-index-name"].strip(),
     )
     print(found)
