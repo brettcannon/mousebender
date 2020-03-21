@@ -26,8 +26,6 @@ Options:
                                     repo information. [default: simple/index.html]
 """
 
-# TODO: Add doc string to packaging.tags.parse_tag
-
 import os
 import packaging.specifiers
 import packaging.tags
