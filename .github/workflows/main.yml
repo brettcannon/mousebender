@@ -8,22 +8,41 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
         python-version: 3.8
+
+    - name: Poetry setup
+      run: |
+        python -m pip install poetry
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r dev-requirements.txt
+        poetry install
+
+    #- name: Build packages
+    #  run: |
+    #    poetry build
+  
     - name: Lint with mypy
       run: |
-        python -m mypy mousebender
+        poetry run mypy mousebender
+
     - name: Check format with Black
       run: |
-        python -m black --check .
+        poetry run black --check .
+
     - name: Test with pytest
       run: |
-        python -m pytest --cov
-      env:
-        PYTHONDEVMODE: 1
+        poetry run pytest --cov
+
+    #- name: Capture artifacts
+    #  uses: actions/upload-artifact@v1
+    #  with:
+    #    name: packages
+    #    path: dist/
+
+    env:
+      PYTHONDEVMODE: 1
