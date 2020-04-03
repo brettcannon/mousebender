@@ -172,34 +172,6 @@ class TestPackageIndexParsing:
 
             assert pkg.gpg_sig is expected_gpg
 
-    def test_python_version_required(self):
-        """All package files require python >=3.7, >=3.8, or >=3.8.1."""
-        index = simple.parse_file_index(self.dummy_data)
-
-        for version in index:
-            for pkg_file in index[version]:
-                assert pkg_file.requires_python in [">=3.7", ">=3.8", ">=3.8.1"]
-
-    def test_gpg_sig_extracted(self):
-        """Determine if a gpg-sig is available for the file."""
-        index = simple.parse_file_index(self.dummy_data)
-
-        for version in index:
-            if version == "1.0.0":
-                # Version 1.0.0 files don't have it specified, should be None
-                expected_gpg = None
-            elif version == "2.0.0":
-                # Version 2.0.0 files have data-gpg-sig set to False
-                expected_gpg = False
-            elif version == "3.0.0":
-                # Version 3.0.0 files have data-gpg-sig set to True
-                expected_gpg = True
-            else:
-                assert False  # Did we add another version to the dummy data?
-
-            for pkg_file in index[version]:
-                assert pkg_file.gpg_sig is expected_gpg
-
     def test_get_package_index_real_data(self):
         index_html = importlib.resources.read_text(numpy_data, "index.html")
         index = simple.parse_archive_links(index_html)
