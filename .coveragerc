@@ -4,5 +4,5 @@ branch=True
 
 [report]
 # % of tests that must pass
-fail_under=60
+fail_under=90
 
