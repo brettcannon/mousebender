@@ -105,3 +105,6 @@ venv.bak/
 
 # VS Code settings
 .vscode/
+
+# Poetry lock file
+poetry.lock
