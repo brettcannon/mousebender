@@ -103,7 +103,7 @@ class TestPackageIndexParsing:
         </html>
         <!--SERIAL 6405382-->"""
 
-    @pytest.mark.parametrize('ver', ["1.0.0", "2.0.0", "3.0.0"])
+    @pytest.mark.parametrize("ver", ["1.0.0", "2.0.0", "3.0.0"])
     def test_multiple_versions(self, ver):
         index = simple.parse_archive_links(self.dummy_data)
         files_for_ver = [al for al in index if ver in al.filename]
@@ -118,14 +118,18 @@ class TestPackageIndexParsing:
 
         assert len(found_file) == 1
 
-    @pytest.mark.parametrize('vermarker', [1, 2, 3])
-    @pytest.mark.parametrize('osmarker', ["win", "macosx", "manylinux1"])
+    @pytest.mark.parametrize("vermarker", [1, 2, 3])
+    @pytest.mark.parametrize("osmarker", ["win", "macosx", "manylinux1"])
     def test_signature_values_match(self, osmarker, vermarker):
         """Each package has a hash that coincides with the OS and version of the file."""
         index = simple.parse_archive_links(self.dummy_data)
         expected_file = f"test_package-{vermarker}.0.0-cp37-cp37m-{osmarker}"
         expected_sha = f"{osmarker}{vermarker}00"
-        found = [a for a in index if a.filename.startswith(expected_file) and a.hash[1] == expected_sha]
+        found = [
+            a
+            for a in index
+            if a.filename.startswith(expected_file) and a.hash[1] == expected_sha
+        ]
         assert len(found)
 
     def test_files_have_python_version_specification(self):
