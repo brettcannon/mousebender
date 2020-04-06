@@ -6,7 +6,6 @@ import pytest
 from mousebender import simple
 
 from .data import simple as simple_data
-from .data.simple import numpy as numpy_data
 
 
 class TestProjectURLConstruction:
@@ -38,7 +37,7 @@ class TestRepoIndexParsing:
     """Tests for mousebender.simple.parse_repo_index()."""
 
     def test_baseline(self):
-        index_html = importlib.resources.read_text(simple_data, "index.html")
+        index_html = importlib.resources.read_text(simple_data, "index.pypi.html")
         index = simple.parse_repo_index(index_html)
         assert "numpy" in index
         assert index["numpy"] == "/simple/numpy/"
@@ -173,7 +172,7 @@ class TestPackageIndexParsing:
             assert pkg.gpg_sig is expected_gpg
 
     def test_get_package_index_real_data(self):
-        index_html = importlib.resources.read_text(numpy_data, "index.html")
+        index_html = importlib.resources.read_text(simple_data, "archive_links.numpy.html")
         index = simple.parse_archive_links(index_html)
         assert len(index) == 1402
         assert len([al for al in index if "1.18.0" in al.filename]) == 42
