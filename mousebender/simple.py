@@ -94,7 +94,7 @@ def parse_repo_index(index_html):
 # - data-requires-python (python_version escaped)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class ArchiveLink:
     filename: str
     url: str
@@ -134,14 +134,13 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         if gpg_sig := attrs.get("data-gpg-sig", None):
             gpg_sig = gpg_sig == "true"
         self._file["gpg_sig"] = gpg_sig
-
         self._file["requires_python"] = attrs.get("data-requires-python")
 
     def handle_endtag(self, tag):
         if tag != "a":
             return
         elif self._file.get("url") and self._file.get("filename"):
-            self.files.append(self._file)
+            self.files.append(ArchiveLink._fromfiledetails(self._file))
 
         self._file = {}
         self._parsing_anchor = False
@@ -149,19 +148,6 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def handle_data(self, data):
         if self._parsing_anchor:
             self._file["filename"] = data
-
-
-def extract_version(file_uri):
-    """Extract the file version for a single file from a simple package index."""
-    chunks = []
-    if file_uri.lower().endswith(".whl"):
-        # naive implementation, use Packaging package...
-        chunks = file_uri.split("-")
-
-    if len(chunks) > 1:
-        return chunks[1]
-
-    return None
 
 
 def parse_archive_links(index_html):
@@ -172,5 +158,4 @@ def parse_archive_links(index_html):
     # of a dict
     parser = _ArchiveLinkHTMLParser()
     parser.feed(index_html)
-    file_info = [ArchiveLink._fromfiledetails(file_) for file_ in parser.files]
-    return file_info
+    return parser.files

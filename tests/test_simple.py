@@ -88,38 +88,27 @@ class TestPackageIndexParsing:
         </head>
         <body>
             <h1>Links for test_package</h1>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=windows100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=win100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=manylinux1100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=macosx100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
 
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=windows200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=win200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=manylinux1200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=macosx200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
 
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=windows300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=linux300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=mac300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=win300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=manylinux1300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
+            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=macosx300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
         </body>
         </html>
         <!--SERIAL 6405382-->"""
 
-    def test_get_num_versions_extracted(self):
-        """3 versions in dummy data, so the index for this package should have 3 entries, one for each version."""
-        index_html = self.dummy_data
-        index = simple.parse_archive_links(index_html)
-        assert len(index) == 9
-
-    def test_get_num_files_per_version_extracted(self):
-        """Each version contains 3 files."""
-
+    @pytest.mark.parametrize('ver', ["1.0.0", "2.0.0", "3.0.0"])
+    def test_multiple_versions(self, ver):
         index = simple.parse_archive_links(self.dummy_data)
-        ver_1 = [al for al in index if "1.0.0" in al.filename]
-        ver_2 = [al for al in index if "2.0.0" in al.filename]
-        ver_3 = [al for al in index if "3.0.0" in al.filename]
+        files_for_ver = [al for al in index if ver in al.filename]
 
-        assert len(ver_1) == 3
-        assert len(ver_2) == 3
-        assert len(ver_3) == 3
+        assert len(files_for_ver) == 3
 
     def test_get_expected_file(self):
         """Ensure the file name is present in the list."""
@@ -129,29 +118,21 @@ class TestPackageIndexParsing:
 
         assert len(found_file) == 1
 
-    def test_signature_values_extracted(self):
+    @pytest.mark.parametrize('vermarker', [1, 2, 3])
+    @pytest.mark.parametrize('osmarker', ["win", "macosx", "manylinux1"])
+    def test_signature_values_match(self, osmarker, vermarker):
         """Each package has a hash that coincides with the OS and version of the file."""
         index = simple.parse_archive_links(self.dummy_data)
+        expected_file = f"test_package-{vermarker}.0.0-cp37-cp37m-{osmarker}"
+        expected_sha = f"{osmarker}{vermarker}00"
+        found = [a for a in index if a.filename.startswith(expected_file) and a.hash[1] == expected_sha]
+        assert len(found)
 
-        for al in index:
-            assert al.hash[1] in [
-                "windows100",
-                "windows200",
-                "windows300",
-                "linux100",
-                "linux200",
-                "linux300",
-                "mac100",
-                "mac200",
-                "mac300",
-            ]
-
-    def test_python_version_required(self):
-        """All package files require python >=3.7, >=3.8, or >=3.8.1."""
+    def test_files_have_python_version_specification(self):
         index = simple.parse_archive_links(self.dummy_data)
 
         for pkg_file in index:
-            assert pkg_file.requires_python in [">=3.7", ">=3.8", ">=3.8.1"]
+            assert pkg_file.requires_python
 
     def test_gpg_sig_extracted(self):
         """Determine if a gpg-sig is available for the file."""
