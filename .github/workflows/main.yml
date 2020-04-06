@@ -44,7 +44,7 @@ jobs:
         poetry run black --check .
 
 
-release:
+  release:
     needs: [tests]
     if: github.event_name == 'pull_request' && github.ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
 
