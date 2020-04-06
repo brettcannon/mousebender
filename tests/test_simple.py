@@ -78,7 +78,9 @@ class TestRepoIndexParsing:
         assert index["PACKAGE-NAME"] == "/project/package-name/"
 
 
-class TestPackageIndexParsing:
+class TestParseArchiveLinks:
+
+    """Tests for mousebender.simple.parse_archive_links()."""
 
     dummy_data = """<!DOCTYPE html>
         <html>
@@ -133,7 +135,7 @@ class TestPackageIndexParsing:
         index = simple.parse_archive_links(self.dummy_data)
 
         for al in index:
-            assert al.hash[1] in [
+            assert al.hash_[1] in [
                 "windows100",
                 "windows200",
                 "windows300",

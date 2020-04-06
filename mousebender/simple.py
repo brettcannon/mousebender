@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import dataclasses
+import html
 import html.parser
 import re
 from typing import Optional, Tuple
+import urllib.parse
+
+import packaging.specifiers
 
 
 _NORMALIZE_RE = re.compile(r"[-_.]+")
@@ -84,93 +88,61 @@ def parse_repo_index(index_html):
     return parser.mapping
 
 
-# XXX Draft code for archive links parsing =====================================
-
-# Data to store for the simple project index:
-# - filename
-# - url
-# - hash? (algorithm, digest)
-# - data-gpg-sig (bool)
-# - data-requires-python (python_version escaped)
-
-
 @dataclasses.dataclass
 class ArchiveLink:
     filename: str
     url: str
-    hash: Optional[Tuple[str, str]]
-    requires_python: Optional[str]  # XXX packaging.specifiers.SpecifierSet?
+    requires_python: packaging.specifiers.SpecifierSet
+    hash_: Optional[Tuple[str, str]]
     gpg_sig: Optional[bool]
-
-    @classmethod
-    def _fromfiledetails(cls, file_details):
-        """
-        Parses the extra 'combined fields' from file details that the data class uses
-        as constructor arguments.
-        """
-        url = file_details["url"]
-        url, _, hash_info = url.partition("#")
-        hash_algo, _, hash_val = hash_info.partition("=")
-        if hash_algo and hash_val:
-            file_details["hash"] = hash_algo, hash_val
-
-        return cls(**file_details)
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self):
+        self.archive_links = []
         super().__init__()
-        self._parsing_anchor = False
-        self.files = []
-        self._file = {}
 
     def handle_starttag(self, tag, attrs_list):
         if tag != "a":
             return
-        self._parsing_anchor = True
         attrs = dict(attrs_list)
-        self._file["url"] = attrs.get("href")
 
-        if gpg_sig := attrs.get("data-gpg-sig", None):
+        # PEP 503:
+        # The href attribute MUST be a URL that links to the location of the
+        # file for download ...
+        full_url = attrs["href"]
+        parsed_url = urllib.parse.urlparse(full_url)
+        # PEP 503:
+        # ... the text of the anchor tag MUST match the final path component
+        # (the filename) of the URL.
+        _, _, raw_filename = parsed_url.path.rpartition("/")
+        filename = html.unescape(raw_filename)
+        url = urllib.parse.urlunparse((*parsed_url[:5], ''))
+        hash_ = None
+        # PEP 503:
+        # The URL SHOULD include a hash in the form of a URL fragment with the
+        # following syntax: #<hashname>=<hashvalue> ...
+        if parsed_url.fragment:
+            hash_algo, hash_value = parsed_url.fragment.split("=", 1)
+            hash_ = hash_algo.lower(), hash_value
+        # PEP 503:
+        # A repository MAY include a data-requires-python attribute on a file
+        # link. This exposes the Requires-Python metadata field ...
+        # In the attribute value, < and > have to be HTML encoded as &lt; and
+        # &gt;, respectively.
+        requires_python_data = html.unescape(attrs.get("data-requires-python", ""))
+        requires_python = packaging.specifiers.SpecifierSet(requires_python_data)
+        # PEP 503:
+        # A repository MAY include a data-gpg-sig attribute on a file link with
+        # a value of either true or false ...
+        if gpg_sig := attrs.get("data-gpg-sig"):
             gpg_sig = gpg_sig == "true"
-        self._file["gpg_sig"] = gpg_sig
 
-        self._file["requires_python"] = attrs.get("data-requires-python")
-
-    def handle_endtag(self, tag):
-        if tag != "a":
-            return
-        elif self._file.get("url") and self._file.get("filename"):
-            self.files.append(self._file)
-
-        self._file = {}
-        self._parsing_anchor = False
-
-    def handle_data(self, data):
-        if self._parsing_anchor:
-            self._file["filename"] = data
-
-
-def extract_version(file_uri):
-    """Extract the file version for a single file from a simple package index."""
-    chunks = []
-    if file_uri.lower().endswith(".whl"):
-        # naive implementation, use Packaging package...
-        chunks = file_uri.split("-")
-
-    if len(chunks) > 1:
-        return chunks[1]
-
-    return None
+        self.archive_links.append(ArchiveLink(filename, url, requires_python, hash_, gpg_sig))
 
 
 def parse_archive_links(index_html):
     """Translate a simple file index into a map of filename:file-data."""
-    # for each simple file anchor set, consisting of
-    # href, cdata, and attributes, construct an ArchiveLink
-    # and add it to the set of files contained in a version member
-    # of a dict
     parser = _ArchiveLinkHTMLParser()
     parser.feed(index_html)
-    file_info = [ArchiveLink._fromfiledetails(file_) for file_ in parser.files]
-    return file_info
+    return parser.archive_links
