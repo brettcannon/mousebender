@@ -174,7 +174,9 @@ class TestParseArchiveLinks:
             assert pkg.gpg_sig is expected_gpg
 
     def test_get_package_index_real_data(self):
-        index_html = importlib.resources.read_text(simple_data, "archive_links.numpy.html")
+        index_html = importlib.resources.read_text(
+            simple_data, "archive_links.numpy.html"
+        )
         index = simple.parse_archive_links(index_html)
         assert len(index) == 1402
         assert len([al for al in index if "1.18.0" in al.filename]) == 42

@@ -117,7 +117,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # (the filename) of the URL.
         _, _, raw_filename = parsed_url.path.rpartition("/")
         filename = html.unescape(raw_filename)
-        url = urllib.parse.urlunparse((*parsed_url[:5], ''))
+        url = urllib.parse.urlunparse((*parsed_url[:5], ""))
         hash_ = None
         # PEP 503:
         # The URL SHOULD include a hash in the form of a URL fragment with the
@@ -138,7 +138,9 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         if gpg_sig := attrs.get("data-gpg-sig"):
             gpg_sig = gpg_sig == "true"
 
-        self.archive_links.append(ArchiveLink(filename, url, requires_python, hash_, gpg_sig))
+        self.archive_links.append(
+            ArchiveLink(filename, url, requires_python, hash_, gpg_sig)
+        )
 
 
 def parse_archive_links(index_html):
