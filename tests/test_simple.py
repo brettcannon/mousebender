@@ -129,7 +129,7 @@ class TestParseArchiveLinks:
         found = [
             a
             for a in index
-            if a.filename.startswith(expected_file) and a.hash[1] == expected_sha
+            if a.filename.startswith(expected_file) and a.hash_[1] == expected_sha
         ]
         assert len(found)
 
@@ -159,7 +159,7 @@ class TestParseArchiveLinks:
             assert pkg.gpg_sig is expected_gpg
 
     def test_get_package_index_real_data(self):
-        index_html = importlib.resources.read_text(numpy_data, "index.html")
+        index_html = importlib.resources.read_text(simple_data, "archive_links.numpy.html")
         index = simple.parse_archive_links(index_html)
         assert len(index) == 1402
         assert len([al for al in index if "1.18.0" in al.filename]) == 42
