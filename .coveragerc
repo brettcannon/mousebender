@@ -1,8 +1,0 @@
-[run]
-source=mousebender/
-branch=True
-
-[report]
-# % of tests that must pass
-fail_under=90
-

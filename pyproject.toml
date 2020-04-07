@@ -15,7 +15,9 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.8,<4"
+packaging = "^20.3"
+coverage = {extras = ["toml"], version = "^5.0.4"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"
@@ -24,9 +26,15 @@ pytest = "^5.4.1"
 pytest-cov = "^2.8.1"
 docopt = "^0.6.2"
 
+[tool.poetry.urls]
+"issues" = "https://github.com/brettcannon/mousebender/issues"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
-[tool.poetry.urls]
-"issues" = "https://github.com/brettcannon/mousebender/issues"
+[tool.coverage.run]
+source = ["mousebender/"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 98
