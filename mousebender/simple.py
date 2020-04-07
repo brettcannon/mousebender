@@ -88,7 +88,7 @@ def parse_repo_index(index_html):
     return parser.mapping
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class ArchiveLink:
     filename: str
     url: str
@@ -106,7 +106,6 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         if tag != "a":
             return
         attrs = dict(attrs_list)
-
         # PEP 503:
         # The href attribute MUST be a URL that links to the location of the
         # file for download ...
