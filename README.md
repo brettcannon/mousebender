@@ -1,7 +1,7 @@
 # mousebender
-A package for installing fully-specified Python packages
+A package for installing fully-specified Python packages.
 
-The goal is to provide a package which could install all dependencies as frozen by a tool like [pip-tools](https://pypi.org/project/pip-tools/) via an API (or put another way, what is required to bootstrap install `pip` via code). This avoids relying on pip's CLI to do installations but instead provide a more programmatic API. It also helps discover any holes in specifications and/or packages for providing such a feature. 
+The goal is to provide a package which could install all dependencies as frozen by a tool like [pip-tools](https://pypi.org/project/pip-tools/) via an API (or put another way, what is required to install `pip` w/o using pip itself). This avoids relying on pip's CLI to do installations but instead provide a more programmatic API. It also helps discover any holes in specifications and/or packages for providing such a feature. 
 
 ## The steps to installing a package
 
@@ -26,8 +26,8 @@ The goal is to provide a package which could install all dependencies as frozen 
 These might be added in the future, but they are not considered requirements for a 1.0 release:
 
 * Parse a frozen `requirements.txt` file
-* Translate `mousebender=1.0.0` to `mousebender` 1.0.0
-* Install from an sdist
+* Translate `mousebender==1.0.0` to `mousebender` 1.0.0
+* Install from an sdist (although using pep517 to do the build wouldn't be _too_ hard; difficulty is identify the sdist due to not standard on naming)
 * Install dependencies (i.e. read dependencies from wheel, solve dependency graph)
 * Networking (everything is sans-I/O as it's easier for you to do the actual networking and rely on this package to handle what was downloaded appropriately)
 * Install somewhere other than in a `venv`-created virtual environment
