@@ -1,6 +1,7 @@
 """Tests for mousebender.simple."""
 import importlib.resources
 
+import packaging.version
 import pytest
 
 from mousebender import simple
@@ -82,87 +83,116 @@ class TestParseArchiveLinks:
 
     """Tests for mousebender.simple.parse_archive_links()."""
 
-    dummy_data = """<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Links for test_package</title>
-        </head>
-        <body>
-            <h1>Links for test_package</h1>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-win_amd64.whl#sha256=win100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=manylinux1100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=macosx100" data-requires-python="&gt;=3.7">test_package-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
-
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-win_amd64.whl#sha256=win200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=manylinux1200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=macosx200" data-requires-python="&gt;=3.8" data-gpg-sig="false">test_package-2.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
-
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-win_amd64.whl#sha256=win300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-win_amd64.whl</a><br/>
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl#sha256=manylinux1300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-manylinux1_x86_64.whl</a><br/>
-            <a href="/packages/1/test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl#sha256=macosx300" data-requires-python="&gt;=3.8.1" data-gpg-sig="true">test_package-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl</a><br/>
-        </body>
-        </html>
-        <!--SERIAL 6405382-->"""
-
-    @pytest.mark.parametrize("ver", ["1.0.0", "2.0.0", "3.0.0"])
-    def test_multiple_versions(self, ver):
-        index = simple.parse_archive_links(self.dummy_data)
-        files_for_ver = [al for al in index if ver in al.filename]
-
-        assert len(files_for_ver) == 3
-
-    def test_get_expected_file(self):
-        """Ensure the file name is present in the list."""
-        index = simple.parse_archive_links(self.dummy_data)
-        expected_file = "test_package-1.0.0-cp37-cp37m-win_amd64.whl"
-        found_file = [al for al in index if al.filename == expected_file]
-
-        assert len(found_file) == 1
-
-    @pytest.mark.parametrize("vermarker", [1, 2, 3])
-    @pytest.mark.parametrize("osmarker", ["win", "macosx", "manylinux1"])
-    def test_signature_values_match(self, osmarker, vermarker):
-        """Each package has a hash that coincides with the OS and version of the file."""
-        index = simple.parse_archive_links(self.dummy_data)
-        expected_file = f"test_package-{vermarker}.0.0-cp37-cp37m-{osmarker}"
-        expected_sha = f"{osmarker}{vermarker}00"
-        found = [
-            a
-            for a in index
-            if a.filename.startswith(expected_file) and a.hash_[1] == expected_sha
-        ]
-        assert len(found)
-
-    def test_files_have_python_version_specification(self):
-        index = simple.parse_archive_links(self.dummy_data)
-
-        for pkg_file in index:
-            assert pkg_file.requires_python
-
-    def test_gpg_sig_extracted(self):
-        """Determine if a gpg-sig is available for the file."""
-        index = simple.parse_archive_links(self.dummy_data)
-
-        for pkg in index:
-            if "1.0.0" in pkg.filename:
-                # Version 1.0.0 files don't have it specified, should be None
-                expected_gpg = None
-            elif "2.0.0" in pkg.filename:
-                # Version 2.0.0 files have data-gpg-sig set to False
-                expected_gpg = False
-            elif "3.0.0" in pkg.filename:
-                # Version 3.0.0 files have data-gpg-sig set to True
-                expected_gpg = True
-            else:
-                assert False  # Did we add another version to the dummy data?
-
-            assert pkg.gpg_sig is expected_gpg
-
-    def test_get_package_index_real_data(self):
-        index_html = importlib.resources.read_text(
-            simple_data, "archive_links.numpy.html"
+    @pytest.mark.parametrize(
+        "module_name,count",
+        [("numpy", 1402), ("pulpcore-client", 370), ("pytorch", 522)],
+    )
+    def test_full_parse(self, module_name, count):
+        html = importlib.resources.read_text(
+            simple_data, f"archive_links.{module_name}.html"
         )
-        index = simple.parse_archive_links(index_html)
-        assert len(index) == 1402
-        assert len([al for al in index if "1.18.0" in al.filename]) == 42
-        assert len([al for al in index if "1.18.1" in al.filename]) == 21
+        assert len(simple.parse_archive_links(html)) == count
+
+    @pytest.mark.parametrize(
+        "html,expected_filename",
+        [
+            (
+                '<a href="https://files.pythonhosted.org/packages/92/e2/7d9c6894511337b012735c0c149a7b4e49db0b934798b3ae05a3b46f31f0/numpy-1.12.1-cp35-none-win_amd64.whl#sha256=818d5a1d5752d09929ce1ba1735366d5acc769a1839386dc91f3ac30cf9faf19">numpy-1.12.1-cp35-none-win_amd64.whl</a><br/>',
+                "numpy-1.12.1-cp35-none-win_amd64.whl",
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                "torch-1.2.0+cpu-cp35-cp35m-win_amd64.whl",
+            ),
+        ],
+    )
+    def test_filename(self, html, expected_filename):
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == 1
+        assert archive_links[0].filename == expected_filename
+
+    @pytest.mark.parametrize(
+        "html,expected_url",
+        [
+            (
+                '<a href="https://files.pythonhosted.org/packages/92/e2/7d9c6894511337b012735c0c149a7b4e49db0b934798b3ae05a3b46f31f0/numpy-1.12.1-cp35-none-win_amd64.whl#sha256=818d5a1d5752d09929ce1ba1735366d5acc769a1839386dc91f3ac30cf9faf19">numpy-1.12.1-cp35-none-win_amd64.whl</a><br/>',
+                "https://files.pythonhosted.org/packages/92/e2/7d9c6894511337b012735c0c149a7b4e49db0b934798b3ae05a3b46f31f0/numpy-1.12.1-cp35-none-win_amd64.whl",
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                "cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl",
+            ),
+        ],
+    )
+    def test_url(self, html, expected_url):
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == 1
+        assert archive_links[0].url == expected_url
+
+    @pytest.mark.parametrize(
+        "html,supported,unsupported",
+        [
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                "3.8",
+                None,
+            ),
+            (
+                '<a href="https://files.pythonhosted.org/packages/4e/d9/d7ec4b9508e6a89f80de3e18fe3629c3c089355bec453b55e271c53dd23f/numpy-1.13.0-cp34-none-win32.whl#sha256=560ca5248c2a8fd96ac75a05811eca0ce08dfeea2ee128c87c9c7261af366288" data-requires-python="&gt;=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*">numpy-1.13.0-cp34-none-win32.whl</a><br/>',
+                "2.7",
+                "3.3",
+            ),
+        ],
+    )
+    def test_requires_python(self, html, supported, unsupported):
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == 1
+        assert packaging.version.Version(supported) in archive_links[0].requires_python
+        if unsupported:
+            assert (
+                packaging.version.Version(unsupported)
+                not in archive_links[0].requires_python
+            )
+
+    @pytest.mark.parametrize(
+        "html,expected_hash",
+        [
+            (
+                '<a href="https://files.pythonhosted.org/packages/92/e2/7d9c6894511337b012735c0c149a7b4e49db0b934798b3ae05a3b46f31f0/numpy-1.12.1-cp35-none-win_amd64.whl#sha256=818d5a1d5752d09929ce1ba1735366d5acc769a1839386dc91f3ac30cf9faf19">numpy-1.12.1-cp35-none-win_amd64.whl</a><br/>',
+                (
+                    "sha256",
+                    "818d5a1d5752d09929ce1ba1735366d5acc769a1839386dc91f3ac30cf9faf19",
+                ),
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                None,
+            ),
+        ],
+    )
+    def test_hash_(self, html, expected_hash):
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == 1
+        assert archive_links[0].hash_ == expected_hash
+
+    @pytest.mark.parametrize(
+        "html,expected_gpg_sig",
+        [
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                None,
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl" data-gpg-sig="true">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                True,
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl" data-gpg-sig="false">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                False,
+            ),
+        ],
+    )
+    def test_gpg_sig(self, html, expected_gpg_sig):
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == 1
+        assert archive_links[0].gpg_sig == expected_gpg_sig
