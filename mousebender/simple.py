@@ -115,7 +115,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # ... the text of the anchor tag MUST match the final path component
         # (the filename) of the URL.
         _, _, raw_filename = parsed_url.path.rpartition("/")
-        filename = html.unescape(raw_filename)
+        filename = urllib.parse.unquote(raw_filename)
         url = urllib.parse.urlunparse((*parsed_url[:5], ""))
         hash_ = None
         # PEP 503:
