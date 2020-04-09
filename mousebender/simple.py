@@ -13,6 +13,8 @@ import packaging.specifiers
 
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
+PYPI_INDEX = "https://pypi.org/simple/"
+
 
 def create_project_url(base_url, project_name):
     """Construct the project URL for a repository following PEP 503."""
@@ -81,15 +83,18 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
             self._name = data
 
 
-def parse_repo_index(index_html):
-    """Parse the HTML for a repository index page."""
+def parse_repo_index(html):
+    """Parse the HTML of a repository index page."""
     parser = _SimpleIndexHTMLParser()
-    parser.feed(index_html)
+    parser.feed(html)
     return parser.mapping
 
 
 @dataclasses.dataclass(frozen=True)
 class ArchiveLink:
+
+    """Data related to a link to an archive file."""
+
     filename: str
     url: str
     requires_python: packaging.specifiers.SpecifierSet
@@ -142,8 +147,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         )
 
 
-def parse_archive_links(index_html):
-    """Translate a simple file index into a map of filename:file-data."""
+def parse_archive_links(html):
+    """Parse the HTML of an archive links page."""
     parser = _ArchiveLinkHTMLParser()
-    parser.feed(index_html)
+    parser.feed(html)
     return parser.archive_links
