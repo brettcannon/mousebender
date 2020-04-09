@@ -1,18 +1,15 @@
 [tool.poetry]
 name = "mousebender"
-version = "0.1.0.post1"
-description = "A package for installing fully-specified Python packages."
+version = "1.0.0"
+description = "A package for implementing various Python packaging standards"
 authors = ["Brett Cannon <brett@snarky.ca>"]
 maintainers = ["Derek Keeler <derek@suchcool.ca>"]
 homepage = "https://github.com/brettcannon/mousebender"
 repository = "https://github.com/brettcannon/mousebender"
-documentation = "https://github.com/brettcannon/mousebender/blob/master/README.md"
+documentation = "https://github.com/brettcannon/mousebender/blob/master/README.rst"
 license = "BSD-3-Clause"
 readme = "README.rst"
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
-packages = [
-    { include = "mousebender" },
-]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
@@ -29,6 +26,7 @@ twine = "^3.1.1"
 
 [tool.poetry.urls]
 "issues" = "https://github.com/brettcannon/mousebender/issues"
+
 [tool.coverage.run]
 source = ["mousebender/"]
 branch = true
@@ -36,6 +34,6 @@ branch = true
 [tool.coverage.report]
 fail_under = 100
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0.5"]
 build-backend = "poetry.masonry.api"
 
