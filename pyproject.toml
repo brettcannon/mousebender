@@ -12,6 +12,7 @@ readme = "README.rst"
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
 
 [tool.poetry.dependencies]
+# The `<4` restriction is because of coverage.py.
 python = ">=3.8,<4"
 packaging = "^20.3"
 
