@@ -45,9 +45,31 @@ Where does the name come from?
 The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender". And in case you don't know, the original name of PyPI_ was the Cheeseshop after the Monty Python sketch.
 
 
----
-.. image::https://img.shields.io/badge/code%20style-black-000000.svg
+-----
+
+.. image:: https://github.com/brettcannon/mousebender/workflows/CI/badge.svg
+    :target: https://github.com/brettcannon/mousebender/actions?query=workflow%3ACI+branch%3Amaster+event%3Apush
+    :alt: CI status
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
+    :alt: Formatted with Black
+    
+.. image:: http://www.mypy-lang.org/static/mypy_badge.svg
+    :target: https://mypy.readthedocs.io/
+    :alt: Checked by mypy
+
+.. image:: https://img.shields.io/pypi/pyversions/mousebender
+    :target: https://pypi.org/project/mousebender
+    :alt: PyPI - Python Version
+    
+.. image:: https://img.shields.io/pypi/l/mousebender
+    :target: https://github.com/brettcannon/mousebender/blob/master/LICENSE
+    :alt: PyPI - License
+    
+.. image:: https://img.shields.io/pypi/wheel/mousebender
+    :target: https://pypi.org/project/mousebender/#files
+    :alt: PyPI - Wheel
 
 
 .. _distlib.wheel: https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels
