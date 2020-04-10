@@ -33,6 +33,7 @@ branch = true
 
 [tool.coverage.report]
 fail_under = 100
+
 [build-system]
 requires = ["poetry>=1.0.5"]
 build-backend = "poetry.masonry.api"
