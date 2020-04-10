@@ -2,8 +2,8 @@
 import html
 import html.parser
 import re
+from typing import List, Optional, Tuple
 import urllib.parse
-from typing import Optional, Tuple
 
 import attr
 import packaging.specifiers
@@ -102,7 +102,7 @@ class ArchiveLink:
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self):
-        self.archive_links = []
+        self.archive_links: List[ArchiveLink] = []
         super().__init__()
 
     def handle_starttag(self, tag, attrs_list):
