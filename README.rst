@@ -50,6 +50,10 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
 .. image:: https://github.com/brettcannon/mousebender/workflows/CI/badge.svg
     :target: https://github.com/brettcannon/mousebender/actions?query=workflow%3ACI+branch%3Amaster+event%3Apush
     :alt: CI status
+    
+.. image:: https://img.shields.io/badge/coverage-100%25-brightgreen
+    :target: https://github.com/brettcannon/mousebender/blob/master/pyproject.toml
+    :alt: 100% branch coverage
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
