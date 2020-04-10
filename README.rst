@@ -46,7 +46,8 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
 
 
 ---
-.. image::https://img.shields.io/badge/code%20style-black-000000.svg :target: https://github.com/psf/black
+.. image::https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
 
 
 .. _distlib.wheel: https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels
