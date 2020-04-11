@@ -17,28 +17,35 @@ The steps to installing a package
 
 `PyPA specifications`_
 
-1. Check if package is already installed (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / `importlib-metadata`_)
-2. Check local wheel cache (? / ?; `how pip does it <https://pip.pypa.io/en/stable/reference/pip_install/#caching>`__)
-3. Choose appropriate file from PyPI/index
+#. Figure out what packages are necessary
 
-   1. Process the list of files (`simple repository API`_ / `mousebender.simple`)
-   2. Calculate best-fitting wheel (`spec <https://packaging.python.org/specifications/platform-compatibility-tags/>`__ / `packaging.tags`_)
+    #. For an app, read lock file (?)
+    #. For a package:
 
-4. *Download the wheel*
-5. Cache the wheel locally (? / ?)
-6. Install the wheel
+        #. Read list of dependencies (?)
+        #. *Solve dependency constraints* (ResolveLib_)
 
-   1. Install the files (`spec <https://packaging.python.org/specifications/distribution-formats/>`__ / `distlib.wheel`_)
-   2. Record the installation (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / ?)
+#. Get the wheel to install
 
+    #. Check if package is already installed (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / `importlib-metadata`_)
+    #. Check local wheel cache (?; `how pip does it <https://pip.pypa.io/en/stable/reference/pip_install/#caching>`__)
+    #. Choose appropriate file from PyPI/index
 
-Things pip does that the above outline doesn't
-----------------------------------------------
+        #. Process the list of files (`simple repository API`_ / `mousebender.simple`)
+        #. Calculate best-fitting wheel (`spec <https://packaging.python.org/specifications/platform-compatibility-tags/>`__ / `packaging.tags`_)
+        #. If no wheel found ...
 
-* Parse a frozen ``requirements.txt`` file
-* Install from an sdist
-* Install dependencies (i.e. read dependencies from wheel, solve dependency graph)
-* Networking (everything is sans-I/O to allow the user to use whatever networking approach they want)
+            #. Select and download the sdist (?)
+            #. Build the wheel (`PEP 517`_, `PEP 518`_ / pep517_)
+
+    #. *Download the wheel*
+    #. Cache the wheel locally (?)
+
+#. Install the wheel
+
+   #. Install the files (`spec <https://packaging.python.org/specifications/distribution-formats/>`__ / `distlib.wheel`_)
+   #. Record the installation (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / ?)
+
 
 Where does the name come from?
 ==============================
@@ -50,7 +57,7 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
 .. image:: https://github.com/brettcannon/mousebender/workflows/CI/badge.svg
     :target: https://github.com/brettcannon/mousebender/actions?query=workflow%3ACI+branch%3Amaster+event%3Apush
     :alt: CI status
-    
+
 .. image:: https://img.shields.io/badge/coverage-100%25-brightgreen
     :target: https://github.com/brettcannon/mousebender/blob/master/pyproject.toml
     :alt: 100% branch coverage
@@ -58,7 +65,7 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
     :alt: Formatted with Black
-    
+
 .. image:: http://www.mypy-lang.org/static/mypy_badge.svg
     :target: https://mypy.readthedocs.io/
     :alt: Checked by mypy
@@ -66,11 +73,11 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
 .. image:: https://img.shields.io/pypi/pyversions/mousebender
     :target: https://pypi.org/project/mousebender
     :alt: PyPI - Python Version
-    
+
 .. image:: https://img.shields.io/pypi/l/mousebender
     :target: https://github.com/brettcannon/mousebender/blob/master/LICENSE
     :alt: PyPI - License
-    
+
 .. image:: https://img.shields.io/pypi/wheel/mousebender
     :target: https://pypi.org/project/mousebender/#files
     :alt: PyPI - Wheel
@@ -80,7 +87,11 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
 .. _importlib-metadata: https://pypi.org/project/importlib-metadata/
 .. _Monty Python's cheese shop sketch: https://en.wikipedia.org/wiki/Cheese_Shop_sketch
 .. _packaging.tags: https://packaging.pypa.io/en/latest/tags/
+.. _PEP 517: https://www.python.org/dev/peps/pep-0517/
+.. _PEP 518: https://www.python.org/dev/peps/pep-0518/
+.. _pep517: https://pypi.org/project/pep517/
 .. _pip-tools: https://pypi.org/project/pip-tools/
 .. _PyPI: https://pypi.org
 .. _PyPA specifications: https://packaging.python.org/specifications/
+.. _ResolveLib: https://pypi.org/project/resolvelib/
 .. _simple repository API: https://packaging.python.org/specifications/simple-repository-api/
