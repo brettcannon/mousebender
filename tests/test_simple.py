@@ -32,17 +32,29 @@ class TestProjectURLConstruction:
         )
         assert url == "https://terribly_awesome.com/So/Simple/the-project-name-here/"
 
+    def test_no_base_url(self):
+        url = simple.create_project_url("", "django-node")
+        assert url == "django-node/"
+
 
 class TestRepoIndexParsing:
 
     """Tests for mousebender.simple.parse_repo_index()."""
 
-    def test_baseline(self):
-        index_html = importlib.resources.read_text(simple_data, "index.pypi.html")
+    @pytest.mark.parametrize(
+        "name,count,expected_item",
+        [
+            ("pypi", 212_862, ("numpy", "/simple/numpy/")),
+            ("piwheels", 263_872, ("django-node", "django-node/")),
+        ],
+    )
+    def test_full_parse(self, name, count, expected_item):
+        index_html = importlib.resources.read_text(simple_data, f"index.{name}.html")
         index = simple.parse_repo_index(index_html)
-        assert "numpy" in index
-        assert index["numpy"] == "/simple/numpy/"
-        assert len(index) == 212_862
+        assert len(index) == count
+        key, value = expected_item
+        assert key in index
+        assert index[key] == value
 
     def test_no_cdata(self):
         index_html = (
@@ -78,20 +90,100 @@ class TestRepoIndexParsing:
         index = simple.parse_repo_index(index_html)
         assert index["PACKAGE-NAME"] == "/project/package-name/"
 
+    def test_relative_url(self):
+        index_html = """
+            <html>
+                <body>
+                    <a href="django-node">django-node</a>
+                </body>
+            </html>
+        """
+        index = simple.parse_repo_index(index_html)
+        assert index["django-node"] == "django-node/"
+
 
 class TestParseArchiveLinks:
 
     """Tests for mousebender.simple.parse_archive_links()."""
 
     @pytest.mark.parametrize(
-        "module_name,count",
-        [("numpy", 1402), ("pulpcore-client", 370), ("pytorch", 522)],
+        "module_name,count,expected_archive_link",
+        [
+            (
+                "numpy",
+                1402,
+                simple.ArchiveLink(
+                    "numpy-1.13.0rc1-cp36-none-win_amd64.whl",
+                    "https://files.pythonhosted.org/packages/5c/2e/5c0eee0635035a7e0646734e2b9388e17a97f6f2087e15141a218b6f2b6d/numpy-1.13.0rc1-cp36-none-win_amd64.whl",
+                    packaging.specifiers.SpecifierSet(
+                        ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
+                    ),
+                    (
+                        "sha256",
+                        "8e8e1ccf025c8b6a821f75086a364a68d9e1877519a35bf8facec9e5120836f4",
+                    ),
+                    None,
+                ),
+            ),
+            (
+                "pulpcore-client",
+                370,
+                simple.ArchiveLink(
+                    "pulpcore_client-3.1.0.dev1578940535-py3-none-any.whl",
+                    "https://files.pythonhosted.org/packages/ca/7e/e14e41dc4bc60208f597f346d57755636e882be7509179c4e7c11f2c60a9/pulpcore_client-3.1.0.dev1578940535-py3-none-any.whl",
+                    packaging.specifiers.SpecifierSet(),
+                    (
+                        "sha256",
+                        "83a3759d7b6af33083b0d4893d53615fc045cbad9adde68a8df02e25b1862bc6",
+                    ),
+                    None,
+                ),
+            ),
+            (
+                "pytorch",
+                522,
+                simple.ArchiveLink(
+                    "torchvision-0.5.0+cu100-cp36-cp36m-linux_x86_64.whl",
+                    "cu100/torchvision-0.5.0%2Bcu100-cp36-cp36m-linux_x86_64.whl",
+                    packaging.specifiers.SpecifierSet(),
+                    None,
+                    None,
+                ),
+            ),
+            (
+                "AICoE-tensorflow",
+                15,
+                simple.ArchiveLink(
+                    "tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
+                    "tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
+                    packaging.specifiers.SpecifierSet(),
+                    None,
+                    None,
+                ),
+            ),
+            (
+                "numpy-piwheels",
+                316,
+                simple.ArchiveLink(
+                    "numpy-1.10.4-cp35-cp35m-linux_armv7l.whl",
+                    "numpy-1.10.4-cp35-cp35m-linux_armv7l.whl",
+                    packaging.specifiers.SpecifierSet(),
+                    (
+                        "sha256",
+                        "5768279588a4766adb0211bbaa0f5857be38483c5aafe5d1caecbcd32749966e",
+                    ),
+                    None,
+                ),
+            ),
+        ],
     )
-    def test_full_parse(self, module_name, count):
+    def test_full_parse(self, module_name, count, expected_archive_link):
         html = importlib.resources.read_text(
             simple_data, f"archive_links.{module_name}.html"
         )
-        assert len(simple.parse_archive_links(html)) == count
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == count
+        assert expected_archive_link in archive_links
 
     @pytest.mark.parametrize(
         "html,expected_filename",
