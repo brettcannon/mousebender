@@ -18,7 +18,7 @@ PYPI_INDEX = "https://pypi.org/simple/"
 
 def create_project_url(base_url, project_name):
     """Construct the project URL for a repository following PEP 503."""
-    if not base_url.endswith("/"):
+    if base_url and not base_url.endswith("/"):
         base_url += "/"
     # https://www.python.org/dev/peps/pep-0503/#normalized-names
     normalized_project_name = _NORMALIZE_RE.sub("-", project_name).lower()
