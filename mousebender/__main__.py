@@ -59,12 +59,6 @@ def filter_wheels_to_version(
     return tag_to_links
 
 
-def get_utf8_data(package_url: str) -> str:  # pragma: no cover
-
-    with urllib.request.urlopen(package_url) as response:
-        return response.read().decode("utf-8")
-
-
 def find_package(archive_links: Iterable[simple.ArchiveLink], package_ver: str):
     relevant_links = filter_to_wheels(
         archive_links
@@ -85,13 +79,19 @@ def get_package_links(
     repo_index: str, repo_subfolder: str, package_name: str
 ) -> Optional[Iterable[simple.ArchiveLink]]:  # pragma: no cover
 
-    repo_index_data = get_utf8_data(urllib.parse.urljoin(repo_index, repo_subfolder))
+    with urllib.request.urlopen(
+        urllib.parse.urljoin(repo_index, repo_subfolder)
+    ) as response:
+        repo_index_data = response.read().decode("utf-8")
+
     pkg_index = simple.parse_repo_index(repo_index_data)
 
     if pkg_index and (package_name in pkg_index):
-        archive_links_data = get_utf8_data(
+        with urllib.request.urlopen(
             urllib.parse.urljoin(repo_index, pkg_index[package_name])
-        )
+        ) as response:
+            archive_links_data = response.read().decode("utf-8")
+
         return simple.parse_archive_links(archive_links_data)
 
     return None
