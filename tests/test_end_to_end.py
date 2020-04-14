@@ -4,7 +4,7 @@ import http
 import importlib.resources
 import packaging.tags
 import pytest
-from typing import List
+from typing import Dict, List
 import urllib
 
 from mousebender import __main__ as e2e
@@ -83,11 +83,17 @@ def test_find_package_no_compatible_tags(wheels_links, monkeypatch):
     assert e2e.find_package(wheels_links, "1.18.0") is None
 
 
-def test_find_package_generic_tag(wheels_links, monkeypatch):
-    def mock_sys_tags():
-        return [packaging.tags.parse_tag("py30-none-any")]
+def test_find_package_happy_path_mocked(wheels_links, monkeypatch):
+    """Test that the happy path to finding a package is tested cross-platform."""
 
-    test_archive_link = simple.ArchiveLink(
+    # tags are not necessarily cross-platform, remove this uncertainty from the test
+    mock_expected_tag = packaging.tags.parse_tag("py30-none-any")
+
+    def mock_sys_tags():
+        return [mock_expected_tag]
+
+    # ensure there is a 'valid-ish' package available with our mocked up tag
+    mock_archive_link = simple.ArchiveLink(
         filename="numpy-1.18.0-py30-none-any.whl",
         url="https://numpy-1.18.0-py30-none-any.whl",
         requires_python=packaging.specifiers.SpecifierSet(">=3.0"),
@@ -97,8 +103,17 @@ def test_find_package_generic_tag(wheels_links, monkeypatch):
         ),
         gpg_sig=False,
     )
-    wheels_links.append(test_archive_link)
+
+    # remove any uncertainty as to which package we will get back
+    def mock_filter_wheels_to_version(
+        relevant_links, package_ver
+    ) -> Dict[packaging.tags.Tag, simple.ArchiveLink]:
+        return {mock_expected_tag: mock_archive_link}
+
     monkeypatch.setattr(packaging.tags, "sys_tags", mock_sys_tags)
+    monkeypatch.setattr(e2e, "filter_wheels_to_version", mock_filter_wheels_to_version)
+
     package = e2e.find_package(wheels_links, "1.18.0")
+
     assert package is not None
     assert package.filename == "numpy-1.18.0-py30-none-any.whl"
