@@ -48,22 +48,6 @@ def test_filter_wheels_to_non_version_gets_none(wheels_links):
     assert len(list(e2e.filter_wheels_to_version(wheels_links, None))) == 0
 
 
-# def find_package(archive_links: Iterable[simple.ArchiveLink], package_ver: str):
-#     relevant_links = filter_to_wheels(
-#         archive_links
-#     )  # get all wheels only, disregard other files
-#
-#     tags_to_links = filter_wheels_to_version(
-#         relevant_links, package_ver
-#     )  # get all the wheels at this version
-#
-#     for tag in packaging.tags.sys_tags():
-#         if link := tags_to_links.get(tag):
-#             return link
-#     else:
-#         return None
-
-
 def test_find_package_nonpresent_version(wheels_links):
     assert e2e.find_package(wheels_links, "123.456.789") is None
 

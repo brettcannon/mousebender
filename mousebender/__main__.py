@@ -31,7 +31,7 @@ import pathlib
 import urllib.request
 from typing import Dict, Iterable, Iterator, List, Optional
 
-import docopt
+import docopt  # type: ignore
 import packaging.specifiers
 import packaging.tags
 import packaging.utils
