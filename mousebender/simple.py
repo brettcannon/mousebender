@@ -1,7 +1,5 @@
 """Parsing for PEP 503 -- Simple Repository API."""
-from __future__ import annotations
-
-import dataclasses
+import collections
 import html
 import html.parser
 import re
@@ -90,16 +88,39 @@ def parse_repo_index(html):
     return parser.mapping
 
 
-@dataclasses.dataclass(frozen=True)
 class ArchiveLink:
 
     """Data related to a link to an archive file."""
 
-    filename: str
-    url: str
-    requires_python: packaging.specifiers.SpecifierSet
-    hash_: Optional[Tuple[str, str]]
-    gpg_sig: Optional[bool]
+    filename = ""
+    url = ""
+    requires_python = packaging.specifiers.parse("0.0")
+    hash_ = None
+    gpg_sig = None
+
+    def __init__(
+        self,
+        filename: str,
+        url: str,
+        requires_python: packaging.specifiers.SpecifierSet,
+        hash: Optional[Tuple[str, str]] = None,
+        gpg_sig: Optional[bool] = None,
+    ):
+        self.filename = filename
+        self.url = url
+        self.requires_python = requires_python
+        self.hash_ = hash
+        self.gpg_sig = gpg_sig
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, ArchiveLink)
+            and self.filename == other.filename
+            and self.url == other.url
+            and self.requires_python == other.requires_python
+            and self.hash_ == other.hash_
+            and self.gpg_sig == other.gpg_sig
+        )
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -139,7 +160,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with
         # a value of either true or false ...
-        if gpg_sig := attrs.get("data-gpg-sig"):
+        gpg_sig = attrs.get("data-gpg-sig")
+        if gpg_sig:
             gpg_sig = gpg_sig == "true"
 
         self.archive_links.append(

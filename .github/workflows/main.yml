@@ -10,8 +10,12 @@ jobs:
   tests:
     if: github.event.action != 'closed' || github.event.pull_request.merged
 
+    name: Test Python ${{ matrix.python_version }}
     runs-on: ubuntu-latest
-
+    strategy:
+      max-parallel: 4
+      matrix:
+        python_version: ['3.5', '3.6', '3.7', '3.8']
     env:
       PYTHONDEVMODE: 1
 
@@ -21,7 +25,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python_version }}
 
     - name: Poetry setup
       run: |
@@ -31,17 +35,19 @@ jobs:
       run: |
         poetry install
 
+    - name: Lint with mypy
+      run: |
+        poetry run mypy mousebender
+  
+    - name: Check format with Black
+      if: matrix.python_version!='3.5'
+      run: |
+        poetry run black --check .
+
     - name: Test with pytest
       run: |
         poetry run pytest --cov
 
-    - name: Lint with mypy
-      run: |
-        poetry run mypy mousebender
-
-    - name: Check format with Black
-      run: |
-        poetry run black --check .
 
 
   release:

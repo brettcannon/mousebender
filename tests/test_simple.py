@@ -1,12 +1,38 @@
 """Tests for mousebender.simple."""
-import importlib.resources
+import pathlib
 
 import packaging.version
 import pytest
 
 from mousebender import simple
 
-from .data import simple as simple_data
+simple_data_path = pathlib.Path(__file__).parent.joinpath("data/simple")
+
+
+def simple_data_content(simple_data_relpath: str):
+    """Return the content of the file within tests/simple/data."""
+    data_file = simple_data_path.joinpath(simple_data_relpath)
+    return data_file.read_text()
+
+
+@pytest.fixture(scope="module")
+def index_content():
+    return {
+        "index.pypi.html": simple_data_content("index.pypi.html"),
+        "index.piwheels.html": simple_data_content("index.piwheels.html"),
+    }
+
+
+@pytest.fixture(scope="module")
+def archive_links_content():
+    files = [
+        "archive_links.AICoE-tensorflow.html",
+        "archive_links.numpy-piwheels.html",
+        "archive_links.numpy.html",
+        "archive_links.pulpcore-client.html",
+        "archive_links.pytorch.html",
+    ]
+    return {file_name: simple_data_content(file_name) for file_name in files}
 
 
 class TestProjectURLConstruction:
@@ -44,12 +70,12 @@ class TestRepoIndexParsing:
     @pytest.mark.parametrize(
         "name,count,expected_item",
         [
-            ("pypi", 212_862, ("numpy", "/simple/numpy/")),
-            ("piwheels", 263_872, ("django-node", "django-node/")),
+            ("pypi", 212862, ("numpy", "/simple/numpy/")),
+            ("piwheels", 263872, ("django-node", "django-node/")),
         ],
     )
-    def test_full_parse(self, name, count, expected_item):
-        index_html = importlib.resources.read_text(simple_data, f"index.{name}.html")
+    def test_full_parse(self, index_content, name, count, expected_item):
+        index_html = index_content["index.{name}.html".format(name=name)]
         index = simple.parse_repo_index(index_html)
         assert len(index) == count
         key, value = expected_item
@@ -177,10 +203,12 @@ class TestParseArchiveLinks:
             ),
         ],
     )
-    def test_full_parse(self, module_name, count, expected_archive_link):
-        html = importlib.resources.read_text(
-            simple_data, f"archive_links.{module_name}.html"
-        )
+    def test_full_parse(
+        self, archive_links_content, module_name, count, expected_archive_link
+    ):
+        html = archive_links_content[
+            "archive_links.{module_name}.html".format(module_name=module_name)
+        ]
         archive_links = simple.parse_archive_links(html)
         assert len(archive_links) == count
         assert expected_archive_link in archive_links
