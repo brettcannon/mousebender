@@ -5,7 +5,7 @@ import dataclasses
 import html
 import html.parser
 import re
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 import urllib.parse
 
 import packaging.specifiers
@@ -98,8 +98,9 @@ class ArchiveLink:
     filename: str
     url: str
     requires_python: packaging.specifiers.SpecifierSet
-    hash_: Optional[Tuple[str, str]]
-    gpg_sig: Optional[bool]
+    hash_: Optional[Tuple[str, str]] = None  # Optional since `(None, None)` is true.
+    gpg_sig: Optional[bool] = None
+    yanked: Union[bool | str] = False
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -141,9 +142,15 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # a value of either true or false ...
         if gpg_sig := attrs.get("data-gpg-sig"):
             gpg_sig = gpg_sig == "true"
+        # PEP 592:
+        # Links in the simple repository MAY have a data-yanked attribute which
+        # may have no value, or may have an arbitrary string as a value.
+        yanked = False
+        if "data-yanked" in attrs:
+            yanked = attrs["data-yanked"] or True
 
         self.archive_links.append(
-            ArchiveLink(filename, url, requires_python, hash_, gpg_sig)
+            ArchiveLink(filename, url, requires_python, hash_, gpg_sig, yanked)
         )
 
 

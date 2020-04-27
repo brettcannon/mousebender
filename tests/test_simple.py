@@ -288,3 +288,25 @@ class TestParseArchiveLinks:
         archive_links = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].gpg_sig == expected_gpg_sig
+
+    @pytest.mark.parametrize(
+        "html,expected",
+        [
+            (
+                '<a href="spam-1.2.3-py3.none.any.whl" data-yanked>spam-1.2.3-py3.none.any.whl</a>',
+                True,
+            ),
+            (
+                '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="oops!">spam-1.2.3-py3.none.any.whl</a>',
+                "oops!",
+            ),
+            (
+                '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>',
+                False,
+            ),
+        ],
+    )
+    def test_yanked(self, html, expected):
+        archive_links = simple.parse_archive_links(html)
+        assert len(archive_links) == 1
+        assert archive_links[0].yanked == expected
