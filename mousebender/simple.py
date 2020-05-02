@@ -100,7 +100,7 @@ class ArchiveLink:
     requires_python: packaging.specifiers.SpecifierSet
     hash_: Optional[Tuple[str, str]] = None  # Optional since `(None, None)` is true.
     gpg_sig: Optional[bool] = None
-    yanked: Union[bool, str] = False
+    yanked: Tuple[bool, str] = False, ''
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -145,9 +145,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # PEP 592:
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
-        yanked = False
-        if "data-yanked" in attrs:
-            yanked = attrs["data-yanked"] or True
+        yanked = "data-yanked" in attrs, attrs.get("data-yanked") or ""
 
         self.archive_links.append(
             ArchiveLink(filename, url, requires_python, hash_, gpg_sig, yanked)
