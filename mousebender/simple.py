@@ -100,7 +100,7 @@ class ArchiveLink:
     requires_python: packaging.specifiers.SpecifierSet
     hash_: Optional[Tuple[str, str]] = None  # Optional since `(None, None)` is true.
     gpg_sig: Optional[bool] = None
-    yanked: Tuple[bool, str] = False, ''
+    yanked: Tuple[bool, str] = (False, "")
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
