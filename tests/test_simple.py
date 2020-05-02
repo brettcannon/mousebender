@@ -302,7 +302,7 @@ class TestParseArchiveLinks:
             ),
             (
                 '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="">spam-1.2.3-py3.none.any.whl</a>',
-                True,
+                (True, ""),
             ),
             (
                 '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>',
