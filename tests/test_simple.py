@@ -301,6 +301,10 @@ class TestParseArchiveLinks:
                 (True, "oops!"),
             ),
             (
+                '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="">spam-1.2.3-py3.none.any.whl</a>',
+                True,
+            ),
+            (
                 '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>',
                 (False, ""),
             ),
