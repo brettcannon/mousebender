@@ -6,6 +6,7 @@ import re
 from typing import Optional, Tuple
 import urllib.parse
 
+import attr
 import packaging.specifiers
 
 
@@ -88,15 +89,20 @@ def parse_repo_index(html):
     return parser.mapping
 
 
+@attr.s
 class ArchiveLink:
 
     """Data related to a link to an archive file."""
 
-    filename = ""
-    url = ""
-    requires_python = packaging.specifiers.parse("0.0")
-    hash_ = None
-    gpg_sig = None
+    def __eq__(self, other):
+        return (
+            isinstance(other, ArchiveLink)
+            and self.filename == other.filename
+            and self.url == other.url
+            and self.requires_python == other.requires_python
+            and self.hash_ == other.hash_
+            and self.gpg_sig == other.gpg_sig
+        )
 
     def __init__(
         self,
@@ -111,16 +117,6 @@ class ArchiveLink:
         self.requires_python = requires_python
         self.hash_ = hash
         self.gpg_sig = gpg_sig
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, ArchiveLink)
-            and self.filename == other.filename
-            and self.url == other.url
-            and self.requires_python == other.requires_python
-            and self.hash_ == other.hash_
-            and self.gpg_sig == other.gpg_sig
-        )
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
