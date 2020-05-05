@@ -94,29 +94,12 @@ class ArchiveLink:
 
     """Data related to a link to an archive file."""
 
-    def __eq__(self, other):
-        return (
-            isinstance(other, ArchiveLink)
-            and self.filename == other.filename
-            and self.url == other.url
-            and self.requires_python == other.requires_python
-            and self.hash_ == other.hash_
-            and self.gpg_sig == other.gpg_sig
-        )
-
-    def __init__(
-        self,
-        filename: str,
-        url: str,
-        requires_python: packaging.specifiers.SpecifierSet,
-        hash: Optional[Tuple[str, str]] = None,
-        gpg_sig: Optional[bool] = None,
-    ):
-        self.filename = filename
-        self.url = url
-        self.requires_python = requires_python
-        self.hash_ = hash
-        self.gpg_sig = gpg_sig
+    filename: str = attr.ib()
+    url: str = attr.ib()
+    requires_python: packaging.specifiers.SpecifierSet = attr.ib()
+    hash_: Optional[Tuple[str, str]] = attr.ib(default=None)
+    gpg_sig: Optional[bool] = attr.ib(default=None)
+    # yanked: Tuple[bool, str] = attr.ib(default=(False, ""))
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
