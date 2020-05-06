@@ -5,7 +5,7 @@ import dataclasses
 import html
 import html.parser
 import re
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 import urllib.parse
 
 import packaging.specifiers
