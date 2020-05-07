@@ -1,6 +1,5 @@
 """Tests for mousebender.simple."""
 import importlib_resources
-
 import packaging.version
 import pytest
 

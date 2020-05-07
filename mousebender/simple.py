@@ -1,14 +1,12 @@
 """Parsing for PEP 503 -- Simple Repository API."""
-import collections
 import html
 import html.parser
 import re
-from typing import Optional, Tuple
 import urllib.parse
+from typing import Optional, Tuple
 
 import attr
 import packaging.specifiers
-
 
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
@@ -89,7 +87,7 @@ def parse_repo_index(html):
     return parser.mapping
 
 
-@attr.s
+@attr.s(frozen=True)
 class ArchiveLink:
 
     """Data related to a link to an archive file."""
