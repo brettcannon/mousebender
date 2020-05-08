@@ -5,7 +5,7 @@ A package for installing fully-specified Python packages.
 Package contents
 ================
 
-- ``mousbender.simple`` -- Parsers for the `simple repository API`_
+- ``mousebender.simple`` -- Parsers for the `simple repository API`_
 
 Goals for this project
 ======================
