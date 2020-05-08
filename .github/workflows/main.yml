@@ -45,20 +45,3 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest --cov
-
-
-
-  release:
-    needs: [tests]
-    if: github.event_name == 'pull_request' && github.ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: brettcannon/release-often@master
-      with:
-        changelog-path: CHANGELOG.rst
-        pypi-token: ${{ secrets.PYPI_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
