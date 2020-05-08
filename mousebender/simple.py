@@ -97,7 +97,7 @@ class ArchiveLink:
     requires_python: packaging.specifiers.SpecifierSet = attr.ib()
     hash_: Optional[Tuple[str, str]] = attr.ib(default=None)
     gpg_sig: Optional[bool] = attr.ib(default=None)
-    # yanked: Tuple[bool, str] = attr.ib(default=(False, ""))
+    yanked: Tuple[bool, str] = attr.ib(default=(False, ""))
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -140,9 +140,13 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         gpg_sig = attrs.get("data-gpg-sig")
         if gpg_sig:
             gpg_sig = gpg_sig == "true"
+        # PEP 592:
+        # Links in the simple repository MAY have a data-yanked attribute which
+        # may have no value, or may have an arbitrary string as a value.
+        yanked = "data-yanked" in attrs, attrs.get("data-yanked") or ""
 
         self.archive_links.append(
-            ArchiveLink(filename, url, requires_python, hash_, gpg_sig)
+            ArchiveLink(filename, url, requires_python, hash_, gpg_sig, yanked)
         )
 
 
