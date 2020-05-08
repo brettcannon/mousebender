@@ -10,18 +10,21 @@ jobs:
   tests:
     if: github.event.action != 'closed' || github.event.pull_request.merged
 
+    name: Test Python ${{ matrix.python_version }}
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python_version: ['3.6', '3.7', '3.8']
     env:
       PYTHONDEVMODE: 1
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python_version }}
 
     - name: Poetry setup
       run: |
@@ -31,10 +34,6 @@ jobs:
       run: |
         poetry install
 
-    - name: Test with pytest
-      run: |
-        poetry run pytest --cov
-
     - name: Lint with mypy
       run: |
         poetry run mypy mousebender
@@ -43,18 +42,6 @@ jobs:
       run: |
         poetry run black --check .
 
-
-  release:
-    needs: [tests]
-    if: github.event_name == 'pull_request' && github.ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: brettcannon/release-often@master
-      with:
-        changelog-path: CHANGELOG.rst
-        pypi-token: ${{ secrets.PYPI_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Test with pytest
+      run: |
+        poetry run pytest --cov

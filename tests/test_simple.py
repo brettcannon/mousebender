@@ -1,6 +1,5 @@
 """Tests for mousebender.simple."""
-import importlib.resources
-
+import importlib_resources
 import packaging.version
 import pytest
 
@@ -49,7 +48,7 @@ class TestRepoIndexParsing:
         ],
     )
     def test_full_parse(self, name, count, expected_item):
-        index_html = importlib.resources.read_text(simple_data, f"index.{name}.html")
+        index_html = importlib_resources.read_text(simple_data, f"index.{name}.html")
         index = simple.parse_repo_index(index_html)
         assert len(index) == count
         key, value = expected_item
@@ -178,7 +177,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_full_parse(self, module_name, count, expected_archive_link):
-        html = importlib.resources.read_text(
+        html = importlib_resources.read_text(
             simple_data, f"archive_links.{module_name}.html"
         )
         archive_links = simple.parse_archive_links(html)
