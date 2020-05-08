@@ -1,15 +1,12 @@
 """Parsing for PEP 503 -- Simple Repository API."""
-from __future__ import annotations
-
-import dataclasses
 import html
 import html.parser
 import re
-from typing import Optional, Tuple
 import urllib.parse
+from typing import Optional, Tuple
 
+import attr
 import packaging.specifiers
-
 
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
@@ -90,16 +87,17 @@ def parse_repo_index(html):
     return parser.mapping
 
 
-@dataclasses.dataclass(frozen=True)
+@attr.s(frozen=True)
 class ArchiveLink:
 
     """Data related to a link to an archive file."""
 
-    filename: str
-    url: str
-    requires_python: packaging.specifiers.SpecifierSet
-    hash_: Optional[Tuple[str, str]]
-    gpg_sig: Optional[bool]
+    filename: str = attr.ib()
+    url: str = attr.ib()
+    requires_python: packaging.specifiers.SpecifierSet = attr.ib()
+    hash_: Optional[Tuple[str, str]] = attr.ib(default=None)
+    gpg_sig: Optional[bool] = attr.ib(default=None)
+    # yanked: Tuple[bool, str] = attr.ib(default=(False, ""))
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -139,7 +137,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with
         # a value of either true or false ...
-        if gpg_sig := attrs.get("data-gpg-sig"):
+        gpg_sig = attrs.get("data-gpg-sig")
+        if gpg_sig:
             gpg_sig = gpg_sig == "true"
 
         self.archive_links.append(
