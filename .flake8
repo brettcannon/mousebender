@@ -1,0 +1,3 @@
+[flake8]
+ignore = C,E,W
+exclude = .venv
