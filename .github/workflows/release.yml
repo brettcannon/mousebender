@@ -6,11 +6,11 @@ on:
       - master
 
 jobs:
-    tests:
+  test:
     name: Test Python ${{ matrix.python_version }}
     runs-on: ubuntu-latest
     strategy:
-        matrix:
+      matrix:
         # CI for PRs handle other versions;
         # this is just a safeguard.
         python_version: ['3.8']
@@ -21,9 +21,9 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Set up Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python_version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python_version }}
 
     - name: Poetry setup
       run: |
