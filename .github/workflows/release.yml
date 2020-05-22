@@ -23,7 +23,7 @@ jobs:
     - name: Set up Python
         uses: actions/setup-python@v1
         with:
-        python-version: ${{ matrix.python_version }}
+          python-version: ${{ matrix.python_version }}
 
     - name: Poetry setup
       run: |
