@@ -14,8 +14,8 @@ classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
 [tool.poetry.dependencies]
 # The `<4` restriction is because of coverage.py.
 python = ">=3.6,<4"
-packaging = "^20.3"
-attrs = ">=19.3,<21.0"
+packaging = ">=20.3"
+attrs = ">=19.3"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.782"
