@@ -13,7 +13,7 @@ jobs:
       matrix:
         # CI for PRs handle other versions;
         # this is just a safeguard.
-        python_version: ['3.8']
+        python_version: ['3.9']
     env:
         PYTHONDEVMODE: 1
 
