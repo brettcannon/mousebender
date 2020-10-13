@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: ['3.6', '3.7', '3.8']
+        python_version: ['3.6', '3.7', '3.8', '3.9']
     env:
       PYTHONDEVMODE: 1
 
@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python_version }}
 
