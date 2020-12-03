@@ -36,14 +36,14 @@ The steps to installing a package
         #. If no wheel found ...
 
             #. Select and download the sdist (?)
-            #. Build the wheel (`PEP 517`_, `PEP 518`_ / pep517_)
+            #. Build the wheel (`PEP 517`_, `PEP 518`_ / pep517_, build_)
 
     #. *Download the wheel*
     #. Cache the wheel locally (?)
 
 #. Install the wheel
 
-   #. Install the files (`spec <https://packaging.python.org/specifications/distribution-formats/>`__ / `distlib.wheel`_)
+   #. Install the files (`spec <https://packaging.python.org/specifications/distribution-formats/>`__ / `distlib.wheel`_, installer_)
    #. Record the installation (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / ?)
 
 
@@ -83,8 +83,10 @@ The customer from `Monty Python's cheese shop sketch`_ is named "Mr. Mousebender
     :alt: PyPI - Wheel
 
 
+.. _build: https://github.com/pypa/build
 .. _distlib.wheel: https://distlib.readthedocs.io/en/latest/tutorial.html#installing-from-wheels
 .. _importlib-metadata: https://pypi.org/project/importlib-metadata/
+.. _installer: https://github.com/pradyunsg/installer
 .. _Monty Python's cheese shop sketch: https://en.wikipedia.org/wiki/Cheese_Shop_sketch
 .. _packaging.tags: https://packaging.pypa.io/en/latest/tags/
 .. _PEP 517: https://www.python.org/dev/peps/pep-0517/
