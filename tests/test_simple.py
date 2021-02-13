@@ -1,4 +1,6 @@
 """Tests for mousebender.simple."""
+import warnings
+
 import importlib_resources
 import packaging.version
 import pytest
@@ -313,3 +315,64 @@ class TestParseArchiveLinks:
         archive_links = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].yanked == expected
+
+
+@pytest.mark.parametrize(
+    "parser", [simple.parse_repo_index, simple.parse_archive_links]
+)
+class TestPEP629Versioning:
+    def _example(self, major, minor):
+        return f"""
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta name="pypi:repository-version" content="{major}.{minor}">
+            </head>
+            <body>
+                <!-- This space intentionally left blank. -->
+            </body>
+        </html>
+        """
+
+    def test_unspecified(self, parser):
+        html = """
+        <!DOCTYPE html>
+        <html>
+            <body>
+                <!-- This space intentionally left blank. -->
+            </body>
+        </html>
+        """
+        # No errors.
+        parser(html)
+
+    def test_equal(self, parser):
+        html = self._example(*simple._SUPPORTED_VERSION)
+        # No errors.
+        parser(html)
+
+    def test_newer_minor(self, parser):
+        html = self._example(
+            simple._SUPPORTED_VERSION[0], simple._SUPPORTED_VERSION[1] + 1
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with pytest.raises(simple.UnsupportedVersionWarning):
+                parser(html)
+
+    def test_newer_major(self, parser):
+        html = self._example(simple._SUPPORTED_VERSION[0] + 1, 0)
+        with pytest.raises(simple.UnsupportedVersion):
+            parser(html)
+
+    def test_older_minor(self, parser, monkeypatch):
+        monkeypatch.setattr(simple, "_SUPPORTED_VERSION", (1, 1))
+        html = self._example(1, 0)
+        # No error.
+        parser(html)
+
+    def test_older_major(self, parser, monkeypatch):
+        monkeypatch.setattr(simple, "_SUPPORTED_VERSION", (2, 0))
+        html = self._example(1, 0)
+        # No error.
+        parser(html)
