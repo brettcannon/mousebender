@@ -3,6 +3,8 @@ import html
 import html.parser
 import re
 import urllib.parse
+import warnings
+
 from typing import Optional, Tuple
 
 import attr
@@ -11,6 +13,23 @@ import packaging.specifiers
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
 PYPI_INDEX = "https://pypi.org/simple/"
+
+_SUPPORTED_VERSION = (1, 0)
+
+
+class UnsupportedVersion(Exception):
+
+    """A major version of the Simple API is used which is not supported."""
+
+
+class UnsupportedVersionWarning(Warning, UnsupportedVersion):
+
+    """A minor version of the Simple API is used which is not supported.
+
+    This is a subclass of UnsupportedVersion so that catching and handling
+    major version discrepancies will also include less critical minor version
+    concerns as well.
+    """
 
 
 def create_project_url(base_url, project_name):
@@ -42,6 +61,23 @@ def _normalize_project_url(url):
     return create_project_url(base_url, project_name)
 
 
+def _check_version(tag, attrs):
+    """Check if the tag is a PEP 629 tag and is a version that is supported."""
+    if tag != "meta" or attrs.get("name") != "pypi:repository-version":
+        return
+
+    major, minor = map(int, attrs["content"].split("."))
+    if major != _SUPPORTED_VERSION[0]:
+        msg = f"v{_SUPPORTED_VERSION[0]} supported, but v{major} used"
+        raise UnsupportedVersion(msg)
+    elif major == _SUPPORTED_VERSION[0] and minor > _SUPPORTED_VERSION[1]:
+        msg = (
+            f"v{_SUPPORTED_VERSION[0]}.{_SUPPORTED_VERSION[1]} supported, "
+            "but v{_SUPPORTED_VERSION[0]}.{minor_version} used"
+        )
+        warnings.warn(msg, UnsupportedVersionWarning)
+
+
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
 
     """Parse the HTML of a repository index page."""
@@ -57,14 +93,16 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
         self._name = None
         self.mapping = {}
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag, attrs_list):
         # PEP 503:
         # There may be any other HTML elements on the API pages as long as the
         # required anchor elements exist.
+        attrs = dict(attrs_list)
+        _check_version(tag, attrs)
         if tag != "a":
             return
         self._parsing_anchor = True
-        self._url = dict(attrs).get("href")
+        self._url = attrs.get("href")
 
     def handle_endtag(self, tag):
         if tag != "a":
@@ -106,9 +144,10 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         super().__init__()
 
     def handle_starttag(self, tag, attrs_list):
+        attrs = dict(attrs_list)
+        _check_version(tag, attrs)
         if tag != "a":
             return
-        attrs = dict(attrs_list)
         # PEP 503:
         # The href attribute MUST be a URL that links to the location of the
         # file for download ...
