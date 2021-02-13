@@ -35,6 +35,7 @@ class UnsupportedVersionWarning(Warning, UnsupportedVersion):
             f"v{_SUPPORTED_VERSION[0]}.{_SUPPORTED_VERSION[1]} supported, "
             "but v{_SUPPORTED_VERSION[0]}.{minor_version} used"
         )
+        super().__init__(msg)
 
 
 def create_project_url(base_url, project_name):
