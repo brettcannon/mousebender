@@ -355,10 +355,11 @@ class TestPEP629Versioning:
         html = self._example(
             simple._SUPPORTED_VERSION[0], simple._SUPPORTED_VERSION[1] + 1
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with pytest.raises(simple.UnsupportedVersionWarning):
-                parser(html)
+        with warnings.catch_warnings(record=True) as raised_warnings:
+            parser(html)
+
+            assert raised_warnings and len(raised_warnings) == 1
+            assert raised_warnings[0].category is simple.UnsupportedVersionWarning
 
     def test_newer_major(self, parser):
         html = self._example(simple._SUPPORTED_VERSION[0] + 1, 0)
@@ -371,8 +372,5 @@ class TestPEP629Versioning:
         # No error.
         parser(html)
 
-    def test_older_major(self, parser, monkeypatch):
-        monkeypatch.setattr(simple, "_SUPPORTED_VERSION", (2, 0))
-        html = self._example(1, 0)
-        # No error.
-        parser(html)
+    # No test for older major versions as that case is currently impossible with
+    # 1.0 as the only possible version.

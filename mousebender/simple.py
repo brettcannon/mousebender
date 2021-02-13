@@ -19,23 +19,17 @@ _SUPPORTED_VERSION = (1, 0)
 
 class UnsupportedVersion(Exception):
 
-    """The page uses a major version of the Simple API which is not supported."""
-
-    def __init__(self, major_version):
-        msg = f"v{_SUPPORTED_VERSION[0]} supported, but v{major_version} used"
-        super().__init__(msg)
+    """A major version of the Simple API is used which is not supported."""
 
 
 class UnsupportedVersionWarning(Warning, UnsupportedVersion):
 
-    """The page uses a minor version of the Simple API which is not supported."""
+    """A minor version of the Simple API is used which is not supported.
 
-    def __init__(self, minor_version):
-        msg = (
-            f"v{_SUPPORTED_VERSION[0]}.{_SUPPORTED_VERSION[1]} supported, "
-            "but v{_SUPPORTED_VERSION[0]}.{minor_version} used"
-        )
-        super().__init__(msg)
+    This is a subclass of UnsupportedVersion so that catching and handling
+    major version discrepancies will also include less critical minor version
+    concerns as well.
+    """
 
 
 def create_project_url(base_url, project_name):
@@ -73,10 +67,15 @@ def _check_version(tag, attrs):
         return
 
     major, minor = map(int, attrs["content"].split("."))
-    if major > _SUPPORTED_VERSION[0]:
-        raise UnsupportedVersion(major)
+    if major != _SUPPORTED_VERSION[0]:
+        msg = f"v{_SUPPORTED_VERSION[0]} supported, but v{major} used"
+        raise UnsupportedVersion(msg)
     elif major == _SUPPORTED_VERSION[0] and minor > _SUPPORTED_VERSION[1]:
-        warnings.warn(UnsupportedVersionWarning(minor))
+        msg = (
+            f"v{_SUPPORTED_VERSION[0]}.{_SUPPORTED_VERSION[1]} supported, "
+            "but v{_SUPPORTED_VERSION[0]}.{minor_version} used"
+        )
+        warnings.warn(msg, UnsupportedVersionWarning)
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
