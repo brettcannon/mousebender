@@ -142,6 +142,7 @@ class ArchiveLink:
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self):
         self.archive_links = []
+        # From the description in the issue, here's the structure proposed:
         self.index: Dict[
             str,  # Project
             Dict[
@@ -152,6 +153,9 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 ],
             ],
         ] = {}
+        # ... however, I don't uet see the build number in here, and I'm missing what
+        # the Tuple at the end is for. (None, {Tag: ArchiveLink}) is valid, as is (ArchiveLink, None),
+        # as is (None, None) and (ArchiveLink, {Tag: ArchiveLink}).
         super().__init__()
 
     def handle_starttag(self, tag, attrs_list):
