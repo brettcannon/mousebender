@@ -5,10 +5,11 @@ import re
 import urllib.parse
 import warnings
 
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import attr
 import packaging.specifiers
+import packaging.tags
 
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
@@ -141,6 +142,16 @@ class ArchiveLink:
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self):
         self.archive_links = []
+        self.index: Dict[
+            str,  # Project
+            Dict[
+                str,  # Version
+                Tuple[
+                    Optional[ArchiveLink],
+                    Optional[Dict[packaging.tags.Tag, ArchiveLink]],  # Tag
+                ],
+            ],
+        ] = {}
         super().__init__()
 
     def handle_starttag(self, tag, attrs_list):
@@ -187,6 +198,11 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self.archive_links.append(
             ArchiveLink(filename, url, requires_python, hash_, gpg_sig, yanked)
         )
+
+    def update_index(self, archive: ArchiveLink):
+        # Dict[str, Dict[str, Tuple[Optional[ArchiveLink], Optional[Dict[Tag, ArchiveLink]]]]]
+        proj, ver, *_ = archive.filename.partition("-")
+        self.index[proj]
 
 
 def parse_archive_links(html):
