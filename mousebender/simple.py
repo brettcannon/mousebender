@@ -1,12 +1,10 @@
 """Parsing for PEP 503 -- Simple Repository API."""
 import html
 import html.parser
-from msilib import sequence
 import re
 import urllib.parse
 import warnings
-
-from typing import Dict, FrozenSet, MutableSequence, Optional, Tuple
+from typing import Dict, FrozenSet, Optional, Tuple
 
 import attr
 import packaging.specifiers

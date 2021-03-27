@@ -5,7 +5,6 @@ import importlib_resources
 import packaging.tags
 import packaging.version
 import pytest
-
 from mousebender import simple
 
 from .data import simple as simple_data
