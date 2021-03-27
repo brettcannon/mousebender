@@ -2,6 +2,7 @@
 import warnings
 
 import importlib_resources
+import packaging.tags
 import packaging.version
 import pytest
 
@@ -182,7 +183,7 @@ class TestParseArchiveLinks:
         html = importlib_resources.read_text(
             simple_data, f"archive_links.{module_name}.html"
         )
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == count
         assert expected_archive_link in archive_links
 
@@ -200,7 +201,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_filename(self, html, expected_filename):
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].filename == expected_filename
 
@@ -218,7 +219,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_url(self, html, expected_url):
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].url == expected_url
 
@@ -238,7 +239,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_requires_python(self, html, supported, unsupported):
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert packaging.version.Version(supported) in archive_links[0].requires_python
         if unsupported:
@@ -264,7 +265,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_hash_(self, html, expected_hash):
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].hash_ == expected_hash
 
@@ -286,7 +287,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_gpg_sig(self, html, expected_gpg_sig):
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].gpg_sig == expected_gpg_sig
 
@@ -312,7 +313,7 @@ class TestParseArchiveLinks:
         ],
     )
     def test_yanked(self, html, expected):
-        archive_links = simple.parse_archive_links(html)
+        archive_links, _ = simple.parse_archive_links(html)
         assert len(archive_links) == 1
         assert archive_links[0].yanked == expected
 
@@ -374,3 +375,113 @@ class TestPEP629Versioning:
 
     # No test for older major versions as that case is currently impossible with
     # 1.0 as the only possible version.
+
+
+class TestIndexing:
+
+    """
+    Test for indexes created to make finding files for a project easier.
+
+    When using simple.py, the user will likely need to do two activities to get
+    to the data they are looking for.
+
+    1. Obtain the index of the projects for packages (index = wget `pypi.org/simple.html`)
+    1. Parse the projects out and map them from project_name -> project_archive_links_uri (i = parse_repo_index(index))
+    1. Find the project name they are interested in within the return value from parse_repo_index (archive_uri = i["my_project"])
+    1. Obtain the index for the archive links for the project (wget `archive_uri` -> archive_links_file)
+    1. Get the list of archive links associated to the project and put them in a list of 'ArchiveLinks' (parse_archive_links(archive_links_file))
+    """
+
+    @pytest.mark.parametrize(
+        "module_name, project_names",
+        [
+            (
+                "pytorch",
+                [
+                    "torch",
+                    "torch-cuda80",
+                    "torchaudio",
+                    "torchtext",
+                    "torchvision",
+                    "torch-nightly",
+                ],
+            ),
+            ("pulpcore-client", ["pulpcore-client"]),
+            ("numpy", ["numpy"]),
+            ("numpy-piwheels", ["numpy"]),
+            ("AICoE-tensorflow", ["tensorflow"]),
+        ],
+    )
+    def test_project_groups(self, module_name, project_names):
+        html = importlib_resources.read_text(
+            simple_data, f"archive_links.{module_name}.html"
+        )
+        _, indexed_archive_links = simple.parse_archive_links(html)
+        for project_name in project_names:
+            assert project_name in indexed_archive_links
+
+    @pytest.mark.parametrize(
+        "module_name, project_name, expected_versions",
+        [
+            (
+                "pytorch",
+                "torch",
+                ["0.1", "0.4.0", "1.0.0", "1.2.0", "1.4.0"],
+            ),
+            (
+                "pytorch",
+                "torchaudio",
+                ["0.3.2", "0.4.0"],
+            ),
+            (
+                "pytorch",
+                "torchvision",
+                ["0.1.6", "0.4.1.post2", "0.5.0"],
+            ),
+            (
+                "numpy",
+                "numpy",
+                [
+                    "1.11.2",
+                    "1.14.2",
+                    "1.16.3",
+                    "1.16.5",
+                    "1.17.3",
+                    "1.18.1",
+                ],
+            ),
+        ],
+    )
+    def test_version_groups(self, module_name, project_name, expected_versions):
+        html = importlib_resources.read_text(
+            simple_data, f"archive_links.{module_name}.html"
+        )
+        _, indexed_archive_links = simple.parse_archive_links(html)
+        for expected_version in expected_versions:
+            assert (
+                packaging.version.Version(expected_version)
+                in indexed_archive_links[project_name]
+            )
+
+    @pytest.mark.parametrize(
+        "module_name, project_name, version, expected_tags",
+        [
+            (
+                "pytorch",
+                "torch",
+                packaging.version.Version("1.2.0"),
+                ["cp36-none-macosx_10_7_x86_64", "cp35-cp35m-win_amd64"],
+            ),
+        ],
+    )
+    def test_tag_groups(self, module_name, project_name, version, expected_tags):
+        html = importlib_resources.read_text(
+            simple_data, f"archive_links.{module_name}.html"
+        )
+        _, indexed_archive_links = simple.parse_archive_links(html)
+
+        for expected_tag in expected_tags:
+            assert (
+                packaging.tags.parse_tag(expected_tag)
+                in indexed_archive_links[project_name][version][1]
+            )
