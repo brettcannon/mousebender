@@ -227,7 +227,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 # and re-create it:
                 self.index[proj][ver] = (sdist_lnk, archive_link_dict)
 
-        except packaging.utils.InvalidWheelFilename as bad_file_name:
+        except packaging.utils.InvalidWheelFilename:
             # This is either an sdist or something else.
 
             try:
@@ -237,7 +237,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 if ver not in self.index[proj]:
                     self.index[proj][ver] = (archive, {})
 
-            except packaging.utils.InvalidSdistFilename as bad_file_name:
+            except packaging.utils.InvalidSdistFilename:
                 pass
                 # warnings.warn(
                 #     f"File {archive.filename} is not a valid wheel nor a valid sdist name, according to `packages`. Skipping."
