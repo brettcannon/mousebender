@@ -19,27 +19,27 @@ The steps to installing a package
 
 #. Figure out what packages are necessary
 
-    #. For an app, read lock file (?)
-    #. For a package:
+   #. For an app, read lock file (?)
+   #. For a package:
 
-        #. Read list of dependencies (?)
-        #. *Solve dependency constraints* (ResolveLib_)
+      #. Read list of dependencies (?)
+      #. *Solve dependency constraints* (ResolveLib_)
 
 #. Get the wheel to install
 
-    #. Check if package is already installed (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / `importlib-metadata`_)
-    #. Check local wheel cache (?; `how pip does it <https://pip.pypa.io/en/stable/reference/pip_install/#caching>`__)
-    #. Choose appropriate file from PyPI/index
+   #. Check if package is already installed (`spec <https://packaging.python.org/specifications/recording-installed-packages/>`__ / `importlib-metadata`_)
+   #. Check local wheel cache (?; `how pip does it <https://pip.pypa.io/en/stable/reference/pip_install/#caching>`__)
+   #. Choose appropriate file from PyPI/index
 
-        #. Process the list of files (`simple repository API`_ / `mousebender.simple`)
-        #. Calculate best-fitting wheel (`spec <https://packaging.python.org/specifications/platform-compatibility-tags/>`__ / `packaging.tags`_)
-        #. If no wheel found ...
+      #. Process the list of files (`simple repository API`_ / `mousebender.simple`)
+      #. Calculate best-fitting wheel (`spec <https://packaging.python.org/specifications/platform-compatibility-tags/>`__ / `packaging.tags`_)
+      #. If no wheel found ...
 
-            #. Select and download the sdist (?)
-            #. Build the wheel (`PEP 517`_, `PEP 518`_ / pep517_, build_)
+         #. Select and download the sdist (?)
+         #. Build the wheel (`PEP 517`_, `PEP 518`_ / pep517_, build_)
 
-    #. *Download the wheel*
-    #. Cache the wheel locally (?)
+   #. *Download the wheel*
+   #. Cache the wheel locally (?)
 
 #. Install the wheel
 
