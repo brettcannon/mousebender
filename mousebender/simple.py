@@ -4,11 +4,13 @@ import html.parser
 import re
 import urllib.parse
 import warnings
-
-from typing import Optional, Tuple
+from typing import Dict, FrozenSet, Optional, Tuple
 
 import attr
 import packaging.specifiers
+import packaging.tags
+import packaging.utils
+import packaging.version
 
 _NORMALIZE_RE = re.compile(r"[-_.]+")
 
@@ -141,6 +143,19 @@ class ArchiveLink:
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self):
         self.archive_links = []
+
+        self.index: Dict[
+            str,  # Project
+            Dict[
+                packaging.version.Version,  # Version
+                Tuple[
+                    Optional[ArchiveLink],  # ArchiveLink:sdist
+                    Optional[
+                        Dict[FrozenSet[packaging.tags.Tag], ArchiveLink]
+                    ],  # Tag: ArchiveLink:wheel
+                ],
+            ],
+        ] = {}
         super().__init__()
 
     def handle_starttag(self, tag, attrs_list):
@@ -183,14 +198,54 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
         yanked = "data-yanked" in attrs, attrs.get("data-yanked") or ""
-
-        self.archive_links.append(
+        self.update_index(
             ArchiveLink(filename, url, requires_python, hash_, gpg_sig, yanked)
         )
+
+    def update_index(self, archive: ArchiveLink):
+        # old way
+        self.archive_links.append(archive)
+
+        # new way, indexed values
+
+        # Dict[str, Dict[str, Tuple[Optional[ArchiveLink], Optional[Dict[Tag, ArchiveLink]]]]]
+        try:
+            proj, ver, build_tag, tags = packaging.utils.parse_wheel_filename(
+                archive.filename
+            )
+
+            if proj not in self.index:
+                self.index[proj] = {}
+            if ver not in self.index[proj]:
+                self.index[proj][ver] = (None, {tags: archive})
+            else:
+                # handle immutability of a Tuple by re-creating it, pull out the old members:
+                sdist_lnk = self.index[proj][ver][0]
+                archive_link_dict = self.index[proj][ver][1] or {}
+                # add the new info:
+                archive_link_dict[tags] = archive
+                # and re-create it:
+                self.index[proj][ver] = (sdist_lnk, archive_link_dict)
+
+        except packaging.utils.InvalidWheelFilename:
+            # This is either an sdist or something else.
+
+            try:
+                proj, ver = packaging.utils.parse_sdist_filename(archive.filename)
+                if proj not in self.index:
+                    self.index[proj] = {}
+                if ver not in self.index[proj]:
+                    self.index[proj][ver] = (archive, {})
+
+            except packaging.utils.InvalidSdistFilename:
+                pass
+                # warnings.warn(
+                #     f"File {archive.filename} is not a valid wheel nor a valid sdist name, according to `packages`. Skipping."
+                # )
 
 
 def parse_archive_links(html):
     """Parse the HTML of an archive links page."""
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
-    return parser.archive_links
+    return parser.archive_links, parser.index
