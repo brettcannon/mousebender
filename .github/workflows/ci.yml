@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   lint:
-    name: Test Python ${{ matrix.python_version }}
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +23,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        flit install --deps dev
+        flit install --extras dev
 
     - name: Lint with flake8
       run: |
@@ -61,7 +61,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        flit install --deps test
+        flit install --extras test
 
     - name: Test with pytest
       run: |
