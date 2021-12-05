@@ -1,44 +1,47 @@
-[tool.poetry]
-name = "mousebender"
-version = "2.0.0"
-description = "A package for implementing various Python packaging standards"
-authors = ["Brett Cannon <brett@snarky.ca>"]
-maintainers = ["Derek Keeler <derek@suchcool.ca>"]
-homepage = "https://github.com/brettcannon/mousebender"
-repository = "https://github.com/brettcannon/mousebender"
-documentation = "https://github.com/brettcannon/mousebender/blob/main/README.rst"
-license = "BSD-3-Clause"
-readme = "README.rst"
-classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
-
-[tool.poetry.dependencies]
-# The `<4` restriction is because of coverage.py.
-python = ">=3.6,<4"
-packaging = ">=20.3"
-attrs = ">=19.3"
-
-[tool.poetry.dev-dependencies]
-mypy = "^0.910"
-coverage = {extras = ["toml"], version = "^6.0"}
-pytest = "^6.0.1"
-pytest-cov = "^3.0.0"
-docopt = "^0.6.2"
-black = "^20.8b1"
-twine = "^3.1.1"
-importlib-resources = "^5.0.0"
-flake8 = "^4.0.1"
-
-[tool.poetry.urls]
-"issues" = "https://github.com/brettcannon/mousebender/issues"
-
-[tool.coverage.run]
-source = ["mousebender/"]
-branch = true
-
-[tool.coverage.report]
-fail_under = 100
-
 [build-system]
-requires = ["poetry>=1.0.5"]
-build-backend = "poetry.masonry.api"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
+
+[project]
+name = "mousebender"
+authors = [
+    {name = "Brett Cannon", email = "brett@python.org"},
+    {name = "Derek Keeler", email = "derek@suchcool.ca"}
+]
+readme = "README.rst"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+keywords = ["packaging", "PEP 503", "PEP 592"]
+urls.homepage = "https://github.com/brettcannon/mousebender"
+urls.repository = "https://github.com/brettcannon/mousebender"
+urls.issues = "https://github.com/brettcannon/mousebender/issues"
+urls.documentation = "https://github.com/brettcannon/mousebender/blob/master/README.rst"
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: BSD License"
+]
+
+dependencies = [
+    "packaging >=20.9",
+    "attrs >=19.3"
+]
+optional-dependencies.test = [
+    "pytest >= 6.0.1",
+    "importlib-resources >= 5.0.0",
+    "coverage[toml] >= 5.0.4",
+    "pytest-cov >= 2.8.1"
+]
+optional-dependencies.dev = [
+    "mypy >= 0.800",
+    "black >= 20.8b1",
+    "flake8 >= 3.8.1"
+]
+
+dynamic = ["version", "description"]
+
+
+[tool.coverage]
+run.source = ["mousebender/"]
+run.branch = true
+report.fail_under = 100

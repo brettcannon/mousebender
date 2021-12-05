@@ -3,15 +3,51 @@ name: CI
 on: pull_request
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install Flit
+      run: |
+        python -m pip install flit
+
+    - name: Install dependencies
+      run: |
+        flit install --extras dev
+
+    - name: Lint with flake8
+      run: |
+        flake8
+
+    - name: Lint with mypy
+      run: |
+        mypy mousebender
+
+    - name: Check format with Black
+      run: |
+        black --check .
+
+    - name: Can be built
+      run: |
+        flit build
+
   tests:
 
     name: Test Python ${{ matrix.python_version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: ['3.6', '3.7', '3.8', '3.9']
-    env:
-      PYTHONDEVMODE: 1
+        python_version: ['3.6', '3.7', '3.8', '3.9', '3.10']
 
     steps:
     - uses: actions/checkout@v2
@@ -20,27 +56,17 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python_version }}
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
 
-    - name: Poetry setup
+    - name: Install Flit
       run: |
-        python -m pip install poetry
+        python -m pip install flit
 
     - name: Install dependencies
       run: |
-        poetry install
-
-    - name: Lint with flake8
-      run: |
-        poetry run flake8
-
-    - name: Lint with mypy
-      run: |
-        poetry run mypy mousebender
-
-    - name: Check format with Black
-      run: |
-        poetry run black --check .
+        flit install --extras test
 
     - name: Test with pytest
       run: |
-        poetry run pytest --cov
+        pytest --cov
