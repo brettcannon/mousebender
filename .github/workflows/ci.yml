@@ -37,6 +37,10 @@ jobs:
       run: |
         black --check .
 
+    - name: Can be built
+      run: |
+        flit build
+
   tests:
 
     name: Test Python ${{ matrix.python_version }}
