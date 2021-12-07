@@ -2,6 +2,7 @@
 import warnings
 
 import importlib_resources
+import packaging.specifiers
 import packaging.version
 import pytest
 
@@ -50,7 +51,8 @@ class TestRepoIndexParsing:
         ],
     )
     def test_full_parse(self, name, count, expected_item):
-        index_html = importlib_resources.read_text(simple_data, f"index.{name}.html")
+        index_file = importlib_resources.files(simple_data) / f"index.{name}.html"
+        index_html = index_file.read_text(encoding="utf-8")
         index = simple.parse_repo_index(index_html)
         assert len(index) == count
         key, value = expected_item
@@ -179,9 +181,8 @@ class TestParseArchiveLinks:
         ],
     )
     def test_full_parse(self, module_name, count, expected_archive_link):
-        html = importlib_resources.read_text(
-            simple_data, f"archive_links.{module_name}.html"
-        )
+        html_file = importlib_resources.files(simple_data) / f"archive_links.{module_name}.html"
+        html = html_file.read_text(encoding="utf-8")
         archive_links = simple.parse_archive_links(html)
         assert len(archive_links) == count
         assert expected_archive_link in archive_links

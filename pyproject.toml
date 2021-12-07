@@ -28,7 +28,7 @@ dependencies = [
 ]
 optional-dependencies.test = [
     "pytest >= 6.0.1",
-    "importlib-resources >= 5.0.0",
+    "importlib-resources >= 1.4.0",
     "coverage[toml] >= 5.0.4",
     "pytest-cov >= 2.8.1"
 ]
