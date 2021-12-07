@@ -23,8 +23,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "packaging >=20.9",
-    "attrs >=19.3"
+    "packaging >= 20.9",
+    "attrs >= 20.1.0"
 ]
 optional-dependencies.test = [
     "pytest >= 6.0.1",

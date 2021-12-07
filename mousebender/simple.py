@@ -125,17 +125,17 @@ def parse_repo_index(html):
     return parser.mapping
 
 
-@attr.s(frozen=True)
+@attr.frozen
 class ArchiveLink:
 
     """Data related to a link to an archive file."""
 
-    filename: str = attr.ib()
-    url: str = attr.ib()
-    requires_python: packaging.specifiers.SpecifierSet = attr.ib()
-    hash_: Optional[Tuple[str, str]] = attr.ib(default=None)
-    gpg_sig: Optional[bool] = attr.ib(default=None)
-    yanked: Tuple[bool, str] = attr.ib(default=(False, ""))
+    filename: str
+    url: str
+    requires_python: packaging.specifiers.SpecifierSet
+    hash_: Optional[Tuple[str, str]] = None
+    gpg_sig: Optional[bool] = None
+    yanked: Tuple[bool, str] = (False, "")
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
