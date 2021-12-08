@@ -5,7 +5,7 @@ import re
 import urllib.parse
 import warnings
 
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import attr
 import packaging.specifiers
@@ -136,6 +136,7 @@ class ArchiveLink:
     hash_: Optional[Tuple[str, str]] = None
     gpg_sig: Optional[bool] = None
     yanked: Tuple[bool, str] = (False, "")
+    metadata: Optional[Tuple[str, str]] = None  # No hash leads to a `("", "")` tuple.
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -183,13 +184,33 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
         yanked = "data-yanked" in attrs, attrs.get("data-yanked") or ""
+        # PEP 658:
+        # ... each anchor tag pointing to a distribution MAY have a
+        # data-dist-info-metadata attribute.
+        metadata = None
+        if "data-dist-info-metadata" in attrs:
+            metadata = attrs.get("data-dist-info-metadata")
+            if metadata and metadata != "true":
+                # The repository SHOULD provide the hash of the Core Metadata
+                # file as the data-dist-info-metadata attribute's value using
+                # the syntax <hashname>=<hashvalue>, where <hashname> is the
+                # lower cased name of the hash function used, and <hashvalue> is
+                # the hex encoded digest.
+                algorithm, _, hash = metadata.partition("=")
+                metadata = (algorithm.lower(), hash)
+            else:
+                # The repository MAY use true as the attribute's value if a hash
+                # is unavailable.
+                metadata = "", ""
 
         self.archive_links.append(
-            ArchiveLink(filename, url, requires_python, hash_, gpg_sig, yanked)
+            ArchiveLink(
+                filename, url, requires_python, hash_, gpg_sig, yanked, metadata
+            )
         )
 
 
-def parse_archive_links(html):
+def parse_archive_links(html: str) -> List[ArchiveLink]:
     """Parse the HTML of an archive links page."""
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
