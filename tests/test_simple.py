@@ -181,7 +181,9 @@ class TestParseArchiveLinks:
         ],
     )
     def test_full_parse(self, module_name, count, expected_archive_link):
-        html_file = importlib_resources.files(simple_data) / f"archive_links.{module_name}.html"
+        html_file = (
+            importlib_resources.files(simple_data) / f"archive_links.{module_name}.html"
+        )
         html = html_file.read_text(encoding="utf-8")
         archive_links = simple.parse_archive_links(html)
         assert len(archive_links) == count
@@ -322,6 +324,9 @@ class TestParseArchiveLinks:
     "parser", [simple.parse_repo_index, simple.parse_archive_links]
 )
 class TestPEP629Versioning:
+    # No test for older major versions as that case is currently impossible with
+    # 1.0 as the only possible version.
+
     def _example(self, major, minor):
         return f"""
         <!DOCTYPE html>
@@ -373,5 +378,29 @@ class TestPEP629Versioning:
         # No error.
         parser(html)
 
-    # No test for older major versions as that case is currently impossible with
-    # 1.0 as the only possible version.
+
+class TestPEP658Metadata:
+    def test_default(self):
+        html = '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>'
+        archive_link = simple.parse_archive_links(html)[0]
+        assert archive_link.metadata is None
+
+    @pytest.mark.parametrize(
+        "attribute", ["data-dist-info-metadata", "data-dist-info-metadata=true"]
+    )
+    def test_attribute_only(self, attribute):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute} >spam-1.2.3-py3.none.any.whl</a>'
+        archive_link = simple.parse_archive_links(html)[0]
+        assert archive_link.metadata == ("", "")
+
+    @pytest.mark.parametrize(
+        "attribute",
+        [
+            'data-dist-info-metadata="sha256=abcdef"',
+            'data-dist-info-metadata="SHA256=abcdef"',
+        ],
+    )
+    def test_hash(self, attribute):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
+        archive_link = simple.parse_archive_links(html)[0]
+        assert archive_link.metadata == ("sha256", "abcdef")
