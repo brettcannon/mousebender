@@ -139,7 +139,9 @@ class ArchiveLink:
     def __str__(self) -> str:
         attrs = []
         if self.requires_python:
-            attrs.append(f'data-requires-python="{html.escape(self.requires_python)}"')
+            requires_str = str(self.requires_python)
+            escaped_requires = html.escape(requires_str)
+            attrs.append(f'data-requires-python="{escaped_requires}"')
         if self.gpg_sig is not None:
             attrs.append(f'data-gpg-sig={str(self.gpg_sig).lower()}')
         if self.yanked is not None:
@@ -206,7 +208,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # PEP 592:
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
-        if "yanked" in attrs:
+        if "data-yanked" in attrs:
             args["yanked"] = attrs.get("data-yanked") or ""
         # PEP 658:
         # ... each anchor tag pointing to a distribution MAY have a
