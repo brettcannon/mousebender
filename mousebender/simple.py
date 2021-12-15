@@ -1,16 +1,15 @@
 """Parsing for PEP 503 -- Simple Repository API."""
 import html
 import html.parser
-import re
 import urllib.parse
 import warnings
 
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import attr
 import packaging.specifiers
+import packaging.utils
 
-_NORMALIZE_RE = re.compile(r"[-_.]+")
 
 PYPI_INDEX = "https://pypi.org/simple/"
 
@@ -32,12 +31,10 @@ class UnsupportedVersionWarning(Warning, UnsupportedVersion):
     """
 
 
-def create_project_url(base_url, project_name):
+def create_project_url(base_url: str, project_name: str) -> str:
     """Construct the project URL for a repository following PEP 503."""
     if base_url and not base_url.endswith("/"):
-        base_url += "/"
-    # https://www.python.org/dev/peps/pep-0503/#normalized-names
-    normalized_project_name = _NORMALIZE_RE.sub("-", project_name).lower()
+        base_url += "/"  # Normalize for easier use w/ str.join() later.
     # PEP 503:
     # The format of this URL is /<project>/ where the <project> is replaced by
     # the normalized name for that project, so a project named "HolyGrail" would
@@ -45,7 +42,7 @@ def create_project_url(base_url, project_name):
     #
     # All URLs which respond with an HTML5 page MUST end with a / and the
     # repository SHOULD redirect the URLs without a / to add a / to the end.
-    return "".join([base_url, normalized_project_name, "/"])
+    return "".join([base_url, packaging.utils.canonicalize_name(project_name), "/"])
 
 
 def _normalize_project_url(url):
@@ -118,25 +115,54 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
             self._name = data
 
 
-def parse_repo_index(html):
+def parse_repo_index(html: str) -> Dict[str, str]:
     """Parse the HTML of a repository index page."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(html)
     return parser.mapping
 
 
-@attr.frozen
+@attr.frozen(kw_only=True)
 class ArchiveLink:
 
     """Data related to a link to an archive file."""
 
     filename: str
     url: str
-    requires_python: packaging.specifiers.SpecifierSet
+    requires_python: packaging.specifiers.SpecifierSet = (
+        packaging.specifiers.SpecifierSet("")
+    )
     hash_: Optional[Tuple[str, str]] = None
     gpg_sig: Optional[bool] = None
-    yanked: Tuple[bool, str] = (False, "")
+    yanked: Optional[str] = None  # Is `""` if no message provided.
     metadata: Optional[Tuple[str, str]] = None  # No hash leads to a `("", "")` tuple.
+
+    def __str__(self) -> str:
+        attrs = []
+        if self.requires_python:
+            requires_str = str(self.requires_python)
+            escaped_requires = html.escape(requires_str)
+            attrs.append(f'data-requires-python="{escaped_requires}"')
+        if self.gpg_sig is not None:
+            attrs.append(f"data-gpg-sig={str(self.gpg_sig).lower()}")
+        if self.yanked is not None:
+            if self.yanked:
+                attrs.append(f'data-yanked="{self.yanked}"')
+            else:
+                attrs.append("data-yanked")
+        if self.metadata:
+            hash_algorithm, hash_value = self.metadata
+            if hash_algorithm:
+                attrs.append(f'data-dist-info-metadata="{hash_algorithm}={hash_value}"')
+            else:
+                attrs.append("data-dist-info-metadata")
+
+        url = self.url
+        if self.hash_:
+            hash_algorithm, hash_value = self.hash_
+            url += f"#{hash_algorithm}={hash_value}"
+
+        return f'<a href="{url}" {" ".join(attrs)}>{self.filename}</a>'
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -160,34 +186,36 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         _, _, raw_filename = parsed_url.path.rpartition("/")
         filename = urllib.parse.unquote(raw_filename)
         url = urllib.parse.urlunparse((*parsed_url[:5], ""))
-        hash_ = None
+        args: Dict[str, Any] = {"filename": filename, "url": url}
         # PEP 503:
         # The URL SHOULD include a hash in the form of a URL fragment with the
         # following syntax: #<hashname>=<hashvalue> ...
         if parsed_url.fragment:
             hash_algo, hash_value = parsed_url.fragment.split("=", 1)
-            hash_ = hash_algo.lower(), hash_value
+            args["hash_"] = hash_algo.lower(), hash_value
         # PEP 503:
         # A repository MAY include a data-requires-python attribute on a file
         # link. This exposes the Requires-Python metadata field ...
         # In the attribute value, < and > have to be HTML encoded as &lt; and
         # &gt;, respectively.
-        requires_python_data = html.unescape(attrs.get("data-requires-python", ""))
-        requires_python = packaging.specifiers.SpecifierSet(requires_python_data)
+        if "data-requires-python" in attrs:
+            requires_python_data = html.unescape(attrs["data-requires-python"])
+            args["requires_python"] = packaging.specifiers.SpecifierSet(
+                requires_python_data
+            )
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with
         # a value of either true or false ...
-        gpg_sig = attrs.get("data-gpg-sig")
-        if gpg_sig:
-            gpg_sig = gpg_sig == "true"
+        if "data-gpg-sig" in attrs:
+            args["gpg_sig"] = attrs["data-gpg-sig"] == "true"
         # PEP 592:
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
-        yanked = "data-yanked" in attrs, attrs.get("data-yanked") or ""
+        if "data-yanked" in attrs:
+            args["yanked"] = attrs.get("data-yanked") or ""
         # PEP 658:
         # ... each anchor tag pointing to a distribution MAY have a
         # data-dist-info-metadata attribute.
-        metadata = None
         if "data-dist-info-metadata" in attrs:
             metadata = attrs.get("data-dist-info-metadata")
             if metadata and metadata != "true":
@@ -202,12 +230,9 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 # The repository MAY use true as the attribute's value if a hash
                 # is unavailable.
                 metadata = "", ""
+            args["metadata"] = metadata
 
-        self.archive_links.append(
-            ArchiveLink(
-                filename, url, requires_python, hash_, gpg_sig, yanked, metadata
-            )
-        )
+        self.archive_links.append(ArchiveLink(**args))
 
 
 def parse_archive_links(html: str) -> List[ArchiveLink]:
