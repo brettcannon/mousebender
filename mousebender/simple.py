@@ -1,7 +1,6 @@
 """Parsing for PEP 503 -- Simple Repository API."""
 import html
 import html.parser
-import re
 import urllib.parse
 import warnings
 
