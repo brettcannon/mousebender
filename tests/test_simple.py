@@ -128,26 +128,10 @@ class TestArchiveLink:
                 url="A/B",
                 gpg_sig=True,
             ),
-            simple.ArchiveLink(
-                filename="B",
-                url="A/B",
-                yanked=""
-            ),
-            simple.ArchiveLink(
-                filename="B",
-                url="A/B",
-                yanked="oops!"
-            ),
-            simple.ArchiveLink(
-                filename="B",
-                url="A/B",
-                metadata=("", "")
-            ),
-            simple.ArchiveLink(
-                filename="B",
-                url="A/B",
-                metadata=("sha256", "ABCDEF")
-            ),
+            simple.ArchiveLink(filename="B", url="A/B", yanked=""),
+            simple.ArchiveLink(filename="B", url="A/B", yanked="oops!"),
+            simple.ArchiveLink(filename="B", url="A/B", metadata=("", "")),
+            simple.ArchiveLink(filename="B", url="A/B", metadata=("sha256", "ABCDEF")),
             simple.ArchiveLink(
                 filename="B",
                 url="A/B",
@@ -155,8 +139,8 @@ class TestArchiveLink:
                 hash_=("sha256", "ABCDEF"),
                 gpg_sig=True,
                 yanked="oops!",
-                metadata=("sha512", "GHIJKL")
-            )
+                metadata=("sha512", "GHIJKL"),
+            ),
         ],
     )
     def test_str(self, archive_link):
@@ -171,11 +155,12 @@ class TestArchiveLink:
     def test_str_escaping(self):
         """data-requires-python must have an escaped value."""
         archive_link = simple.ArchiveLink(
-                filename="B",
-                url="A/B",
-                requires_python=packaging.specifiers.SpecifierSet(">=3.6"),
-            )
+            filename="B",
+            url="A/B",
+            requires_python=packaging.specifiers.SpecifierSet(">=3.6"),
+        )
         assert "gt;=3.6" in str(archive_link)
+
 
 class TestParseArchiveLinks:
 

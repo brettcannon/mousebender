@@ -129,7 +129,9 @@ class ArchiveLink:
 
     filename: str
     url: str
-    requires_python: packaging.specifiers.SpecifierSet = packaging.specifiers.SpecifierSet("")
+    requires_python: packaging.specifiers.SpecifierSet = (
+        packaging.specifiers.SpecifierSet("")
+    )
     hash_: Optional[Tuple[str, str]] = None
     gpg_sig: Optional[bool] = None
     yanked: Optional[str] = None  # Is `""` if no message provided.
@@ -142,7 +144,7 @@ class ArchiveLink:
             escaped_requires = html.escape(requires_str)
             attrs.append(f'data-requires-python="{escaped_requires}"')
         if self.gpg_sig is not None:
-            attrs.append(f'data-gpg-sig={str(self.gpg_sig).lower()}')
+            attrs.append(f"data-gpg-sig={str(self.gpg_sig).lower()}")
         if self.yanked is not None:
             if self.yanked:
                 attrs.append(f'data-yanked="{self.yanked}"')
@@ -198,7 +200,9 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # &gt;, respectively.
         if "data-requires-python" in attrs:
             requires_python_data = html.unescape(attrs["data-requires-python"])
-            args["requires_python"] = packaging.specifiers.SpecifierSet(requires_python_data)
+            args["requires_python"] = packaging.specifiers.SpecifierSet(
+                requires_python_data
+            )
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with
         # a value of either true or false ...
