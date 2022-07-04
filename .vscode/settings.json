@@ -3,7 +3,7 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "python.formatting.provider": "black",
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
 }
