@@ -121,7 +121,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # following syntax: #<hashname>=<hashvalue> ...
         if parsed_url.fragment:
             hash_algo, hash_value = parsed_url.fragment.split("=", 1)
-            args["hash"] = hash_algo.lower(), hash_value
+            args["hashes"] = hash_algo.lower(), hash_value
         # PEP 503:
         # A repository MAY include a data-requires-python attribute on a file
         # link. This exposes the Requires-Python metadata field ...
@@ -162,23 +162,16 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self.archive_links.append(args)
 
 
-# def parse_archive_links(html: str) -> List[ArchiveLink]:
-#     """Parse the HTML of an archive links page."""
-#     parser = _ArchiveLinkHTMLParser()
-#     parser.feed(html)
-#     return parser.archive_links
-
-
 def from_project_details_html(name: str, html: str) -> ProjectDetails:
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
     files = []
     for archive_link in parser.archive_links:
         details = {"filename": archive_link["filename"], "url": archive_link["url"]}
-        if "hash" in archive_link:
-            details["hash"] = dict([archive_link["hash"]])
+        if "hashes" in archive_link:
+            details["hashes"] = dict([archive_link["hashes"]])
         else:
-            details["hash"] = {}
+            details["hashes"] = {}
         if "metadata" in archive_link:
             algorithm, value = archive_link["metadata"]
             if algorithm:
@@ -186,8 +179,9 @@ def from_project_details_html(name: str, html: str) -> ProjectDetails:
             else:
                 details["dist-info-metadata"] = True
         for key in {"requires-python", "yanked", "gpg-sig"}:
-            details[key] = archive_link[key]
-
+            if key in archive_link:
+                details[key] = archive_link[key]
+        files.append(details)
     return {
         "meta": {"api-version": "1.0"},
         "name": packaging.utils.canonicalize_name(name),
