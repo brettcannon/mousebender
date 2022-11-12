@@ -14,10 +14,6 @@ jobs:
         run: |
           pipx run flake8
 
-      - name: Lint with mypy
-        run: |
-          pipx run mypy mousebender
-
       - name: Check format with Black
         run: |
           pipx run black --check .
@@ -46,9 +42,9 @@ jobs:
           cache: "pip"
           cache-dependency-path: "pyproject.toml"
 
-      - name: Install Flit
+      - name: Install Flit & mypy
         run: |
-          python -m pip install flit
+          python -m pip install flit mypy
 
       - name: Install dependencies
         run: |
@@ -57,3 +53,8 @@ jobs:
       - name: Test with pytest
         run: |
           pytest --cov
+
+      # Needs access to runtime dependencies.
+      - name: Check with mypy
+        run: |
+          mypy mousebender
