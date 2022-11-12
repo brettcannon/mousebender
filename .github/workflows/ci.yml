@@ -23,7 +23,7 @@ jobs:
 
       - name: Type check
         run: |
-          pipx run -s type_check
+          pipx run nox -s type_check
 
       - name: Build wheel
         run: |
@@ -48,4 +48,4 @@ jobs:
 
       - name: Test
         run: |
-          pipx run -s coverage --python ${{ matrix.python_version }}
+          pipx run nox -s coverage --python ${{ matrix.python_version }}
