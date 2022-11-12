@@ -3,7 +3,7 @@ from __future__ import annotations
 import html
 import html.parser
 import urllib.parse
-from typing import Any, Dict, Literal, TypedDict, Union
+from typing import Any, Dict, List, Literal, TypedDict, Union
 
 import packaging.specifiers
 import packaging.utils
@@ -28,10 +28,10 @@ _Meta = TypedDict("_Meta", {"api-version": Literal["1.0"]})
 
 class ProjectIndex(TypedDict):
     meta: _Meta
-    projects: list[dict[Literal["name"], str]]
+    projects: List[Dict[Literal["name"], str]]
 
 
-_HashesDict = dict[str, str]
+_HashesDict = Dict[str, str]
 _OptionalProjectFileDetails = TypedDict(
     "_OptionalProjectFileDetails",
     {
