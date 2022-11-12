@@ -118,7 +118,7 @@ class TestProjectDetailsParsing:
                 },
             ),
             (
-                "AICoE-tensorflow",
+                "aicoe-tensorflow",
                 15,
                 {
                     "filename": "tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
@@ -225,9 +225,8 @@ class TestProjectDetailsParsing:
     )
     def test_hashes(self, html, expected_hashes):
         project_details = simple.from_project_details_html("Brett", html)
-        assert len(project_details)["files"] == 1
-        assert len(project_details)["files"][0] == expected_hashes
-
+        assert len(project_details["files"]) == 1
+        assert project_details["files"][0]["hashes"] == expected_hashes
 
     @pytest.mark.parametrize(
         "html,expected_gpg_sig",
@@ -276,7 +275,7 @@ class TestProjectDetailsParsing:
             pytest.param(
                 '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>',
                 None,
-                id="no `data-yanked`,
+                id="no `data-yanked`",
             ),
         ],
     )
@@ -292,7 +291,7 @@ class TestPEP658Metadata:
         details = simple.from_project_details_html("test_default", html)
         assert len(details["files"]) == 1
         # Need to make sure it isn't an empty dict.
-        assert details["files"][0]["dist-info-metadata"] is False
+        assert "dist-info-metadata" not in details["files"][0]
 
     @pytest.mark.parametrize(
         "attribute", ["data-dist-info-metadata", "data-dist-info-metadata=true"]
@@ -301,7 +300,7 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute} >spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html("test_default", html)
         assert len(details["files"]) == 1
-        assert details["files"]["dist-info-metadata"] is True
+        assert details["files"][0]["dist-info-metadata"] is True
 
     @pytest.mark.parametrize(
         "attribute",
@@ -314,4 +313,4 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html("test_default", html)
         assert len(details["files"]) == 1
-        assert details["files"]["dist-info-metadata"] == {"sha256": "abcdef"}
+        assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
