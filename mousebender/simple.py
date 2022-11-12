@@ -138,7 +138,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
         if "data-yanked" in attrs:
-            args["yanked"] = attrs.get("data-yanked") or ""
+            args["yanked"] = attrs.get("data-yanked") or True
         # PEP 658:
         # ... each anchor tag pointing to a distribution MAY have a
         # data-dist-info-metadata attribute.
