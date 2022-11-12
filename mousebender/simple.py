@@ -3,7 +3,7 @@ from __future__ import annotations
 import html
 import html.parser
 import urllib.parse
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import packaging.specifiers
 import packaging.utils
