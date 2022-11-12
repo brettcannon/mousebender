@@ -3,10 +3,13 @@ from __future__ import annotations
 import html
 import html.parser
 import urllib.parse
-from typing import Any, Dict, List, Literal, TypedDict, Union
+from typing import Any, Dict, List, TypedDict, Union
 
 import packaging.specifiers
 import packaging.utils
+
+# Python 3.8+ only.
+from typing_extensions import Literal
 
 
 def create_project_url(base_url: str, project_name: str) -> str:
