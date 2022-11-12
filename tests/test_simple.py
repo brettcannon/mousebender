@@ -1,5 +1,4 @@
 """Tests for mousebender.simple."""
-from sys import api_version
 import warnings
 
 import importlib_resources
@@ -109,48 +108,35 @@ class TestProjectDetailsParsing:
                     },
                 },
             ),
-            # (
-            #     "pytorch",
-            #     522,
-            #     simple.ArchiveLink(
-            #         filename="torchvision-0.5.0+cu100-cp36-cp36m-linux_x86_64.whl",
-            #         url="cu100/torchvision-0.5.0%2Bcu100-cp36-cp36m-linux_x86_64.whl",
-            #         requires_python=packaging.specifiers.SpecifierSet(),
-            #         hash_=None,
-            #         gpg_sig=None,
-            #         yanked=None,
-            #         metadata=None,
-            #     ),
-            # ),
-            # (
-            #     "AICoE-tensorflow",
-            #     15,
-            #     simple.ArchiveLink(
-            #         filename="tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
-            #         url="tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
-            #         requires_python=packaging.specifiers.SpecifierSet(),
-            #         hash_=None,
-            #         gpg_sig=None,
-            #         yanked=None,
-            #         metadata=None,
-            #     ),
-            # ),
-            # (
-            #     "numpy-piwheels",
-            #     316,
-            #     simple.ArchiveLink(
-            #         filename="numpy-1.10.4-cp35-cp35m-linux_armv7l.whl",
-            #         url="numpy-1.10.4-cp35-cp35m-linux_armv7l.whl",
-            #         requires_python=packaging.specifiers.SpecifierSet(),
-            #         hash_=(
-            #             "sha256",
-            #             "5768279588a4766adb0211bbaa0f5857be38483c5aafe5d1caecbcd32749966e",
-            #         ),
-            #         gpg_sig=None,
-            #         yanked=None,
-            #         metadata=None,
-            #     ),
-            # ),
+            (
+                "pytorch",
+                522,
+                {
+                    "filename": "torchvision-0.5.0+cu100-cp36-cp36m-linux_x86_64.whl",
+                    "url": "cu100/torchvision-0.5.0%2Bcu100-cp36-cp36m-linux_x86_64.whl",
+                    "hashes": {},
+                },
+            ),
+            (
+                "AICoE-tensorflow",
+                15,
+                {
+                    "filename": "tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
+                    "url": "tensorflow-2.0.0-cp37-cp37m-linux_x86_64.whl",
+                    "hashes": {},
+                },
+            ),
+            (
+                "numpy-piwheels",
+                316,
+                {
+                    "filename": "numpy-1.10.4-cp35-cp35m-linux_armv7l.whl",
+                    "url": "numpy-1.10.4-cp35-cp35m-linux_armv7l.whl",
+                    "hashes": {
+                        "sha256": "5768279588a4766adb0211bbaa0f5857be38483c5aafe5d1caecbcd32749966e",
+                    },
+                },
+            ),
         ],
     )
     def test_full_parse(self, module_name, count, expected_file_details):
@@ -223,7 +209,7 @@ class TestProjectDetailsParsing:
             assert expected == project_details["files"][0]["requires-python"]
 
     @pytest.mark.parametrize(
-        "html,expected_hash",
+        "html,expected_hashes",
         [
             (
                 '<a href="https://files.pythonhosted.org/packages/92/e2/7d9c6894511337b012735c0c149a7b4e49db0b934798b3ae05a3b46f31f0/numpy-1.12.1-cp35-none-win_amd64.whl#sha256=818d5a1d5752d09929ce1ba1735366d5acc769a1839386dc91f3ac30cf9faf19">numpy-1.12.1-cp35-none-win_amd64.whl</a><br/>',
@@ -237,144 +223,95 @@ class TestProjectDetailsParsing:
             ),
         ],
     )
-    def test_hash_(self, html, hashes):
+    def test_hashes(self, html, expected_hashes):
         project_details = simple.from_project_details_html("Brett", html)
         assert len(project_details)["files"] == 1
-        assert len(project_details)["files"][0] == hashes
+        assert len(project_details)["files"][0] == expected_hashes
 
 
-#         assert archive_links[0].hashes_ == expected_hash
+    @pytest.mark.parametrize(
+        "html,expected_gpg_sig",
+        [
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                None,
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl" data-gpg-sig="true">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                True,
+            ),
+            (
+                '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl" data-gpg-sig="false">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
+                False,
+            ),
+        ],
+    )
+    def test_gpg_sig(self, html, expected_gpg_sig):
+        details = simple.from_project_details_html("test_gpg_sig", html)
+        assert len(details["files"]) == 1
+        assert details["files"][0].get("gpg-sig") == expected_gpg_sig
 
-#     @pytest.mark.parametrize(
-#         "html,expected_gpg_sig",
-#         [
-#             (
-#                 '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
-#                 None,
-#             ),
-#             (
-#                 '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl" data-gpg-sig="true">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
-#                 True,
-#             ),
-#             (
-#                 '<a href="cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl" data-gpg-sig="false">cpu/torch-1.2.0%2Bcpu-cp35-cp35m-win_amd64.whl</a><br>',
-#                 False,
-#             ),
-#         ],
-#     )
-#     def test_gpg_sig(self, html, expected_gpg_sig):
-#         archive_links = simple.parse_archive_links(html)
-#         assert len(archive_links) == 1
-#         assert archive_links[0].gpg_sig == expected_gpg_sig
-
-#     @pytest.mark.parametrize(
-#         "html,expected",
-#         [
-#             (
-#                 '<a href="spam-1.2.3-py3.none.any.whl" data-yanked>spam-1.2.3-py3.none.any.whl</a>',
-#                 "",
-#             ),
-#             (
-#                 '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="oops!">spam-1.2.3-py3.none.any.whl</a>',
-#                 "oops!",
-#             ),
-#             (
-#                 '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="">spam-1.2.3-py3.none.any.whl</a>',
-#                 "",
-#             ),
-#             (
-#                 '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>',
-#                 None,
-#             ),
-#         ],
-#     )
-#     def test_yanked(self, html, expected):
-#         archive_links = simple.parse_archive_links(html)
-#         assert len(archive_links) == 1
-#         assert archive_links[0].yanked == expected
-
-
-# @pytest.mark.parametrize(
-#     "parser", [simple.parse_repo_index, simple.parse_archive_links]
-# )
-# class TestPEP629Versioning:
-#     # No test for older major versions as that case is currently impossible with
-#     # 1.0 as the only possible version.
-
-#     def _example(self, major, minor):
-#         return f"""
-#         <!DOCTYPE html>
-#         <html>
-#             <head>
-#                 <meta name="pypi:repository-version" content="{major}.{minor}">
-#             </head>
-#             <body>
-#                 <!-- This space intentionally left blank. -->
-#             </body>
-#         </html>
-#         """
-
-#     def test_unspecified(self, parser):
-#         html = """
-#         <!DOCTYPE html>
-#         <html>
-#             <body>
-#                 <!-- This space intentionally left blank. -->
-#             </body>
-#         </html>
-#         """
-#         # No errors.
-#         parser(html)
-
-#     def test_equal(self, parser):
-#         html = self._example(*simple._SUPPORTED_VERSION)
-#         # No errors.
-#         parser(html)
-
-#     def test_newer_minor(self, parser):
-#         html = self._example(
-#             simple._SUPPORTED_VERSION[0], simple._SUPPORTED_VERSION[1] + 1
-#         )
-#         with warnings.catch_warnings(record=True) as raised_warnings:
-#             parser(html)
-
-#             assert raised_warnings and len(raised_warnings) == 1
-#             assert raised_warnings[0].category is simple.UnsupportedVersionWarning
-
-#     def test_newer_major(self, parser):
-#         html = self._example(simple._SUPPORTED_VERSION[0] + 1, 0)
-#         with pytest.raises(simple.UnsupportedVersion):
-#             parser(html)
-
-#     def test_older_minor(self, parser, monkeypatch):
-#         monkeypatch.setattr(simple, "_SUPPORTED_VERSION", (1, 1))
-#         html = self._example(1, 0)
-#         # No error.
-#         parser(html)
+    @pytest.mark.parametrize(
+        "html,expected",
+        [
+            pytest.param(
+                '<a href="spam-1.2.3-py3.none.any.whl" data-yanked>spam-1.2.3-py3.none.any.whl</a>',
+                True,
+                id="sole `data-yanked`",
+            ),
+            pytest.param(
+                '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="oops!">spam-1.2.3-py3.none.any.whl</a>',
+                "oops!",
+                id="`data-yanked` w/ string",
+            ),
+            # PEP 592 suggests any string value means the release is yanked,
+            # but PEP 691 says the truthiness of the value determines whether something
+            # was yanked. That would suggest the empty string should be replaced with
+            # True according to PEP 691.
+            pytest.param(
+                '<a href="spam-1.2.3-py3.none.any.whl" data-yanked="">spam-1.2.3-py3.none.any.whl</a>',
+                True,
+                id="`data-yanked w/ ''",
+            ),
+            pytest.param(
+                '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>',
+                None,
+                id="no `data-yanked`,
+            ),
+        ],
+    )
+    def test_yanked(self, html, expected):
+        details = simple.from_project_details_html("test_yanked", html)
+        assert len(details["files"]) == 1
+        assert details["files"][0].get("yanked") == expected
 
 
-# class TestPEP658Metadata:
-#     def test_default(self):
-#         html = '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>'
-#         archive_link = simple.parse_archive_links(html)[0]
-#         assert archive_link.metadata is None
+class TestPEP658Metadata:
+    def test_default(self):
+        html = '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>'
+        details = simple.from_project_details_html("test_default", html)
+        assert len(details["files"]) == 1
+        # Need to make sure it isn't an empty dict.
+        assert details["files"][0]["dist-info-metadata"] is False
 
-#     @pytest.mark.parametrize(
-#         "attribute", ["data-dist-info-metadata", "data-dist-info-metadata=true"]
-#     )
-#     def test_attribute_only(self, attribute):
-#         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute} >spam-1.2.3-py3.none.any.whl</a>'
-#         archive_link = simple.parse_archive_links(html)[0]
-#         assert archive_link.metadata == ("", "")
+    @pytest.mark.parametrize(
+        "attribute", ["data-dist-info-metadata", "data-dist-info-metadata=true"]
+    )
+    def test_attribute_only(self, attribute):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute} >spam-1.2.3-py3.none.any.whl</a>'
+        details = simple.from_project_details_html("test_default", html)
+        assert len(details["files"]) == 1
+        assert details["files"]["dist-info-metadata"] is True
 
-#     @pytest.mark.parametrize(
-#         "attribute",
-#         [
-#             'data-dist-info-metadata="sha256=abcdef"',
-#             'data-dist-info-metadata="SHA256=abcdef"',
-#         ],
-#     )
-#     def test_hash(self, attribute):
-#         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
-#         archive_link = simple.parse_archive_links(html)[0]
-#         assert archive_link.metadata == ("sha256", "abcdef")
+    @pytest.mark.parametrize(
+        "attribute",
+        [
+            'data-dist-info-metadata="sha256=abcdef"',
+            'data-dist-info-metadata="SHA256=abcdef"',
+        ],
+    )
+    def test_hash(self, attribute):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
+        details = simple.from_project_details_html("test_default", html)
+        assert len(details["files"]) == 1
+        assert details["files"]["dist-info-metadata"] == {"sha256": "abcdef"}

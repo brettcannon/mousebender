@@ -1,5 +1,4 @@
 from __future__ import annotations
-from fileinput import filename
 
 from typing import Literal, TypedDict, Dict, Any
 import packaging.utils
