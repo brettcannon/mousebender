@@ -1,34 +1,15 @@
-"""Parsing for PEP 503 -- Simple Repository API."""
+from __future__ import annotations
+
 import html
 import html.parser
 import urllib.parse
-import warnings
+from typing import Dict, List, Union
 
-from typing import Any, Dict, List, Optional, Tuple
-
-import attr
 import packaging.specifiers
 import packaging.utils
 
-
-PYPI_INDEX = "https://pypi.org/simple/"
-
-_SUPPORTED_VERSION = (1, 0)
-
-
-class UnsupportedVersion(Exception):
-
-    """A major version of the Simple API is used which is not supported."""
-
-
-class UnsupportedVersionWarning(Warning, UnsupportedVersion):
-
-    """A minor version of the Simple API is used which is not supported.
-
-    This is a subclass of UnsupportedVersion so that catching and handling
-    major version discrepancies will also include less critical minor version
-    concerns as well.
-    """
+# Python 3.8+ only.
+from typing_extensions import Literal, TypedDict
 
 
 def create_project_url(base_url: str, project_name: str) -> str:
@@ -45,34 +26,37 @@ def create_project_url(base_url: str, project_name: str) -> str:
     return "".join([base_url, packaging.utils.canonicalize_name(project_name), "/"])
 
 
-def _normalize_project_url(url):
-    """Normalizes a project URL found in a repository index.
-
-    If a repository is fully-compliant with PEP 503 this will be a no-op.
-    If a repository is reasonably compliant with PEP 503 then the resulting URL
-    will be usable.
-
-    """
-    url_no_trailing_slash = url.rstrip("/")  # Explicitly added back later.
-    base_url, _, project_name = url_no_trailing_slash.rpartition("/")
-    return create_project_url(base_url, project_name)
+_Meta = TypedDict("_Meta", {"api-version": Literal["1.0"]})
 
 
-def _check_version(tag, attrs):
-    """Check if the tag is a PEP 629 tag and is a version that is supported."""
-    if tag != "meta" or attrs.get("name") != "pypi:repository-version":
-        return
+class ProjectIndex(TypedDict):
+    meta: _Meta
+    projects: List[Dict[Literal["name"], str]]
 
-    major, minor = map(int, attrs["content"].split("."))
-    if major != _SUPPORTED_VERSION[0]:
-        msg = f"v{_SUPPORTED_VERSION[0]} supported, but v{major} used"
-        raise UnsupportedVersion(msg)
-    elif major == _SUPPORTED_VERSION[0] and minor > _SUPPORTED_VERSION[1]:
-        msg = (
-            f"v{_SUPPORTED_VERSION[0]}.{_SUPPORTED_VERSION[1]} supported, "
-            "but v{_SUPPORTED_VERSION[0]}.{minor_version} used"
-        )
-        warnings.warn(msg, UnsupportedVersionWarning)
+
+_HashesDict = Dict[str, str]
+_OptionalProjectFileDetails = TypedDict(
+    "_OptionalProjectFileDetails",
+    {
+        "requires-python": str,
+        "dist-info-metadata": Union[bool, _HashesDict],
+        "gpg-sig": bool,
+        "yanked": Union[bool, str],
+    },
+    total=False,
+)
+
+
+class ProjectFileDetails(_OptionalProjectFileDetails):
+    filename: str
+    url: str
+    hashes: _HashesDict
+
+
+class ProjectDetails(TypedDict):
+    meta: _Meta
+    name: packaging.utils.NormalizedName
+    files: list[ProjectFileDetails]
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
@@ -86,83 +70,32 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
     def __init__(self):
         super().__init__()
         self._parsing_anchor = False
-        self._url = None
-        self._name = None
-        self.mapping = {}
+        self.names = []
 
-    def handle_starttag(self, tag, attrs_list):
-        # PEP 503:
-        # There may be any other HTML elements on the API pages as long as the
-        # required anchor elements exist.
-        attrs = dict(attrs_list)
-        _check_version(tag, attrs)
+    def handle_starttag(self, tag, _attrs_list):
         if tag != "a":
             return
         self._parsing_anchor = True
-        self._url = attrs.get("href")
 
     def handle_endtag(self, tag):
         if tag != "a":
             return
-        elif self._name and self._url:
-            self.mapping[self._name] = _normalize_project_url(self._url)
-
-        self._name = self._url = None
         self._parsing_anchor = False
 
     def handle_data(self, data):
         if self._parsing_anchor:
-            self._name = data
+            self.names.append(data)
 
 
-def parse_repo_index(html: str) -> Dict[str, str]:
+def from_project_index_html(html: str) -> ProjectIndex:
     """Parse the HTML of a repository index page."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(html)
-    return parser.mapping
-
-
-@attr.frozen(kw_only=True)
-class ArchiveLink:
-
-    """Data related to a link to an archive file."""
-
-    filename: str
-    url: str
-    requires_python: packaging.specifiers.SpecifierSet = (
-        packaging.specifiers.SpecifierSet("")
-    )
-    hash_: Optional[Tuple[str, str]] = None
-    gpg_sig: Optional[bool] = None
-    yanked: Optional[str] = None  # Is `""` if no message provided.
-    metadata: Optional[Tuple[str, str]] = None  # No hash leads to a `("", "")` tuple.
-
-    def __str__(self) -> str:
-        attrs = []
-        if self.requires_python:
-            requires_str = str(self.requires_python)
-            escaped_requires = html.escape(requires_str)
-            attrs.append(f'data-requires-python="{escaped_requires}"')
-        if self.gpg_sig is not None:
-            attrs.append(f"data-gpg-sig={str(self.gpg_sig).lower()}")
-        if self.yanked is not None:
-            if self.yanked:
-                attrs.append(f'data-yanked="{self.yanked}"')
-            else:
-                attrs.append("data-yanked")
-        if self.metadata:
-            hash_algorithm, hash_value = self.metadata
-            if hash_algorithm:
-                attrs.append(f'data-dist-info-metadata="{hash_algorithm}={hash_value}"')
-            else:
-                attrs.append("data-dist-info-metadata")
-
-        url = self.url
-        if self.hash_:
-            hash_algorithm, hash_value = self.hash_
-            url += f"#{hash_algorithm}={hash_value}"
-
-        return f'<a href="{url}" {" ".join(attrs)}>{self.filename}</a>'
+    project_index: ProjectIndex = {
+        "meta": {"api-version": "1.0"},
+        "projects": [{"name": name} for name in parser.names],
+    }
+    return project_index
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
@@ -172,7 +105,6 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs_list):
         attrs = dict(attrs_list)
-        _check_version(tag, attrs)
         if tag != "a":
             return
         # PEP 503:
@@ -186,13 +118,13 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         _, _, raw_filename = parsed_url.path.rpartition("/")
         filename = urllib.parse.unquote(raw_filename)
         url = urllib.parse.urlunparse((*parsed_url[:5], ""))
-        args: Dict[str, Any] = {"filename": filename, "url": url}
+        args = {"filename": filename, "url": url}
         # PEP 503:
         # The URL SHOULD include a hash in the form of a URL fragment with the
         # following syntax: #<hashname>=<hashvalue> ...
         if parsed_url.fragment:
             hash_algo, hash_value = parsed_url.fragment.split("=", 1)
-            args["hash_"] = hash_algo.lower(), hash_value
+            args["hashes"] = hash_algo.lower(), hash_value
         # PEP 503:
         # A repository MAY include a data-requires-python attribute on a file
         # link. This exposes the Requires-Python metadata field ...
@@ -200,19 +132,17 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # &gt;, respectively.
         if "data-requires-python" in attrs:
             requires_python_data = html.unescape(attrs["data-requires-python"])
-            args["requires_python"] = packaging.specifiers.SpecifierSet(
-                requires_python_data
-            )
+            args["requires-python"] = requires_python_data
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with
         # a value of either true or false ...
         if "data-gpg-sig" in attrs:
-            args["gpg_sig"] = attrs["data-gpg-sig"] == "true"
+            args["gpg-sig"] = attrs["data-gpg-sig"] == "true"
         # PEP 592:
         # Links in the simple repository MAY have a data-yanked attribute which
         # may have no value, or may have an arbitrary string as a value.
         if "data-yanked" in attrs:
-            args["yanked"] = attrs.get("data-yanked") or ""
+            args["yanked"] = attrs.get("data-yanked") or True
         # PEP 658:
         # ... each anchor tag pointing to a distribution MAY have a
         # data-dist-info-metadata attribute.
@@ -232,11 +162,33 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 metadata = "", ""
             args["metadata"] = metadata
 
-        self.archive_links.append(ArchiveLink(**args))
+        self.archive_links.append(args)
 
 
-def parse_archive_links(html: str) -> List[ArchiveLink]:
-    """Parse the HTML of an archive links page."""
+def from_project_details_html(name: str, html: str) -> ProjectDetails:
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
-    return parser.archive_links
+    files: List[ProjectFileDetails] = []
+    for archive_link in parser.archive_links:
+        details: ProjectFileDetails = {
+            "filename": archive_link["filename"],
+            "url": archive_link["url"],
+            "hashes": {},
+        }
+        if "hashes" in archive_link:
+            details["hashes"] = dict([archive_link["hashes"]])
+        if "metadata" in archive_link:
+            algorithm, value = archive_link["metadata"]
+            if algorithm:
+                details["dist-info-metadata"] = {algorithm: value}
+            else:
+                details["dist-info-metadata"] = True
+        for key in {"requires-python", "yanked", "gpg-sig"}:
+            if key in archive_link:
+                details[key] = archive_link[key]  # type: ignore
+        files.append(details)
+    return {
+        "meta": {"api-version": "1.0"},
+        "name": packaging.utils.canonicalize_name(name),
+        "files": files,
+    }

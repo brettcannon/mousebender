@@ -24,18 +24,13 @@ classifiers = [
 
 dependencies = [
     "packaging >= 20.9",
-    "attrs >= 20.1.0"
+    "typing_extensions"
 ]
 optional-dependencies.test = [
     "pytest >= 6.0.1",
     "importlib-resources >= 1.4.0",
     "coverage[toml] >= 5.0.4",
     "pytest-cov >= 2.8.1"
-]
-optional-dependencies.dev = [
-    "mypy >= 0.800",
-    "black >= 20.8b1",
-    "flake8 >= 3.8.1"
 ]
 
 dynamic = ["version", "description"]
@@ -45,3 +40,6 @@ dynamic = ["version", "description"]
 run.source = ["mousebender/"]
 run.branch = true
 report.fail_under = 100
+
+[tool.isort]
+profile = "black"
