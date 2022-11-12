@@ -10,18 +10,22 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Lint with flake8
+      - name: Lint code
         run: |
           pipx run flake8
 
-      - name: Check format with Black
+      - name: Check format
         run: |
           pipx run black --check .
 
-      - name: Check format with isort
+      - name: Check imports
         uses: isort/isort-action@v1
 
-      - name: Can be built
+      - name: Type check
+        run: |
+          pipx run -s type_check
+
+      - name: Build wheel
         run: |
           pipx run flit build
 
@@ -42,19 +46,6 @@ jobs:
           cache: "pip"
           cache-dependency-path: "pyproject.toml"
 
-      - name: Install Flit & mypy
+      - name: Test
         run: |
-          python -m pip install flit mypy
-
-      - name: Install dependencies
-        run: |
-          flit install --extras test
-
-      - name: Test with pytest
-        run: |
-          pytest --cov
-
-      # Needs access to runtime dependencies.
-      - name: Check with mypy
-        run: |
-          mypy mousebender
+          pipx run -s coverage --python ${{ matrix.python_version }}
