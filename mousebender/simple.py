@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Literal, TypedDict, Dict, Any
-import packaging.utils
+import html
 import html.parser
 import urllib.parse
-import html
+from typing import Any, Dict, Literal, TypedDict
+
 import packaging.specifiers
+import packaging.utils
 
 
 def create_project_url(base_url: str, project_name: str) -> str:
