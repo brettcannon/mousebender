@@ -118,7 +118,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         _, _, raw_filename = parsed_url.path.rpartition("/")
         filename = urllib.parse.unquote(raw_filename)
         url = urllib.parse.urlunparse((*parsed_url[:5], ""))
-        args: Dict[str, Any] = {"filename": filename, "url": url}
+        args = {"filename": filename, "url": url}
         # PEP 503:
         # The URL SHOULD include a hash in the form of a URL fragment with the
         # following syntax: #<hashname>=<hashvalue> ...
@@ -168,13 +168,15 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
 def from_project_details_html(name: str, html: str) -> ProjectDetails:
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
-    files = []
+    files: List[ProjectFileDetails] = []
     for archive_link in parser.archive_links:
-        details = {"filename": archive_link["filename"], "url": archive_link["url"]}
+        details: ProjectFileDetails = {
+            "filename": archive_link["filename"],
+            "url": archive_link["url"],
+            "hashes": {},
+        }
         if "hashes" in archive_link:
             details["hashes"] = dict([archive_link["hashes"]])
-        else:
-            details["hashes"] = {}
         if "metadata" in archive_link:
             algorithm, value = archive_link["metadata"]
             if algorithm:
@@ -183,7 +185,7 @@ def from_project_details_html(name: str, html: str) -> ProjectDetails:
                 details["dist-info-metadata"] = True
         for key in {"requires-python", "yanked", "gpg-sig"}:
             if key in archive_link:
-                details[key] = archive_link[key]
+                details[key] = archive_link[key]  # type: ignore
         files.append(details)
     return {
         "meta": {"api-version": "1.0"},
