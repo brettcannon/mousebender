@@ -32,11 +32,6 @@ optional-dependencies.test = [
     "coverage[toml] >= 5.0.4",
     "pytest-cov >= 2.8.1"
 ]
-optional-dependencies.dev = [
-    "mypy >= 0.800",
-    "black >= 20.8b1",
-    "flake8 >= 3.8.1"
-]
 
 dynamic = ["version", "description"]
 
