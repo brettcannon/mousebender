@@ -45,3 +45,6 @@ dynamic = ["version", "description"]
 run.source = ["mousebender/"]
 run.branch = true
 report.fail_under = 100
+
+[tool.isort]
+profile = "black"

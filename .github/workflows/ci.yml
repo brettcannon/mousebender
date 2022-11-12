@@ -22,6 +22,9 @@ jobs:
         run: |
           pipx run black --check .
 
+      - name: Check format with isort
+        uses: isort/isort-action@v1
+
       - name: Can be built
         run: |
           pipx run flit build
