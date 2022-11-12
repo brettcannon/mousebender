@@ -3,7 +3,7 @@ from __future__ import annotations
 import html
 import html.parser
 import urllib.parse
-from typing import Any, Dict, Literal, TypedDict
+from typing import Any, Dict, Literal, TypedDict, Union
 
 import packaging.specifiers
 import packaging.utils
@@ -36,9 +36,9 @@ _OptionalProjectFileDetails = TypedDict(
     "_OptionalProjectFileDetails",
     {
         "requires-python": str,
-        "dist-info-metadata": bool | _HashesDict,
+        "dist-info-metadata": Union[bool, _HashesDict],
         "gpg-sig": bool,
-        "yanked": bool | str,
+        "yanked": Union[bool, str],
     },
     total=False,
 )
