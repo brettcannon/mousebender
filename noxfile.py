@@ -1,3 +1,9 @@
+"""Developer-related actions.
+
+All sessions prefixed with `check_` are non-destructive.
+
+"""
+
 import nox
 
 python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
@@ -40,12 +46,14 @@ def check_format(session):
 
 
 @nox.session
-def lint(session):
+def check_code(session):
+    """Lint the code."""
     session.install("ruff")
     session.run("ruff", "mousebender", "tests")
 
 
 @nox.session
 def build(session):
+    """Build the wheel and sdist."""
     session.install("flit")
     session.run("flit", "build")

@@ -12,7 +12,7 @@ jobs:
 
       - name: Lint code
         run: |
-          pipx run nox -s lint
+          pipx run nox -s check_code
 
       - name: Check format
         run: |
