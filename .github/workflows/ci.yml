@@ -16,14 +16,11 @@ jobs:
 
       - name: Check format
         run: |
-          pipx run black --check .
-
-      - name: Check imports
-        uses: isort/isort-action@v1
+          pipx run nox -s check_format
 
       - name: Type check
         run: |
-          pipx run nox -s type_check
+          pipx run nox -s check_types
 
       - name: Build wheel
         run: |
