@@ -1,9 +1,20 @@
+"""Implement the Simple Repository API.
+
+This encompasses PEPs:
+
+1. 503: Simple Repository API
+2. 592: Adding “Yank” Support to the Simple API
+3. 629: Versioning PyPI's Simple API
+4. 658: Serve Distribution Metadata in the Simple Repository API
+5. 691: JSON-based Simple API for Python Package Indexes
+
+"""
 from __future__ import annotations
 
 import html
 import html.parser
 import urllib.parse
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import packaging.specifiers
 import packaging.utils
@@ -30,6 +41,8 @@ _Meta = TypedDict("_Meta", {"api-version": Literal["1.0"]})
 
 
 class ProjectIndex(TypedDict):
+    """A TypedDict representing a project index."""
+
     meta: _Meta
     projects: List[Dict[Literal["name"], str]]
 
@@ -48,41 +61,46 @@ _OptionalProjectFileDetails = TypedDict(
 
 
 class ProjectFileDetails(_OptionalProjectFileDetails):
+    """A TypedDict representing a project file's details."""
+
     filename: str
     url: str
     hashes: _HashesDict
 
 
 class ProjectDetails(TypedDict):
+    """A TypedDict representing a project's detail."""
+
     meta: _Meta
     name: packaging.utils.NormalizedName
     files: list[ProjectFileDetails]
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
-
     """Parse the HTML of a repository index page."""
 
     # PEP 503:
     # Within a repository, the root URL (/) MUST be a valid HTML5 page with a
     # single anchor element per project in the repository.
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._parsing_anchor = False
-        self.names = []
+        self.names: List[str] = []
 
-    def handle_starttag(self, tag, _attrs_list):
+    def handle_starttag(
+        self, tag: str, _attrs_list: list[tuple[str, Optional[str]]]
+    ) -> None:
         if tag != "a":
             return
         self._parsing_anchor = True
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         if tag != "a":
             return
         self._parsing_anchor = False
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if self._parsing_anchor:
             self.names.append(data)
 
@@ -99,18 +117,22 @@ def from_project_index_html(html: str) -> ProjectIndex:
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
-    def __init__(self):
-        self.archive_links = []
+    def __init__(self) -> None:
+        self.archive_links: List[Dict[str, Any]] = []
         super().__init__()
 
-    def handle_starttag(self, tag, attrs_list):
+    def handle_starttag(
+        self, tag: str, attrs_list: list[tuple[str, Optional[str]]]
+    ) -> None:
         attrs = dict(attrs_list)
         if tag != "a":
             return
         # PEP 503:
         # The href attribute MUST be a URL that links to the location of the
         # file for download ...
-        full_url = attrs["href"]
+        if "href" not in attrs or not attrs["href"]:
+            return
+        full_url: str = attrs["href"]
         parsed_url = urllib.parse.urlparse(full_url)
         # PEP 503:
         # ... the text of the anchor tag MUST match the final path component
@@ -118,7 +140,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         _, _, raw_filename = parsed_url.path.rpartition("/")
         filename = urllib.parse.unquote(raw_filename)
         url = urllib.parse.urlunparse((*parsed_url[:5], ""))
-        args = {"filename": filename, "url": url}
+        args: Dict[str, Any] = {"filename": filename, "url": url}
         # PEP 503:
         # The URL SHOULD include a hash in the form of a URL fragment with the
         # following syntax: #<hashname>=<hashvalue> ...
@@ -130,7 +152,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # link. This exposes the Requires-Python metadata field ...
         # In the attribute value, < and > have to be HTML encoded as &lt; and
         # &gt;, respectively.
-        if "data-requires-python" in attrs:
+        if "data-requires-python" in attrs and attrs["data-requires-python"]:
             requires_python_data = html.unescape(attrs["data-requires-python"])
             args["requires-python"] = requires_python_data
         # PEP 503:
@@ -147,15 +169,15 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # ... each anchor tag pointing to a distribution MAY have a
         # data-dist-info-metadata attribute.
         if "data-dist-info-metadata" in attrs:
-            metadata = attrs.get("data-dist-info-metadata")
-            if metadata and metadata != "true":
+            found_metadata = attrs.get("data-dist-info-metadata")
+            if found_metadata and found_metadata != "true":
                 # The repository SHOULD provide the hash of the Core Metadata
                 # file as the data-dist-info-metadata attribute's value using
                 # the syntax <hashname>=<hashvalue>, where <hashname> is the
                 # lower cased name of the hash function used, and <hashvalue> is
                 # the hex encoded digest.
-                algorithm, _, hash = metadata.partition("=")
-                metadata = (algorithm.lower(), hash)
+                algorithm, _, hash_ = found_metadata.partition("=")
+                metadata = (algorithm.lower(), hash_)
             else:
                 # The repository MAY use true as the attribute's value if a hash
                 # is unavailable.
@@ -166,6 +188,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
 
 
 def from_project_details_html(name: str, html: str) -> ProjectDetails:
+    """Parse the HTML of a project details page."""
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
     files: List[ProjectFileDetails] = []

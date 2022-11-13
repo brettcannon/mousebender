@@ -8,9 +8,6 @@ from .data import simple as simple_data
 
 
 class TestProjectURLConstruction:
-
-    """Tests for mousebender.simple.create_project_url()."""
-
     @pytest.mark.parametrize("base_url", ["/simple/", "/simple"])
     def test_url_joining(self, base_url):
         url = simple.create_project_url(base_url, "hello")
@@ -36,9 +33,6 @@ class TestProjectURLConstruction:
 
 
 class TestRepoIndexParsing:
-
-    """Tests for mousebender.simple.parse_repo_index()."""
-
     @pytest.mark.parametrize(
         "name,count,expected_item",
         [
@@ -75,9 +69,6 @@ class TestRepoIndexParsing:
 
 
 class TestProjectDetailsParsing:
-
-    """Tests for mousebender.simple. from project details HTML."""
-
     @pytest.mark.parametrize(
         "module_name,count,expected_file_details",
         [
@@ -182,6 +173,11 @@ class TestProjectDetailsParsing:
         project_details = simple.from_project_details_html("cash", html)
         assert len(project_details["files"]) == 1
         assert project_details["files"][0]["url"] == expected_url
+
+    def test_no_href(self):
+        html = "<a>numpy-1.12.1-cp35-none-win_amd64.whl</a><br/>"
+        project_details = simple.from_project_details_html("test_no_href", html)
+        assert not len(project_details["files"])
 
     @pytest.mark.parametrize(
         "html,expected",

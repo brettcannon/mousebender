@@ -12,7 +12,7 @@ jobs:
 
       - name: Lint code
         run: |
-          pipx run flake8
+          pipx run nox -s check_code
 
       - name: Check format
         run: |
@@ -24,7 +24,7 @@ jobs:
 
       - name: Build wheel
         run: |
-          pipx run flit build
+          pipx run nox -s build
 
   tests:
     name: Test Python ${{ matrix.python_version }}
