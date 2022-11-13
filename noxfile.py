@@ -12,7 +12,9 @@ python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 def test(session, coverage=False):
     """Run the test suite."""
     session.install("-e", ".[test]")
-    session.run("pytest", *(["--cov"] if coverage else []))
+    session.run(
+        "pytest", *(["--cov", "--cov-report", "term-missing"] if coverage else [])
+    )
 
 
 @nox.session(python=python_versions)
