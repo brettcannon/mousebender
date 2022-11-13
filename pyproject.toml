@@ -6,12 +6,12 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "mousebender"
 authors = [
-    {name = "Brett Cannon", email = "brett@python.org"},
-    {name = "Derek Keeler", email = "derek@suchcool.ca"}
+    { name = "Brett Cannon", email = "brett@python.org" },
+    { name = "Derek Keeler", email = "derek@suchcool.ca" },
 ]
 readme = "README.rst"
 requires-python = ">=3.6"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["packaging", "PEP 503", "PEP 592"]
 urls.homepage = "https://github.com/brettcannon/mousebender"
 urls.repository = "https://github.com/brettcannon/mousebender"
@@ -19,18 +19,15 @@ urls.issues = "https://github.com/brettcannon/mousebender/issues"
 urls.documentation = "https://github.com/brettcannon/mousebender/blob/master/README.rst"
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "License :: OSI Approved :: BSD License"
+    "License :: OSI Approved :: BSD License",
 ]
 
-dependencies = [
-    "packaging >= 20.9",
-    "typing-extensions"
-]
+dependencies = ["packaging >= 20.9", "typing-extensions"]
 optional-dependencies.test = [
     "pytest >= 6.0.1",
     "importlib-resources >= 1.4.0",
     "coverage[toml] >= 5.0.4",
-    "pytest-cov >= 2.8.1"
+    "pytest-cov >= 2.8.1",
 ]
 
 dynamic = ["version", "description"]
@@ -43,3 +40,15 @@ report.fail_under = 100
 
 [tool.isort]
 profile = "black"
+
+[tool.ruff]
+select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M"]
+ignore = ["E501", "D211", "ANN101"]
+per-file-ignores = { "tests/test_simple.py" = [
+    "D",
+    "ANN",
+], "noxfile.py" = [
+    "D",
+    "ANN",
+    "A001",
+] }

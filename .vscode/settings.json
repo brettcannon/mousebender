@@ -1,7 +1,12 @@
 {
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "ruff.logLevel": "warn",
+    "isort.check": true,
+    "isort.logLevel": "warn"
 }

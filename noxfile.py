@@ -37,3 +37,15 @@ def format(session, check=False):
 def check_format(session):
     """Check that the code is properly formatted."""
     format(session, check=True)
+
+
+@nox.session
+def lint(session):
+    session.install("ruff")
+    session.run("ruff", "mousebender", "tests")
+
+
+@nox.session
+def build(session):
+    session.install("flit")
+    session.run("flit", "build")

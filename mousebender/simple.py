@@ -67,22 +67,24 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
     # Within a repository, the root URL (/) MUST be a valid HTML5 page with a
     # single anchor element per project in the repository.
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._parsing_anchor = False
         self.names = []
 
-    def handle_starttag(self, tag, _attrs_list):
+    def handle_starttag(
+        self, tag: str, _attrs_list: list[tuple[str, str | None]]
+    ) -> None:
         if tag != "a":
             return
         self._parsing_anchor = True
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         if tag != "a":
             return
         self._parsing_anchor = False
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if self._parsing_anchor:
             self.names.append(data)
 
@@ -99,11 +101,13 @@ def from_project_index_html(html: str) -> ProjectIndex:
 
 
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
-    def __init__(self):
+    def __init__(self) -> None:
         self.archive_links = []
         super().__init__()
 
-    def handle_starttag(self, tag, attrs_list):
+    def handle_starttag(
+        self, tag: str, attrs_list: list[tuple[str, str | None]]
+    ) -> None:
         attrs = dict(attrs_list)
         if tag != "a":
             return
@@ -154,8 +158,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 # the syntax <hashname>=<hashvalue>, where <hashname> is the
                 # lower cased name of the hash function used, and <hashvalue> is
                 # the hex encoded digest.
-                algorithm, _, hash = metadata.partition("=")
-                metadata = (algorithm.lower(), hash)
+                algorithm, _, hash_ = metadata.partition("=")
+                metadata = (algorithm.lower(), hash_)
             else:
                 # The repository MAY use true as the attribute's value if a hash
                 # is unavailable.
