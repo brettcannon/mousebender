@@ -43,7 +43,7 @@ profile = "black"
 
 [tool.ruff]
 select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M"]
-ignore = ["E501", "D211", "D213", "ANN101"]
+ignore = ["E501", "D203", "D213", "ANN101"]
 per-file-ignores = { "tests/*" = [
     "D",
     "ANN",
