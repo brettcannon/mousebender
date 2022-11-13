@@ -24,7 +24,7 @@ classifiers = [
 
 dependencies = [
     "packaging >= 20.9",
-    "typing_extensions"
+    "typing-extensions"
 ]
 optional-dependencies.test = [
     "pytest >= 6.0.1",
