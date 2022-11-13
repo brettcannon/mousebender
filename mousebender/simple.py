@@ -1,3 +1,14 @@
+"""Implement the Simple Repository API.
+
+This encompasses PEPs:
+
+1. 503: Simple Repository API
+2. 592: Adding “Yank” Support to the Simple API
+3. 629: Versioning PyPI's Simple API
+4. 658: Serve Distribution Metadata in the Simple Repository API
+5. 691: JSON-based Simple API for Python Package Indexes
+
+"""
 from __future__ import annotations
 
 import html
@@ -30,6 +41,8 @@ _Meta = TypedDict("_Meta", {"api-version": Literal["1.0"]})
 
 
 class ProjectIndex(TypedDict):
+    """A TypedDict representing a project index."""
+
     meta: _Meta
     projects: List[Dict[Literal["name"], str]]
 
@@ -48,19 +61,22 @@ _OptionalProjectFileDetails = TypedDict(
 
 
 class ProjectFileDetails(_OptionalProjectFileDetails):
+    """A TypedDict representing a project file's details."""
+
     filename: str
     url: str
     hashes: _HashesDict
 
 
 class ProjectDetails(TypedDict):
+    """A TypedDict representing a project's detail."""
+
     meta: _Meta
     name: packaging.utils.NormalizedName
     files: list[ProjectFileDetails]
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
-
     """Parse the HTML of a repository index page."""
 
     # PEP 503:
@@ -170,6 +186,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
 
 
 def from_project_details_html(name: str, html: str) -> ProjectDetails:
+    """Parse the HTML of a project details page."""
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
     files: List[ProjectFileDetails] = []
