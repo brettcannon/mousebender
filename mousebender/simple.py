@@ -37,13 +37,13 @@ def create_project_url(base_url: str, project_name: str) -> str:
     return "".join([base_url, packaging.utils.canonicalize_name(project_name), "/"])
 
 
-_Meta = TypedDict("_Meta", {"api-version": Literal["1.0"]})
+_Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 
 
 class ProjectIndex_1_0(TypedDict):
     """A TypedDict for API version 1.0 that represents a project index."""
 
-    meta: _Meta
+    meta: _Meta_1_0
     projects: List[Dict[Literal["name"], str]]
 
 
@@ -52,7 +52,8 @@ ProjectIndex: TypeAlias = ProjectIndex_1_0
 """API version-agnostic type alias for a project index."""
 
 
-_HashesDict = Dict[str, str]
+_HashesDict: TypeAlias = Dict[str, str]
+
 _OptionalProjectFileDetails = TypedDict(
     "_OptionalProjectFileDetails",
     {
@@ -76,7 +77,7 @@ class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
 class ProjectDetails_1_0(TypedDict):
     """A TypedDict for API version 1.0 representing a project's details."""
 
-    meta: _Meta
+    meta: _Meta_1_0
     name: packaging.utils.NormalizedName
     files: list[ProjectFileDetails_1_0]
 
