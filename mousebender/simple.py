@@ -20,7 +20,7 @@ import packaging.specifiers
 import packaging.utils
 
 # Python 3.8+ only.
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal, TypeAlias, TypedDict
 
 
 def create_project_url(base_url: str, project_name: str) -> str:
@@ -40,11 +40,16 @@ def create_project_url(base_url: str, project_name: str) -> str:
 _Meta = TypedDict("_Meta", {"api-version": Literal["1.0"]})
 
 
-class ProjectIndex(TypedDict):
-    """A TypedDict representing a project index."""
+class ProjectIndex_1_0(TypedDict):
+    """A TypedDict for API version 1.0 that represents a project index."""
 
     meta: _Meta
     projects: List[Dict[Literal["name"], str]]
+
+
+# Turn into a union when future API versions are supported.
+ProjectIndex: TypeAlias = ProjectIndex_1_0
+"""API version-agnostic type alias for a project index."""
 
 
 _HashesDict = Dict[str, str]
@@ -60,20 +65,25 @@ _OptionalProjectFileDetails = TypedDict(
 )
 
 
-class ProjectFileDetails(_OptionalProjectFileDetails):
-    """A TypedDict representing a project file's details."""
+class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
+    """A TypedDict for API version 1.0 that represents a project file."""
 
     filename: str
     url: str
     hashes: _HashesDict
 
 
-class ProjectDetails(TypedDict):
-    """A TypedDict representing a project's detail."""
+class ProjectDetails_1_0(TypedDict):
+    """A TypedDict for API version 1.0 representing a project's details."""
 
     meta: _Meta
     name: packaging.utils.NormalizedName
-    files: list[ProjectFileDetails]
+    files: list[ProjectFileDetails_1_0]
+
+
+# Turn into a union when future API versions are supported.
+ProjectDetails: TypeAlias = ProjectDetails_1_0
+"""API version-agnostic type alias for a project's details."""
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
@@ -105,7 +115,7 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
             self.names.append(data)
 
 
-def from_project_index_html(html: str) -> ProjectIndex:
+def from_project_index_html(html: str) -> ProjectIndex_1_0:
     """Parse the HTML of a repository index page."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(html)
@@ -187,13 +197,13 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self.archive_links.append(args)
 
 
-def from_project_details_html(name: str, html: str) -> ProjectDetails:
+def from_project_details_html(name: str, html: str) -> ProjectDetails_1_0:
     """Parse the HTML of a project details page."""
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
-    files: List[ProjectFileDetails] = []
+    files: List[ProjectFileDetails_1_0] = []
     for archive_link in parser.archive_links:
-        details: ProjectFileDetails = {
+        details: ProjectFileDetails_1_0 = {
             "filename": archive_link["filename"],
             "url": archive_link["url"],
             "hashes": {},
