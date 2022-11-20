@@ -1,8 +1,14 @@
 version: 2
 updates:
-- package-ecosystem: pip
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "13:00"
-  open-pull-requests-limit: 10
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    labels: ["impact-project"]
+    schedule:
+      interval: "weekly"
+      day: "friday"

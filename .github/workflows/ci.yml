@@ -1,6 +1,6 @@
 name: CI
 
-on: pull_request
+on: [pull_request, workflow_dispatch]
 
 jobs:
   lint:
@@ -25,6 +25,27 @@ jobs:
       - name: Build wheel
         run: |
           pipx run nox -s build
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+          cache: "pip"
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Dependencies
+        run: pip install -e .[doc]
+
+      - name: Sphinx Build
+        uses: ammaraskar/sphinx-action@0.4
+        with:
+          docs-folder: "docs/"
 
   tests:
     name: Test Python ${{ matrix.python_version }}
