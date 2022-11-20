@@ -39,7 +39,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "pyproject.toml"
 
-      - name: Dependencies
+      - name: Install dependencies
         run: pip install -e .[doc]
 
       - name: Sphinx Build
