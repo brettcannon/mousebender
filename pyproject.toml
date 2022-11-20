@@ -5,6 +5,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "mousebender"
+version = "2022.0.0"
 authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
@@ -21,17 +22,20 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "License :: OSI Approved :: BSD License",
 ]
+dynamic = ["description"]
 
 dependencies = ["packaging >= 20.9", "typing-extensions"]
-optional-dependencies.test = [
+
+[project.optional-dependencies]
+
+test = [
     "pytest >= 6.0.1",
     "importlib-resources >= 1.4.0",
     "coverage[toml] >= 5.0.4",
     "pytest-cov >= 2.8.1",
 ]
 
-dynamic = ["version", "description"]
-
+doc = ["sphinx", "furo"]
 
 [tool.coverage]
 run.source = ["mousebender/"]
@@ -44,10 +48,4 @@ profile = "black"
 [tool.ruff]
 select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M"]
 ignore = ["E501", "D203", "D213", "ANN101"]
-per-file-ignores = { "tests/*" = [
-    "D",
-    "ANN",
-], "noxfile.py" = [
-    "ANN",
-    "A001",
-] }
+per-file-ignores = { "tests/*" = ["D", "ANN"], "noxfile.py" = ["ANN", "A001"] }

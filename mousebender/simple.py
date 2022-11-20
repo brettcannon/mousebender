@@ -1,12 +1,13 @@
-"""Implement the Simple Repository API.
+"""Utilities to help with Simple repository API responses.
 
-This encompasses PEPs:
+This module helps with the JSON-based Simple repository API by providing
+:class:`~typing.TypedDict` definitions for API responses. For HTML-based
+responses, functions are provided to convert the HTML to the equivalent JSON
+response.
 
-1. 503: Simple Repository API
-2. 592: Adding “Yank” Support to the Simple API
-3. 629: Versioning PyPI's Simple API
-4. 658: Serve Distribution Metadata in the Simple Repository API
-5. 691: JSON-based Simple API for Python Package Indexes
+This module implements :pep:`503`, :pep:`592`, :pep:`658`, and :pep:`691` of the
+:external:ref:`Simple repository API <simple-repository-api>` (it forgoes
+:pep:`629` as :pep:`691` makes it obsolete).
 
 """
 from __future__ import annotations
@@ -22,26 +23,11 @@ import packaging.utils
 # Python 3.8+ only.
 from typing_extensions import Literal, TypeAlias, TypedDict
 
-
-def create_project_url(base_url: str, project_name: str) -> str:
-    """Construct the project URL for a repository following PEP 503."""
-    if base_url and not base_url.endswith("/"):
-        base_url += "/"  # Normalize for easier use w/ str.join() later.
-    # PEP 503:
-    # The format of this URL is /<project>/ where the <project> is replaced by
-    # the normalized name for that project, so a project named "HolyGrail" would
-    # have a URL like /holygrail/.
-    #
-    # All URLs which respond with an HTML5 page MUST end with a / and the
-    # repository SHOULD redirect the URLs without a / to add a / to the end.
-    return "".join([base_url, packaging.utils.canonicalize_name(project_name), "/"])
-
-
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 
 
 class ProjectIndex_1_0(TypedDict):
-    """A TypedDict for API version 1.0 that represents a project index."""
+    """A :class:`~typing.TypedDict` for a project index (JSON v1.0)."""
 
     meta: _Meta_1_0
     projects: List[Dict[Literal["name"], str]]
@@ -49,7 +35,8 @@ class ProjectIndex_1_0(TypedDict):
 
 # Turn into a union when future API versions are supported.
 ProjectIndex: TypeAlias = ProjectIndex_1_0
-"""API version-agnostic type alias for a project index."""
+"""A :data:`~typing.TypeAlias` for any version of the JSON project
+index response."""
 
 
 _HashesDict: TypeAlias = Dict[str, str]
@@ -67,7 +54,8 @@ _OptionalProjectFileDetails = TypedDict(
 
 
 class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
-    """A TypedDict for API version 1.0 that represents a project file."""
+    """A :class:`~typing.TypedDict` for the ``files`` key of
+    :class:`ProjectDetails_1_0`."""
 
     filename: str
     url: str
@@ -75,7 +63,7 @@ class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
 
 
 class ProjectDetails_1_0(TypedDict):
-    """A TypedDict for API version 1.0 representing a project's details."""
+    """A :class:`~typing.TypedDict` for a project details response (JSON v1.0)."""
 
     meta: _Meta_1_0
     name: packaging.utils.NormalizedName
@@ -84,12 +72,11 @@ class ProjectDetails_1_0(TypedDict):
 
 # Turn into a union when future API versions are supported.
 ProjectDetails: TypeAlias = ProjectDetails_1_0
-"""API version-agnostic type alias for a project's details."""
+"""A :data:`~typing.TypeAlias` for any version of the JSON project details
+response."""
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
-    """Parse the HTML of a repository index page."""
-
     # PEP 503:
     # Within a repository, the root URL (/) MUST be a valid HTML5 page with a
     # single anchor element per project in the repository.
@@ -117,7 +104,7 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
 
 
 def from_project_index_html(html: str) -> ProjectIndex_1_0:
-    """Parse the HTML of a repository index page."""
+    """Convert the HTML response of a repository index page to a JSON v1.0 response."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(html)
     project_index: ProjectIndex = {
@@ -198,7 +185,26 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self.archive_links.append(args)
 
 
+def create_project_url(base_url: str, project_name: str) -> str:
+    """Construct the URL for a project hosted on a server at *base_url*."""
+    if base_url and not base_url.endswith("/"):
+        base_url += "/"  # Normalize for easier use w/ str.join() later.
+    # PEP 503:
+    # The format of this URL is /<project>/ where the <project> is replaced by
+    # the normalized name for that project, so a project named "HolyGrail" would
+    # have a URL like /holygrail/.
+    #
+    # All URLs which respond with an HTML5 page MUST end with a / and the
+    # repository SHOULD redirect the URLs without a / to add a / to the end.
+    return "".join([base_url, packaging.utils.canonicalize_name(project_name), "/"])
+
+
 def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
+    """Convert the HTML response for a project details page to a JSON v1.0 response.
+
+    Due to HTML project details pages lacking the name of the project, it must
+    be specified via the *name* parameter to fill in the JSON data.
+    """
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
     files: List[ProjectFileDetails_1_0] = []
