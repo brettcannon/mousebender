@@ -54,8 +54,7 @@ _OptionalProjectFileDetails = TypedDict(
 
 
 class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
-    """A :class:`~typing.TypedDict` for the ``files`` key of
-    :class:`ProjectDetails_1_0`."""
+    """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_0`."""
 
     filename: str
     url: str
