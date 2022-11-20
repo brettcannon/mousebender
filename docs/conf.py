@@ -7,8 +7,11 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import pathlib
-import tomllib
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 pyproject_path = pathlib.Path(__file__).parent.parent / "pyproject.toml"
 pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))

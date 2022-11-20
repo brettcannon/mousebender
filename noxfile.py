@@ -55,6 +55,13 @@ def check_code(session):
 
 
 @nox.session
+def docs(session):
+    """Build the documentation."""
+    session.install("-e", ".[doc]")
+    session.run("sphinx-build", "-W", "--keep-going", "docs", "docs/_build")
+
+
+@nox.session
 def build(session):
     """Build the wheel and sdist."""
     session.install("flit")

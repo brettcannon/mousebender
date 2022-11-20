@@ -22,30 +22,13 @@ jobs:
         run: |
           pipx run nox -s check_types
 
+      - name: Build docs
+        run: |
+          pipx run nox -s docs
+
       - name: Build wheel
         run: |
           pipx run nox -s build
-
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.x"
-          cache: "pip"
-          cache-dependency-path: "pyproject.toml"
-
-      - name: Install dependencies
-        run: pip install -e .[doc]
-
-      - name: Sphinx Build
-        uses: ammaraskar/sphinx-action@0.4
-        with:
-          docs-folder: "docs/"
 
   tests:
     name: Test Python ${{ matrix.python_version }}

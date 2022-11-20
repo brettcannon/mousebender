@@ -35,7 +35,7 @@ test = [
     "pytest-cov >= 2.8.1",
 ]
 
-doc = ["sphinx", "furo"]
+doc = ["sphinx", "furo", "tomli; python_version < '3.11'"]
 
 [tool.coverage]
 run.source = ["mousebender/"]
