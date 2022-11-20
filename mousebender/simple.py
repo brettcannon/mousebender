@@ -198,8 +198,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self.archive_links.append(args)
 
 
-def from_project_details_html(name: str, html: str) -> ProjectDetails_1_0:
-    """Parse the HTML of a project details page."""
+def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
     files: List[ProjectFileDetails_1_0] = []
