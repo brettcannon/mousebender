@@ -46,6 +46,6 @@ report.fail_under = 100
 profile = "black"
 
 [tool.ruff]
-select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M"]
+select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M", "I"]
 ignore = ["E501", "D203", "D213", "ANN101"]
 per-file-ignores = { "tests/*" = ["D", "ANN"], "noxfile.py" = ["ANN", "A001"] }
