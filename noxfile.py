@@ -50,7 +50,7 @@ def check_format(session):
 @nox.session
 def check_code(session):
     """Lint the code."""
-    session.install("ruff>0.0.132")
+    session.install("ruff>=0.0.132")
     session.run("ruff", "mousebender", "tests")
 
 
