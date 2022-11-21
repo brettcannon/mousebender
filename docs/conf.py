@@ -40,7 +40,7 @@ language = "en-ca"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # -- Options for autodoc ----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#configuration
@@ -67,5 +67,5 @@ extlinks = {
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "pypa": ("https://packaging.python.org/", None),
+    "pypa": ("https://packaging.python.org/en/latest/", None),
 }
