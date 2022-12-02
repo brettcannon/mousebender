@@ -14,10 +14,6 @@ readme = "README.rst"
 requires-python = ">=3.6"
 license = { file = "LICENSE" }
 keywords = ["packaging", "PEP 503", "PEP 592"]
-urls.homepage = "https://github.com/brettcannon/mousebender"
-urls.repository = "https://github.com/brettcannon/mousebender"
-urls.issues = "https://github.com/brettcannon/mousebender/issues"
-urls.documentation = "https://github.com/brettcannon/mousebender/blob/master/README.rst"
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "License :: OSI Approved :: BSD License",
@@ -36,6 +32,12 @@ test = [
 ]
 
 doc = ["sphinx", "furo", "tomli; python_version < '3.11'"]
+
+[project.urls]
+Documentation = "https://mousebender.readthedocs.io/"
+Changelog = "https://github.com/brettcannon/mousebender/blob/main/CHANGELOG.rst"
+Repository = "https://github.com/brettcannon/mousebender"
+Issues = "https://github.com/brettcannon/mousebender/issues"
 
 [tool.coverage]
 run.source = ["mousebender/"]
