@@ -35,7 +35,7 @@ doc = ["sphinx", "furo", "tomli; python_version < '3.11'"]
 
 [project.urls]
 Documentation = "https://mousebender.readthedocs.io/"
-Changelog = "https://github.com/brettcannon/mousebender/blob/main/CHANGELOG.rst"
+Changelog = "https://github.com/brettcannon/mousebender/releases"
 Repository = "https://github.com/brettcannon/mousebender"
 Issues = "https://github.com/brettcannon/mousebender/issues"
 
