@@ -10,7 +10,7 @@ authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
 ]
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.6"
 license = { file = "LICENSE" }
 keywords = ["packaging", "PEP 503", "PEP 592"]
