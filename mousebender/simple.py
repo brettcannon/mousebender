@@ -27,7 +27,7 @@ _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 
 
 class ProjectIndex_1_0(TypedDict):
-    """A :class:`~typing.TypedDict` for a project index (JSON v1.0)."""
+    """A :class:`~typing.TypedDict` for a project index (:pep:`691`)."""
 
     meta: _Meta_1_0
     projects: List[Dict[Literal["name"], str]]
@@ -62,7 +62,7 @@ class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
 
 
 class ProjectDetails_1_0(TypedDict):
-    """A :class:`~typing.TypedDict` for a project details response (JSON v1.0)."""
+    """A :class:`~typing.TypedDict` for a project details response (:pep:`691`)."""
 
     meta: _Meta_1_0
     name: packaging.utils.NormalizedName
@@ -103,7 +103,7 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
 
 
 def from_project_index_html(html: str) -> ProjectIndex_1_0:
-    """Convert the HTML response of a repository index page to a JSON v1.0 response."""
+    """Convert the HTML response of a repository index page to a :pep:`691` response."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(html)
     project_index: ProjectIndex = {
@@ -199,7 +199,7 @@ def create_project_url(base_url: str, project_name: str) -> str:
 
 
 def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
-    """Convert the HTML response for a project details page to a JSON v1.0 response.
+    """Convert the HTML response for a project details page to a :pep:`691` response.
 
     Due to HTML project details pages lacking the name of the project, it must
     be specified via the *name* parameter to fill in the JSON data.
