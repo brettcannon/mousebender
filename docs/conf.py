@@ -29,6 +29,8 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
+    "sphinx_copybutton",
+    "sphinx-prompt",
 ]
 
 templates_path = ["_templates"]

@@ -31,7 +31,13 @@ test = [
     "pytest-cov >= 2.8.1",
 ]
 
-doc = ["sphinx", "furo", "tomli; python_version < '3.11'"]
+doc = [
+    "sphinx",
+    "tomli; python_version < '3.11'",
+    "furo",
+    "sphinx-copybutton",
+    "sphinx-prompt",
+    ]
 
 [project.urls]
 Documentation = "https://mousebender.readthedocs.io/"
