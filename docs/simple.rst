@@ -5,6 +5,26 @@
 
 .. automodule:: mousebender.simple
 
+.. autodata:: ACCEPT_JSON_LATEST
+
+   .. versionadded:: 2022.1.0
+
+.. autodata:: ACCEPT_JSON_V1
+
+   .. versionadded:: 2022.1.0
+
+.. autodata:: ACCEPT_HTML
+
+   .. versionadded:: 2022.1.0
+
+.. autodata:: ACCEPT_SUPPORTED
+
+   .. versionadded:: 2022.1.0
+
+.. autoexception:: UnsupportedMIMEType
+
+   .. versionadded:: 2022.1.0
+
 .. autodata:: ProjectIndex_1_0
    :no-value:
 
@@ -39,3 +59,11 @@
 .. autofunction:: from_project_details_html
 
    .. versionadded:: 2022.0.0
+
+.. autofunction:: parse_project_index
+
+   .. versionadded:: 2022.1.0
+
+.. autofunction:: parse_project_details
+
+   .. versionadded:: 2022.1.0
