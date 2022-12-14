@@ -1,10 +1,58 @@
 """Tests for mousebender.simple."""
+import json
+
 import importlib_resources
 import pytest
 
 from mousebender import simple
 
 from .data import simple as simple_data
+
+INDEX_v1_EXAMPLE = """{
+  "meta": {
+    "api-version": "1.0"
+  },
+  "projects": [
+    {"name": "Frob"},
+    {"name": "spamspamspam"}
+  ]
+}"""
+
+INDEX_HTML_EXAMPLE = """<!DOCTYPE html>
+<html>
+  <body>
+    <a href="/frob/">Frob</a>
+    <a href="/spamspamspam/">spamspamspam</a>
+  </body>
+</html>"""
+
+DETAILS_V1_EXAMPLE = """{
+  "meta": {
+    "api-version": "1.0"
+  },
+  "name": "holygrail",
+  "files": [
+    {
+      "filename": "holygrail-1.0.tar.gz",
+      "url": "https://example.com/files/holygrail-1.0.tar.gz",
+      "hashes": {}
+    },
+    {
+      "filename": "holygrail-1.0-py3-none-any.whl",
+      "url": "https://example.com/files/holygrail-1.0-py3-none-any.whl",
+      "hashes": {}
+    }
+  ]
+}"""
+
+
+DETAILS_HTML_EXAMPLE = """<!DOCTYPE html>
+<html>
+  <body>
+    <a href="https://example.com/files/holygrail-1.0.tar.gz">holygrail-1.0.tar.gz</a>
+    <a href="https://example.com/files/holygrail-1.0-py3-none-any.whl">holygrail-1.0-py3-none-any.whl</a>
+  </body>
+</html>"""
 
 
 class TestProjectURLConstruction:
@@ -306,3 +354,43 @@ class TestPEP658Metadata:
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
         assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
+
+
+class TestParseProjectIndex:
+    def test_json(self):
+        index = simple.parse_project_index(INDEX_v1_EXAMPLE, simple.ACCEPT_JSON_V1)
+        assert index == json.loads(INDEX_v1_EXAMPLE)
+
+    @pytest.mark.parametrize(
+        ["content_type"],
+        [(content_type,) for content_type in simple._ACCEPT_HTML_VALUES],
+    )
+    def test_html(self, content_type):
+        index = simple.parse_project_index(INDEX_HTML_EXAMPLE, content_type)
+        assert index == json.loads(INDEX_v1_EXAMPLE)
+
+    def test_invalid_content_type(self):
+        with pytest.raises(simple.UnsupportedMIMEType):
+            simple.parse_project_index(INDEX_HTML_EXAMPLE, "invalid")
+
+
+class TestParseProjectDetails:
+    def test_json(self):
+        index = simple.parse_project_details(
+            DETAILS_V1_EXAMPLE, simple.ACCEPT_JSON_V1, "holygrail"
+        )
+        assert index == json.loads(DETAILS_V1_EXAMPLE)
+
+    @pytest.mark.parametrize(
+        ["content_type"],
+        [(content_type,) for content_type in simple._ACCEPT_HTML_VALUES],
+    )
+    def test_html(self, content_type):
+        index = simple.parse_project_details(
+            DETAILS_HTML_EXAMPLE, content_type, "holygrail"
+        )
+        assert index == json.loads(DETAILS_V1_EXAMPLE)
+
+    def test_invalid_content_type(self):
+        with pytest.raises(simple.UnsupportedMIMEType):
+            simple.parse_project_details(INDEX_HTML_EXAMPLE, "invalid", "holygrail")

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import html
 import html.parser
+import json
 import urllib.parse
 from typing import Any, Dict, List, Optional, Union
 
@@ -22,6 +23,34 @@ import packaging.utils
 
 # Python 3.8+ only.
 from typing_extensions import Literal, TypeAlias, TypedDict
+
+ACCEPT_JSON_LATEST = "application/vnd.pypi.simple.latest+json"
+"""The ``Accept`` header value for the latest version of the JSON API.
+
+Use of this value is generally discouraged as major versions of the JSON API are
+not guaranteed to be backwards compatible, and thus may result in a response
+that code cannot handle.
+
+"""
+ACCEPT_JSON_V1 = "application/vnd.pypi.simple.v1+json"
+"""The ``Accept`` header value for version 1 of the JSON API."""
+_ACCEPT_HTML_VALUES = ["application/vnd.pypi.simple.v1+html", "text/html"]
+ACCEPT_HTML = f"{_ACCEPT_HTML_VALUES[0]}, {_ACCEPT_HTML_VALUES[1]};q=0.01"
+"""The ``Accept`` header value for the HTML API."""
+ACCEPT_SUPPORTED = ", ".join(
+    [
+        ACCEPT_JSON_V1,
+        f"{_ACCEPT_HTML_VALUES[0]};q=0.02",
+        f"{_ACCEPT_HTML_VALUES[1]};q=0.01",
+    ]
+)
+"""The ``Accept`` header for the MIME types that :func:`parse_project_index` and
+:func:`parse_project_details` support."""
+
+
+class UnsupportedMIMEType(Exception):
+    """An unsupported MIME type was provided in a ``Content-Type`` header."""
+
 
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 
@@ -230,3 +259,41 @@ def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
         "name": packaging.utils.canonicalize_name(name),
         "files": files,
     }
+
+
+def parse_project_index(data: str, content_type: str) -> ProjectIndex:
+    """Parse an HTTP response for a project index.
+
+    The text of the body and ``Content-Type`` header are expected to be passed
+    in as *data* and *content_type* respectively. This allows for the user to
+    not have to concern themselves with what form the response came back in.
+
+    If the specified *content_type* is not supported,
+    :exc:`UnsupportedMIMEType` is raised.
+    """
+    if content_type == ACCEPT_JSON_V1:
+        return json.loads(data)
+    elif any(content_type.startswith(mime_type) for mime_type in _ACCEPT_HTML_VALUES):
+        return from_project_index_html(data)
+    else:
+        raise UnsupportedMIMEType(f"Unsupported MIME type: {content_type}")
+
+
+def parse_project_details(data: str, content_type: str, name: str) -> ProjectDetails:
+    """Parse an HTTP response for a project's details.
+
+    The text of the body and ``Content-Type`` header are expected to be passed
+    in as *data* and *content_type* respectively. This allows for the user to
+    not have to concern themselves with what form the response came back in.
+    The *name* parameter is for the name of the projet whose details have been
+    fetched.
+
+    If the specified *content_type* is not supported,
+    :exc:`UnsupportedMIMEType` is raised.
+    """
+    if content_type == ACCEPT_JSON_V1:
+        return json.loads(data)
+    elif any(content_type.startswith(mime_type) for mime_type in _ACCEPT_HTML_VALUES):
+        return from_project_details_html(data, name)
+    else:
+        raise UnsupportedMIMEType(f"Unsupported MIME type: {content_type}")
