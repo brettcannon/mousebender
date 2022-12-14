@@ -369,6 +369,10 @@ class TestParseProjectIndex:
         index = simple.parse_project_index(INDEX_HTML_EXAMPLE, content_type)
         assert index == json.loads(INDEX_v1_EXAMPLE)
 
+    def test_invalid_content_type(self):
+        with pytest.raises(simple.UnsupportedMIMEType):
+            simple.parse_project_index(INDEX_HTML_EXAMPLE, "invalid")
+
 
 class TestParseProjectDetails:
     def test_json(self):
@@ -386,3 +390,7 @@ class TestParseProjectDetails:
             DETAILS_HTML_EXAMPLE, content_type, "holygrail"
         )
         assert index == json.loads(DETAILS_V1_EXAMPLE)
+
+    def test_invalid_content_type(self):
+        with pytest.raises(simple.UnsupportedMIMEType):
+            simple.parse_project_details(INDEX_HTML_EXAMPLE, "invalid", "holygrail")
