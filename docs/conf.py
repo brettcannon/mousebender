@@ -18,7 +18,7 @@ pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
 
 project = pyproject["project"]["name"]
 author = ", ".join(author["name"] for author in pyproject["project"]["authors"])
-copyright = f"2022, {author}"
+copyright = f"2022, {author}"  # noqa: A001
 version = release = pyproject["project"]["version"]
 
 # -- General configuration ---------------------------------------------------

@@ -49,7 +49,6 @@ ACCEPT_SUPPORTED = ", ".join(
 
 
 class UnsupportedMIMEType(Exception):
-
     """An unsupported MIME type was provided in a ``Content-Type`` header."""
 
 
