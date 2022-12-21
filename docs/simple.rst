@@ -30,23 +30,43 @@
 
    .. versionadded:: 2022.0.0
 
+
+.. autodata:: ProjectIndex_1_1
+   :no-value:
+
+   .. versionadded:: 2022.1.0
+
 .. autodata:: ProjectIndex
 
    .. versionadded:: 2022.0.0
+   .. versionchanged:: 2022.1.0
+      Added :data:`ProjectIndex_1_1`.
 
 .. autodata:: ProjectFileDetails_1_0
    :no-value:
 
    .. versionadded:: 2022.0.0
 
+.. autodata:: ProjectFileDetails_1_1
+   :no-value:
+
+   .. versionadded:: 2022.1.0
+
 .. autodata:: ProjectDetails_1_0
    :no-value:
 
    .. versionadded:: 2022.0.0
 
+.. autodata:: ProjectDetails_1_1
+   :no-value:
+
+   .. versionadded:: 2022.1.0
+
 .. autodata:: ProjectDetails
 
    .. versionadded:: 2022.0.0
+   .. versionchanged:: 2022.1.0
+      Added :data:`ProjectDetails_1_1`.
 
 .. autofunction:: from_project_index_html
 
