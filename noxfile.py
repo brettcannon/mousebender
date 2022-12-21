@@ -26,9 +26,9 @@ def coverage(session):
 @nox.session
 def check_types(session):
     """Type check."""
-    session.install("-e", ".")
+    session.install("-e", ".[test]")
     session.install("mypy")
-    session.run("mypy", "mousebender")
+    session.run("mypy", "mousebender", "tests")
 
 
 @nox.session
