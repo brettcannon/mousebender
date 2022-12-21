@@ -53,6 +53,7 @@ class UnsupportedMIMEType(Exception):
 
 
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
+_Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
 
 
 class ProjectIndex_1_0(TypedDict):
@@ -62,16 +63,20 @@ class ProjectIndex_1_0(TypedDict):
     projects: List[Dict[Literal["name"], str]]
 
 
-# Turn into a union when future API versions are supported.
-ProjectIndex: TypeAlias = ProjectIndex_1_0
-"""A :data:`~typing.TypeAlias` for any version of the JSON project
-index response."""
+class ProjectIndex_1_1(TypedDict):
+    """A :class:`~typing.TypedDict` for a project index (:pep:`700`)."""
+
+    meta: _Meta_1_1
+    projects: List[Dict[Literal["name"], str]]
+
+
+ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1]
 
 
 _HashesDict: TypeAlias = Dict[str, str]
 
-_OptionalProjectFileDetails = TypedDict(
-    "_OptionalProjectFileDetails",
+_OptionalProjectFileDetails_1_0 = TypedDict(
+    "_OptionalProjectFileDetails_1_0",
     {
         "requires-python": str,
         "dist-info-metadata": Union[bool, _HashesDict],
@@ -82,12 +87,36 @@ _OptionalProjectFileDetails = TypedDict(
 )
 
 
-class ProjectFileDetails_1_0(_OptionalProjectFileDetails):
+class ProjectFileDetails_1_0(_OptionalProjectFileDetails_1_0):
     """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_0`."""
 
     filename: str
     url: str
     hashes: _HashesDict
+
+
+_OptionalProjectFileDetails_1_1 = TypedDict(
+    "_OptionalProjectFileDetails_1_1",
+    {
+        "requires-python": str,
+        "dist-info-metadata": Union[bool, _HashesDict],
+        "gpg-sig": bool,
+        "yanked": Union[bool, str],
+        # PEP 700
+        "upload-time": str,
+    },
+    total=False,
+)
+
+
+class ProjectFileDetails_1_1(_OptionalProjectFileDetails_1_1):
+    """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_1`."""
+
+    filename: str
+    url: str
+    hashes: _HashesDict
+    # PEP 700
+    size: int
 
 
 class ProjectDetails_1_0(TypedDict):
@@ -98,10 +127,17 @@ class ProjectDetails_1_0(TypedDict):
     files: list[ProjectFileDetails_1_0]
 
 
-# Turn into a union when future API versions are supported.
-ProjectDetails: TypeAlias = ProjectDetails_1_0
-"""A :data:`~typing.TypeAlias` for any version of the JSON project details
-response."""
+class ProjectDetails_1_1(TypedDict):
+    """A :class:`~typing.TypedDict` for a project details response (:pep:`700`)."""
+
+    meta: _Meta_1_1
+    name: packaging.utils.NormalizedName
+    files: list[ProjectFileDetails_1_1]
+    # PEP 700
+    versions: List[str]
+
+
+ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
@@ -135,7 +171,7 @@ def from_project_index_html(html: str) -> ProjectIndex_1_0:
     """Convert the HTML response of a repository index page to a :pep:`691` response."""
     parser = _SimpleIndexHTMLParser()
     parser.feed(html)
-    project_index: ProjectIndex = {
+    project_index: ProjectIndex_1_0 = {
         "meta": {"api-version": "1.0"},
         "projects": [{"name": name} for name in parser.names],
     }
