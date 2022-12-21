@@ -36,7 +36,9 @@
 
    .. versionadded:: 2022.1.0
 
-.. autodata:: ProjectIndex
+.. data:: ProjectIndex
+
+   A :data:`~typing.TypeAlias` for any version of the JSON project index response.
 
    .. versionadded:: 2022.0.0
    .. versionchanged:: 2022.1.0
@@ -62,7 +64,9 @@
 
    .. versionadded:: 2022.1.0
 
-.. autodata:: ProjectDetails
+.. data:: ProjectDetails
+
+   A :data:`~typing.TypeAlias` for any version of the JSON project details response.
 
    .. versionadded:: 2022.0.0
    .. versionchanged:: 2022.1.0

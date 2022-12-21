@@ -70,9 +70,7 @@ class ProjectIndex_1_1(TypedDict):
     projects: List[Dict[Literal["name"], str]]
 
 
-# Turn into a union when future API versions are supported.
 ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1]
-"""A :data:`~typing.TypeAlias` for any version of the JSON project index response."""
 
 
 _HashesDict: TypeAlias = Dict[str, str]
@@ -139,9 +137,7 @@ class ProjectDetails_1_1(TypedDict):
     versions: List[str]
 
 
-# Turn into a union when future API versions are supported.
 ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
-"""A :data:`~typing.TypeAlias` for any version of the JSON project details response."""
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
