@@ -1,0 +1,24 @@
+# Workflow that ensures our PRs have an appropriate label applied to them.
+# These labels help us determine if each release is a major (breaking), 
+# minor (new feature added), or patch (bug- or security-fix) release.
+
+name: 'PR labels'
+on:
+  pull_request:
+    types:
+      - 'opened'
+      - 'reopened'
+      - 'labeled'
+      - 'unlabeled'
+
+jobs:
+  classify:
+    name: 'Classify PR'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'PR impact specified'
+        uses: mheap/github-action-required-labels@v2
+        with:
+          mode: exactly
+          count: 1
+          labels: 'impact-breaking, impact-feature, impact-bug, impact-project'
