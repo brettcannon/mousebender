@@ -18,7 +18,6 @@ import json
 import urllib.parse
 from typing import Any, Dict, List, Optional, Union
 
-import packaging.specifiers
 import packaging.utils
 
 # Python 3.8+ only.
