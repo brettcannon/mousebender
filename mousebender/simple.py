@@ -5,9 +5,9 @@ This module helps with the JSON-based Simple repository API by providing
 responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
-This module implements :pep:`503`, :pep:`592`, :pep:`658`, and :pep:`691` of the
-:external:ref:`Simple repository API <simple-repository-api>` (it forgoes
-:pep:`629` as :pep:`691` makes it obsolete).
+This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
+:pep:`691`, and :pep:`700`of the
+:external:ref:`Simple repository API <simple-repository-api>`.
 
 """
 from __future__ import annotations
