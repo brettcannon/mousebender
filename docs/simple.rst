@@ -21,6 +21,15 @@
 
    .. versionadded:: 2022.1.0
 
+.. autoexception:: UnsupportedAPIVersion
+
+   .. versionadded:: 2023.0.0
+
+
+.. autoexception:: APIVersionWarning
+
+   .. versionadded:: 2023.0.0
+
 .. autoexception:: UnsupportedMIMEType
 
    .. versionadded:: 2022.1.0

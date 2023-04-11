@@ -47,6 +47,20 @@ ACCEPT_SUPPORTED = ", ".join(
 :func:`parse_project_details` support."""
 
 
+class UnsupportedAPIVersion(Exception):
+    """The major version of an API response is not supported."""
+
+    def __init__(self, version: str) -> None:
+        super().__init__(f"Unsupported API major version: {version!r}")
+
+
+class APIVersionWarning(Warning):
+    """The minor verison of an API response is not supported."""
+
+    def __init__(self, version: str) -> None:
+        super().__init__(f"Unsupported API minor version: {version!r}")
+
+
 class UnsupportedMIMEType(Exception):
     """An unsupported MIME type was provided in a ``Content-Type`` header."""
 
