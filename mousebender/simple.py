@@ -156,11 +156,12 @@ class ProjectDetails_1_1(TypedDict):
 ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
 
 
-def _check_version(tag: str, attrs: Dict[str, str]) -> None:
+def _check_version(tag: str, attrs: Dict[str, Optional[str]]) -> None:
     if (
         tag == "meta"
         and attrs.get("name") == "pypi:repository-version"
         and "content" in attrs
+        and attrs["content"]
     ):
         version = attrs["content"]
         major_version, minor_version = map(int, version.split("."))
