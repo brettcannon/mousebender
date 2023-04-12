@@ -52,6 +52,7 @@ class UnsupportedAPIVersion(Exception):
     """The major version of an API response is not supported."""
 
     def __init__(self, version: str) -> None:
+        """Initialize the exception with a message based on the provided version."""
         super().__init__(f"Unsupported API major version: {version!r}")
 
 
@@ -59,6 +60,7 @@ class APIVersionWarning(Warning):
     """The minor version of an API response is not supported."""
 
     def __init__(self, version: str) -> None:
+        """Initialize the warning with a message based on the provided version."""
         super().__init__(f"Unsupported API minor version: {version!r}")
 
 
