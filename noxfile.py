@@ -3,7 +3,7 @@
 All sessions prefixed with `check_` are non-destructive.
 
 """
-import nox
+import nox  # type: ignore[import]
 
 python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 

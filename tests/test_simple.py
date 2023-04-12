@@ -1,5 +1,6 @@
 """Tests for mousebender.simple."""
 import json
+import warnings
 from typing import Dict, Union
 
 import importlib_resources
@@ -329,6 +330,55 @@ class TestProjectDetailsParsing:
         details = simple.from_project_details_html(html, "test_yanked")
         assert len(details["files"]) == 1
         assert details["files"][0].get("yanked") == expected
+
+
+class TestPEP629Versioning:
+    @pytest.mark.parametrize(["version"], [("",), ("1.0",), ("1.1",)])
+    def test_supported_versions(self, version):
+        if not version:
+            meta_tag = ""
+        else:
+            meta_tag = f'<meta name="pypi:repository-version" content="{version}">'
+
+        index_html = (
+            f"<!DOCTYPE html><html><head>{meta_tag}</head>"
+            '<body><a href="/spamspamspam/">spamspamspam</a></body></html>'
+        )
+
+        assert simple.from_project_index_html(index_html)
+
+        details_html = (
+            f"<!DOCTYPE html><html><head>{meta_tag}</head>"
+            '<body><a href="mousebender-2022.1.0-py3-none-any.whl">'
+            "mousebender-2022.1.0-py3-none-any.whl/a></body></html>"
+        )
+
+        assert simple.from_project_details_html(details_html, "mousebender")
+
+    @pytest.mark.parametrize(["version"], [("0.1",), ("2.0",), ("2.1",), ("10.0",)])
+    def test_unsupported_major_versions(self, version):
+        meta_tag = f'<meta name="pypi:repository-version" content="{version}">'
+        index_html = (
+            f"<!DOCTYPE html><html><head>{meta_tag}</head>"
+            '<body><a href="/spamspamspam/">spamspamspam</a></body></html>'
+        )
+
+        with pytest.raises(simple.UnsupportedAPIVersion):
+            simple.from_project_index_html(index_html)
+
+    @pytest.mark.parametrize(["minor_version"], [("2",), ("10",)])
+    def test_unsupported_minor_version(self, minor_version):
+        meta_tag = f'<meta name="pypi:repository-version" content="1.{minor_version}">'
+        details_html = (
+            f"<!DOCTYPE html><html><head>{meta_tag}</head>"
+            '<body><a href="mousebender-2022.1.0-py3-none-any.whl">'
+            "mousebender-2022.1.0-py3-none-any.whl/a></body></html>"
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with pytest.raises(simple.APIVersionWarning):
+                simple.from_project_details_html(details_html, "mousebender")
 
 
 class TestPEP658Metadata:

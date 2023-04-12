@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "mousebender"
-version = "2022.1.0"
+version = "2023.0.0"
 authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
@@ -54,7 +54,7 @@ report.fail_under = 100
 profile = "black"
 
 [tool.ruff]
-select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "I"]
+select = ["E", "F", "W", "D", "B", "A", "ANN", "RUF", "I"]
 ignore = ["E501", "D203", "D213", "ANN101"]
 
 [tool.ruff.per-file-ignores]

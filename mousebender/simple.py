@@ -5,9 +5,9 @@ This module helps with the JSON-based Simple repository API by providing
 responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
-This module implements :pep:`503`, :pep:`592`, :pep:`658`, and :pep:`691` of the
-:external:ref:`Simple repository API <simple-repository-api>` (it forgoes
-:pep:`629` as :pep:`691` makes it obsolete).
+This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
+:pep:`691`, and :pep:`700` of the
+:external:ref:`Simple repository API <simple-repository-api>`.
 
 """
 from __future__ import annotations
@@ -16,6 +16,7 @@ import html
 import html.parser
 import json
 import urllib.parse
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import packaging.utils
@@ -45,6 +46,22 @@ ACCEPT_SUPPORTED = ", ".join(
 )
 """The ``Accept`` header for the MIME types that :func:`parse_project_index` and
 :func:`parse_project_details` support."""
+
+
+class UnsupportedAPIVersion(Exception):
+    """The major version of an API response is not supported."""
+
+    def __init__(self, version: str) -> None:
+        """Initialize the exception with a message based on the provided version."""
+        super().__init__(f"Unsupported API major version: {version!r}")
+
+
+class APIVersionWarning(Warning):
+    """The minor version of an API response is not supported."""
+
+    def __init__(self, version: str) -> None:
+        """Initialize the warning with a message based on the provided version."""
+        super().__init__(f"Unsupported API minor version: {version!r}")
 
 
 class UnsupportedMIMEType(Exception):
@@ -139,6 +156,21 @@ class ProjectDetails_1_1(TypedDict):
 ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
 
 
+def _check_version(tag: str, attrs: Dict[str, Optional[str]]) -> None:
+    if (
+        tag == "meta"
+        and attrs.get("name") == "pypi:repository-version"
+        and "content" in attrs
+        and attrs["content"]
+    ):
+        version = attrs["content"]
+        major_version, minor_version = map(int, version.split("."))
+        if major_version != 1:
+            raise UnsupportedAPIVersion(version)
+        elif minor_version > 1:
+            warnings.warn(APIVersionWarning(version), stacklevel=7)
+
+
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
     # PEP 503:
     # Within a repository, the root URL (/) MUST be a valid HTML5 page with a
@@ -150,8 +182,9 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
         self.names: List[str] = []
 
     def handle_starttag(
-        self, tag: str, _attrs_list: list[tuple[str, Optional[str]]]
+        self, tag: str, attrs_list: list[tuple[str, Optional[str]]]
     ) -> None:
+        _check_version(tag, dict(attrs_list))
         if tag != "a":
             return
         self._parsing_anchor = True
@@ -186,6 +219,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self, tag: str, attrs_list: list[tuple[str, Optional[str]]]
     ) -> None:
         attrs = dict(attrs_list)
+        _check_version(tag, attrs)
         if tag != "a":
             return
         # PEP 503:
