@@ -157,14 +157,17 @@ ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
 
 
 def _check_version(tag: str, attrs: Dict[str, str]) -> None:
-    if tag == "meta" and attrs.get("name") == "pypi:repository-version":
-        if "content" in attrs:
-            version = attrs["content"]
-            major_version, minor_version = map(int, version.split("."))
-            if major_version != 1:
-                raise UnsupportedAPIVersion(version)
-            elif minor_version > 1:
-                warnings.warn(APIVersionWarning(version), stacklevel=7)
+    if (
+        tag == "meta"
+        and attrs.get("name") == "pypi:repository-version"
+        and "content" in attrs
+    ):
+        version = attrs["content"]
+        major_version, minor_version = map(int, version.split("."))
+        if major_version != 1:
+            raise UnsupportedAPIVersion(version)
+        elif minor_version > 1:
+            warnings.warn(APIVersionWarning(version), stacklevel=7)
 
 
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
