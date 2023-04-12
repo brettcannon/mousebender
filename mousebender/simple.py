@@ -6,7 +6,7 @@ responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
 This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
-:pep:`691`, and :pep:`700`of the
+:pep:`691`, and :pep:`700` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
 """
