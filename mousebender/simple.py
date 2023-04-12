@@ -16,6 +16,7 @@ import html
 import html.parser
 import json
 import urllib.parse
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import packaging.utils
@@ -55,7 +56,7 @@ class UnsupportedAPIVersion(Exception):
 
 
 class APIVersionWarning(Warning):
-    """The minor verison of an API response is not supported."""
+    """The minor version of an API response is not supported."""
 
     def __init__(self, version: str) -> None:
         super().__init__(f"Unsupported API minor version: {version!r}")
@@ -153,6 +154,17 @@ class ProjectDetails_1_1(TypedDict):
 ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
 
 
+def _check_version(tag: str, attrs: Dict[str, str]) -> None:
+    if tag == "meta" and attrs.get("name") == "pypi:repository-version":
+        if "content" in attrs:
+            version = attrs["content"]
+            major_version, minor_version = map(int, version.split("."))
+            if major_version != 1:
+                raise UnsupportedAPIVersion(version)
+            elif minor_version > 1:
+                warnings.warn(APIVersionWarning(version), stacklevel=7)
+
+
 class _SimpleIndexHTMLParser(html.parser.HTMLParser):
     # PEP 503:
     # Within a repository, the root URL (/) MUST be a valid HTML5 page with a
@@ -164,8 +176,9 @@ class _SimpleIndexHTMLParser(html.parser.HTMLParser):
         self.names: List[str] = []
 
     def handle_starttag(
-        self, tag: str, _attrs_list: list[tuple[str, Optional[str]]]
+        self, tag: str, attrs_list: list[tuple[str, Optional[str]]]
     ) -> None:
+        _check_version(tag, dict(attrs_list))
         if tag != "a":
             return
         self._parsing_anchor = True
@@ -200,6 +213,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         self, tag: str, attrs_list: list[tuple[str, Optional[str]]]
     ) -> None:
         attrs = dict(attrs_list)
+        _check_version(tag, attrs)
         if tag != "a":
             return
         # PEP 503:

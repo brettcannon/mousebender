@@ -363,7 +363,7 @@ class TestPEP629Versioning:
             '<body><a href="/spamspamspam/">spamspamspam</a></body></html>'
         )
 
-        with pytest.raises(simple.UnsupportedRepositoryVersion):
+        with pytest.raises(simple.UnsupportedAPIVersion):
             simple.from_project_index_html(index_html)
 
     @pytest.mark.parametrize(["minor_version"], [("2",), ("10",)])
