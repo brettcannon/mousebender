@@ -354,7 +354,7 @@ def parse_project_details(data: str, content_type: str, name: str) -> ProjectDet
     The text of the body and ``Content-Type`` header are expected to be passed
     in as *data* and *content_type* respectively. This allows for the user to
     not have to concern themselves with what form the response came back in.
-    The *name* parameter is for the name of the projet whose details have been
+    The *name* parameter is for the name of the project whose details have been
     fetched.
 
     If the specified *content_type* is not supported,
