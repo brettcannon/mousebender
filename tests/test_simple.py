@@ -401,8 +401,8 @@ class TestPEP658Metadata:
     @pytest.mark.parametrize(
         "attribute",
         [
-            'data-dist-info-metadata="sha256=abcdef"',
-            'data-dist-info-metadata="SHA256=abcdef"',
+            'data-core-metadata="sha256=abcdef"',
+            'data-core-metadata="SHA256=abcdef"',
         ],
     )
     def test_hash(self, attribute: str):
