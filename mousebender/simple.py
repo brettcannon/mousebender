@@ -267,9 +267,9 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         #   The PEP 658 metadata, when used in the HTML representation of the Simple
         #   API, MUST be emitted using the attribute name data-core-metadata, with
         #   the supported values remaining the same.
-        found_metadata = ""
+        found_metadata: str = ""
         if "data-core-metadata" in attrs:
-            found_metadata = attrs.get("data-core-metadata")
+            found_metadata = attrs.get("data-core-metadata", "") or ""
 
             # Addendum: PEP 714
             #   ...To support clients that used the previous key names, the HTML
