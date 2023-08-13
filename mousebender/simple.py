@@ -271,31 +271,31 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         if "data-core-metadata" in attrs:
             found_metadata = attrs.get("data-core-metadata")
 
-        # Addendum: PEP 714
-        #   ...To support clients that used the previous key names, the HTML
-        #   representation MAY also be emitted using the data-dist-info-metadata, and
-        #   if it does so it MUST match the value of data-core-metadata.
-        if ("data-dist-info-metadata" in attrs) and (
-            found_metadata != attrs.get("data-dist-info-metadata")
-        ):
-            # Because of the use of MUST we will throw an exception in this case.
-            raise ValueError(
-                "PEP 714 Violation. `data-dist-info-metadata` is present in package ",
-                "metadata, but it does not match the value given in `data-core-metadata`",
-            )
+            # Addendum: PEP 714
+            #   ...To support clients that used the previous key names, the HTML
+            #   representation MAY also be emitted using the data-dist-info-metadata, and
+            #   if it does so it MUST match the value of data-core-metadata.
+            if ("data-dist-info-metadata" in attrs) and (
+                found_metadata != attrs.get("data-dist-info-metadata")
+            ):
+                # Because of the use of MUST we will throw an exception in this case.
+                raise ValueError(
+                    "PEP 714 Violation. `data-dist-info-metadata` is present in package ",
+                    "metadata, but it does not match the value given in `data-core-metadata`",
+                )
 
-        if found_metadata and found_metadata != "true":
-            # The repository SHOULD provide the hash of the Core Metadata
-            # file as the data-dist-info-metadata attribute's value using
-            # the syntax <hashname>=<hashvalue>, where <hashname> is the
-            # lower cased name of the hash function used, and <hashvalue> is
-            # the hex encoded digest.
-            algorithm, _, hash_ = found_metadata.partition("=")
-            metadata = (algorithm.lower(), hash_)
-        else:
-            # The repository MAY use true as the attribute's value if a hash
-            # is unavailable.
-            metadata = "", ""
+            if found_metadata and found_metadata != "true":
+                # The repository SHOULD provide the hash of the Core Metadata
+                # file as the data-dist-info-metadata attribute's value using
+                # the syntax <hashname>=<hashvalue>, where <hashname> is the
+                # lower cased name of the hash function used, and <hashvalue> is
+                # the hex encoded digest.
+                algorithm, _, hash_ = found_metadata.partition("=")
+                metadata = (algorithm.lower(), hash_)
+            else:
+                # The repository MAY use true as the attribute's value if a hash
+                # is unavailable.
+                metadata = "", ""
             args["metadata"] = metadata
 
         self.archive_links.append(args)
