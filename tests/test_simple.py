@@ -396,7 +396,7 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute} >spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
-        assert details["files"][0]["dist-info-metadata"] is True
+        assert details["files"][0]["core-metadata"] is True
 
     @pytest.mark.parametrize(
         "attribute",
@@ -409,7 +409,7 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
-        assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
+        assert details["files"][0]["core-metadata"] == {"sha256": "abcdef"}
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
     # allowing for its presence. The original named attribute being present without the
@@ -427,7 +427,7 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
-        assert "dist-info-metadata" not in details["files"][0]
+        assert "core-metadata" not in details["files"][0]
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
     # allowing for its presence. The original named attribute being present as well as
@@ -453,7 +453,7 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attr_pep_658} {attr_pep_714}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
-        assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
+        assert details["files"][0]["core-metadata"] == {"sha256": "abcdef"}
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
     # allowing for its presence. The original named attribute being present as well as
@@ -479,7 +479,7 @@ class TestPEP658Metadata:
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attr_pep_658} {attr_pep_714}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
-        assert details["files"][0]["dist-info-metadata"] == True
+        assert details["files"][0]["core-metadata"] == True
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
     # allowing for its presence. The original named attribute being present as well as

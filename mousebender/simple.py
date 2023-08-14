@@ -6,7 +6,7 @@ responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
 This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
-:pep:`691`, and :pep:`700` of the
+:pep:`691`, :pep:`700`, and :pep:`714` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
 """
@@ -74,6 +74,7 @@ class InvalidDistroMetadata(Exception):
 
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 _Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
+_Meta_1_2 = TypedDict("_Meta_1_2", {"api-version": Literal["1.2"]})
 
 
 class ProjectIndex_1_0(TypedDict):
@@ -128,7 +129,6 @@ _OptionalProjectFileDetails_1_1 = TypedDict(
     total=False,
 )
 
-
 class ProjectFileDetails_1_1(_OptionalProjectFileDetails_1_1):
     """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_1`."""
 
@@ -136,6 +136,27 @@ class ProjectFileDetails_1_1(_OptionalProjectFileDetails_1_1):
     url: str
     hashes: _HashesDict
     # PEP 700
+    size: int
+
+_OptionalProjectFileDetails_1_2 = TypedDict(
+    "_OptionalProjectFileDetails_1_2",
+    {
+        "requires-python": str,
+        # PEP 714
+        "core-metadata": Union[bool, _HashesDict],
+        "dist-info-metadata": Union[bool, _HashesDict],
+        "gpg-sig": bool,
+        "yanked": Union[bool, str],
+    },
+    total=False,
+)
+
+class ProjectFileDetails_1_2(_OptionalProjectFileDetails_1_2):
+    """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_2`."""
+
+    filename: str
+    url: str
+    hashes: _HashesDict
     size: int
 
 
@@ -156,8 +177,15 @@ class ProjectDetails_1_1(TypedDict):
     # PEP 700
     versions: List[str]
 
+class ProjectDetails_1_2(TypedDict):
+    """A :class:`~typing.TypedDict` for a project details response (:pep:`714`)."""
 
-ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
+    meta: _Meta_1_2
+    name: packaging.utils.NormalizedName
+    files: list[ProjectFileDetails_1_2]
+    versions: List[str]
+
+ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1, ProjectDetails_1_2]
 
 
 def _check_version(tag: str, attrs: Dict[str, Optional[str]]) -> None:
@@ -338,9 +366,9 @@ def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
         if "metadata" in archive_link:
             algorithm, value = archive_link["metadata"]
             if algorithm:
-                details["dist-info-metadata"] = {algorithm: value}
+                details["core-metadata"] = {algorithm: value}
             else:
-                details["dist-info-metadata"] = True
+                details["core-metadata"] = True
         for key in {"requires-python", "yanked", "gpg-sig"}:
             if key in archive_link:
                 details[key] = archive_link[key]  # type: ignore

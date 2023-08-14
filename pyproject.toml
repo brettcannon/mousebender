@@ -13,7 +13,15 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.7"
 license = { file = "LICENSE" }
-keywords = ["packaging", "Simple Repository API", "PEP 503", "PEP 592", "PEP 658", "PEP 691"]
+keywords = [
+    "packaging",
+    "Simple Repository API",
+    "PEP 503",
+    "PEP 592",
+    "PEP 658",
+    "PEP 691",
+    "PEP 714",
+]
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "License :: OSI Approved :: BSD License",
@@ -37,7 +45,7 @@ doc = [
     "furo",
     "sphinx-copybutton",
     "sphinx-prompt",
-    ]
+]
 
 [project.urls]
 Documentation = "https://mousebender.readthedocs.io/"
