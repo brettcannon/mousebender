@@ -280,7 +280,7 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
             #   representation MAY also be emitted using the data-dist-info-metadata, and
             #   if it does so it MUST match the value of data-core-metadata.
             if ("data-dist-info-metadata" in attrs) and (
-                found_metadata != attrs.get("data-dist-info-metadata")
+                found_metadata != (attrs.get("data-dist-info-metadata") or "")
             ):
                 # Because of the use of MUST we will throw an exception in this case.
                 raise InvalidDistroMetadata(

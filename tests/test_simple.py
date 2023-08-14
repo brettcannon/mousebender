@@ -419,6 +419,8 @@ class TestPEP658Metadata:
         [
             'data-dist-info-metadata="sha256=abcdef"',
             'data-dist-info-metadata="SHA256=abcdef"',
+            'data-dist-info-metadata',
+            'data-dist-info-metadata=True',
         ],
     )
     def test_ignore_pep_658_dist_info_metadata_attr_name(self, attribute: str):
@@ -430,8 +432,8 @@ class TestPEP658Metadata:
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
     # allowing for its presence. The original named attribute being present as well as
     # the new named metadata should ensure that the values of the two match completely.
-    # This test ensures that if the two are equal the parsing completes successfully and
-    # captures the value properly.
+    # This test ensures that if the two contain a hash value, they are equal and the
+    # parsing completes successfully and captures the value properly.
     @pytest.mark.parametrize(
         ["attr_pep_658", "attr_pep_714"],
         [
@@ -445,13 +447,39 @@ class TestPEP658Metadata:
             ),
         ],
     )
-    def test_hash_with_both_pep_658_and_pep_714_metadata_attr_names_matching_values(
+    def test_hash_with_both_pep_658_and_pep_714_metadata_attr_names_matching_hash_values(
         self, attr_pep_658: str, attr_pep_714: str
     ):
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attr_pep_658} {attr_pep_714}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
         assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
+
+    # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
+    # allowing for its presence. The original named attribute being present as well as
+    # the new named metadata should ensure that the values of the two match completely.
+    # This test ensures that if the two are equal and contain 'true' or no value, the
+    # parsing completes successfully and captures the value properly.
+    @pytest.mark.parametrize(
+        ["attr_pep_658", "attr_pep_714"],
+        [
+            (
+                'data-dist-info-metadata=true',
+                'data-core-metadata=true',
+            ),
+            (
+                'data-dist-info-metadata',
+                'data-core-metadata',
+            ),
+        ],
+    )
+    def test_hash_with_both_pep_658_and_pep_714_metadata_attr_names_matching(
+        self, attr_pep_658: str, attr_pep_714: str
+    ):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attr_pep_658} {attr_pep_714}>spam-1.2.3-py3.none.any.whl</a>'
+        details = simple.from_project_details_html(html, "test_default")
+        assert len(details["files"]) == 1
+        assert details["files"][0]["dist-info-metadata"] == True
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
     # allowing for its presence. The original named attribute being present as well as
@@ -469,13 +497,25 @@ class TestPEP658Metadata:
                 'data-dist-info-metadata="SHA256=abcdef"',
                 'data-core-metadata="SHA256=not-the-same"',
             ),
+            (
+                'data-dist-info-metadata=true',
+                'data-core-metadata',
+            ),
+            (
+                'data-dist-info-metadata',
+                'data-core-metadata=true',
+            ),
+            (
+                'data-dist-info-metadata=TRUE',
+                'data-core-metadata=true',
+            ),
         ],
     )
     def test_hash_with_both_pep_658_and_pep_714_metadata_attr_names_unmatched_values(
         self, attr_pep_658: str, attr_pep_714: str
     ):
         html = f'<a href="spam-1.2.3-py3.none.any.whl" {attr_pep_658} {attr_pep_714}>spam-1.2.3-py3.none.any.whl</a>'
-        with pytest.raises(ValueError):
+        with pytest.raises(simple.InvalidDistroMetadata):
             simple.from_project_details_html(html, "test_default")
 
 
