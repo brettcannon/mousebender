@@ -412,7 +412,7 @@ class TestPEP658Metadata:
         assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
-    # allowing for it's presence. The original named attribute being present without the
+    # allowing for its presence. The original named attribute being present without the
     # new named metadata should _ignore_ the old attribute altogether.
     @pytest.mark.parametrize(
         "attribute",
@@ -428,7 +428,7 @@ class TestPEP658Metadata:
         assert "dist-info-metadata" not in details["files"][0]
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
-    # allowing for it's presence. The original named attribute being present as well as
+    # allowing for its presence. The original named attribute being present as well as
     # the new named metadata should ensure that the values of the two match completely.
     # This test ensures that if the two are equal the parsing completes successfully and
     # captures the value properly.
@@ -454,7 +454,7 @@ class TestPEP658Metadata:
         assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
 
     # PEP 714 replaces data-dist-info-metadata with data-core-metadata while still
-    # allowing for it's presence. The original named attribute being present as well as
+    # allowing for its presence. The original named attribute being present as well as
     # the new named metadata must ensure that the values of the two attributes are
     # equal, and fail if they are not. This test ensures a ValueError is raised when the
     # two are not equal.
