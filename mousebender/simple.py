@@ -68,6 +68,10 @@ class UnsupportedMIMEType(Exception):
     """An unsupported MIME type was provided in a ``Content-Type`` header."""
 
 
+class InvalidDistroMetadata(Exception):
+    """The distro metadata is invalid. This is a violation of PEP 714."""
+
+
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 _Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
 
@@ -279,9 +283,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
                 found_metadata != attrs.get("data-dist-info-metadata")
             ):
                 # Because of the use of MUST we will throw an exception in this case.
-                raise ValueError(
-                    "PEP 714 Violation. `data-dist-info-metadata` is present in package ",
-                    "metadata, but it does not match the value given in `data-core-metadata`",
+                raise InvalidDistroMetadata(
+                    "'data-dist-info-metadata' differs from 'data-core-metadata'"
                 )
 
             if found_metadata and found_metadata != "true":
