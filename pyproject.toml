@@ -20,7 +20,7 @@ classifiers = [
 ]
 dynamic = ["description"]
 
-dependencies = ["packaging >= 20.9", "typing-extensions"]
+dependencies = ["packaging >= 20.9", "resolvelib", "typing-extensions"]
 
 [project.optional-dependencies]
 
@@ -55,7 +55,7 @@ profile = "black"
 
 [tool.ruff]
 select = ["E", "F", "W", "D", "B", "A", "ANN", "RUF", "I"]
-ignore = ["E501", "D203", "D213", "ANN101"]
+ignore = ["E501", "D105", "D107", "D203", "D213", "ANN101"]
 
 [tool.ruff.per-file-ignores]
 "tests/*" = ["D", "ANN"]
