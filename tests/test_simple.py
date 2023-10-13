@@ -3,6 +3,7 @@ import json
 import warnings
 from typing import Dict, Union
 
+# Python < 3.9
 import importlib_resources
 import pytest
 
@@ -387,28 +388,25 @@ class TestPEP658Metadata:
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
         # Need to make sure it isn't an empty dict.
+        assert "core-metadata" not in details["files"][0]
         assert "dist-info-metadata" not in details["files"][0]
 
-    @pytest.mark.parametrize(
-        "attribute", ["data-dist-info-metadata", "data-dist-info-metadata=true"]
-    )
-    def test_attribute_only(self, attribute: str):
-        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute} >spam-1.2.3-py3.none.any.whl</a>'
+    @pytest.mark.parametrize("field", ["data-core-metadata", "data-dist-info-metadata"])
+    @pytest.mark.parametrize("value", ["", "=true"])
+    def test_attribute_only(self, field: str, value: str):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {field}{value} >spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
+        assert details["files"][0]["core-metadata"] is True
         assert details["files"][0]["dist-info-metadata"] is True
 
-    @pytest.mark.parametrize(
-        "attribute",
-        [
-            'data-dist-info-metadata="sha256=abcdef"',
-            'data-dist-info-metadata="SHA256=abcdef"',
-        ],
-    )
-    def test_hash(self, attribute: str):
-        html = f'<a href="spam-1.2.3-py3.none.any.whl" {attribute}>spam-1.2.3-py3.none.any.whl</a>'
+    @pytest.mark.parametrize("field", ["data-core-metadata", "data-dist-info-metadata"])
+    @pytest.mark.parametrize("value", ['"sha256=abcdef"', '"SHA256=abcdef"'])
+    def test_hash(self, field: str, value: str):
+        html = f'<a href="spam-1.2.3-py3.none.any.whl" {field}={value}>spam-1.2.3-py3.none.any.whl</a>'
         details = simple.from_project_details_html(html, "test_default")
         assert len(details["files"]) == 1
+        assert details["files"][0]["core-metadata"] == {"sha256": "abcdef"}
         assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
 
 

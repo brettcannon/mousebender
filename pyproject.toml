@@ -11,7 +11,7 @@ authors = [
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = { file = "LICENSE" }
 keywords = ["packaging", "Simple Repository API", "PEP 503", "PEP 592", "PEP 658", "PEP 691"]
 classifiers = [

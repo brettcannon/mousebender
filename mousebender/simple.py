@@ -6,7 +6,7 @@ responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
 This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
-:pep:`691`, and :pep:`700` of the
+:pep:`691`, :pep:`700`, and :pep:`714` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
 """
@@ -17,12 +17,12 @@ import html.parser
 import json
 import urllib.parse
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 import packaging.utils
 
-# Python 3.8+ only.
-from typing_extensions import Literal, TypeAlias, TypedDict
+# Python < 3.10
+from typing_extensions import TypeAlias
 
 ACCEPT_JSON_LATEST = "application/vnd.pypi.simple.latest+json"
 """The ``Accept`` header value for the latest version of the JSON API.
@@ -98,6 +98,8 @@ _OptionalProjectFileDetails_1_0 = TypedDict(
         "dist-info-metadata": Union[bool, _HashesDict],
         "gpg-sig": bool,
         "yanked": Union[bool, str],
+        # PEP 714
+        "core-metadata": Union[bool, _HashesDict],  # PEP 714
     },
     total=False,
 )
@@ -115,11 +117,13 @@ _OptionalProjectFileDetails_1_1 = TypedDict(
     "_OptionalProjectFileDetails_1_1",
     {
         "requires-python": str,
-        "dist-info-metadata": Union[bool, _HashesDict],
+        "dist-info-metadata": Union[bool, _HashesDict],  # Deprecated by PEP 714
         "gpg-sig": bool,
         "yanked": Union[bool, str],
         # PEP 700
         "upload-time": str,
+        # PEP 714
+        "core-metadata": Union[bool, _HashesDict],  # PEP 714
     },
     total=False,
 )
@@ -263,8 +267,14 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # PEP 658:
         # ... each anchor tag pointing to a distribution MAY have a
         # data-dist-info-metadata attribute.
-        if "data-dist-info-metadata" in attrs:
-            found_metadata = attrs.get("data-dist-info-metadata")
+        # PEP 714:
+        # Clients consuming any of the HTML representations of the Simple API
+        # MUST read the PEP 658 metadata from the key data-core-metadata if it
+        # is present. They MAY optionally use the legacy data-dist-info-metadata
+        # if it is present but data-core-metadata is not.
+        metadata_fields = ["data-core-metadata", "data-dist-info-metadata"]
+        if any((metadata_field := field) in attrs for field in metadata_fields):
+            found_metadata = attrs.get(metadata_field)
             if found_metadata and found_metadata != "true":
                 # The repository SHOULD provide the hash of the Core Metadata
                 # file as the data-dist-info-metadata attribute's value using
@@ -316,12 +326,14 @@ def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
         if "metadata" in archive_link:
             algorithm, value = archive_link["metadata"]
             if algorithm:
-                details["dist-info-metadata"] = {algorithm: value}
+                value = {algorithm: value}
             else:
-                details["dist-info-metadata"] = True
+                value = True
+            for key in ["core-metadata", "dist-info-metadata"]:
+                details[key] = value  # type: ignore[literal-required]
         for key in {"requires-python", "yanked", "gpg-sig"}:
             if key in archive_link:
-                details[key] = archive_link[key]  # type: ignore
+                details[key] = archive_link[key]  # type: ignore[literal-required]
         files.append(details)
     return {
         "meta": {"api-version": "1.0"},
