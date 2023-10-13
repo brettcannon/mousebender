@@ -330,7 +330,7 @@ def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
             else:
                 value = True
             for key in ["core-metadata", "dist-info-metadata"]:
-                details[key] = value  #
+                details[key] = value  # type: ignore[literal-required]
         for key in {"requires-python", "yanked", "gpg-sig"}:
             if key in archive_link:
                 details[key] = archive_link[key]  # type: ignore[literal-required]
