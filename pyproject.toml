@@ -20,7 +20,7 @@ classifiers = [
 ]
 dynamic = ["description"]
 
-dependencies = ["packaging >= 20.9", "resolvelib", "typing-extensions"]
+dependencies = ["packaging >= 23.2", "resolvelib", "typing-extensions"]
 
 [project.optional-dependencies]
 
