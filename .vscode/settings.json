@@ -6,7 +6,5 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "ruff.logLevel": "warn",
-    "isort.check": true,
-    "isort.logLevel": "warn"
+    "python.analysis.typeCheckingMode": "basic"
 }
