@@ -243,6 +243,7 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
             _Candidate(wheel, extras) for wheel in self.sort_wheels(filtered_wheels)
         ]
 
+    @typing.override
     def is_satisfied_by(self, requirement: _Requirement, candidate: _Candidate) -> bool:
         """Check if a candidate satisfies a requirement."""
         return (
