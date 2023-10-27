@@ -1,6 +1,5 @@
 import packaging.tags
 import packaging.version
-import pytest
 
 from mousebender import resolve, simple
 
