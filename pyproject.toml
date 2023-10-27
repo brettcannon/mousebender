@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "mousebender"
-version = "2023.1"
+version = "2023.2"
 authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
