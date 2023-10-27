@@ -63,7 +63,7 @@
 
    .. versionadded:: 2022.1.0
 
-.. data:: ProjectDetails
+.. data:: ProjectFileDetails
 
    A :data:`~typing.TypeAlias` for any version of the JSON project file details
    response.
