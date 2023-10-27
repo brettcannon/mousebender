@@ -139,6 +139,9 @@ class ProjectFileDetails_1_1(_OptionalProjectFileDetails_1_1):
     size: int
 
 
+ProjectFileDetails: TypeAlias = Union[ProjectFileDetails_1_0, ProjectFileDetails_1_1]
+
+
 class ProjectDetails_1_0(TypedDict):
     """A :class:`~typing.TypedDict` for a project details response (:pep:`691`)."""
 
