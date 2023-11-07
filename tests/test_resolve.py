@@ -1,4 +1,5 @@
 import packaging.tags
+import packaging.utils
 import packaging.version
 
 from mousebender import resolve, simple
@@ -33,7 +34,30 @@ class TestWheel:
 
 
 class TestCandidate:
-    pass
+    def test_default_id(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+
+        wheel = resolve.Wheel(details)
+        candidate = resolve._Candidate(wheel)
+
+        assert candidate.identifier == ("spam", frozenset())
+
+    def test_id_with_extras(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+
+        wheel = resolve.Wheel(details)
+        extras = [packaging.utils.canonicalize_name(name) for name in ["foo", "bar"]]
+        candidate = resolve._Candidate(wheel, extras)
+
+        assert candidate.identifier == ("spam", frozenset(extras))
 
 
 class TestRequirement:
