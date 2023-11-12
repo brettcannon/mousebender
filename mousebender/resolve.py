@@ -153,7 +153,7 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
     ) -> tuple[packaging.version.Version, int, packaging.utils.BuildTag]:
         """Create a sort key for a wheel.
 
-        The assumption is the sort will be reversed in order to get most to
+        The assumption is the sort will be reversed in order to go from most to
         least desirable wheel. Preference is determined by the newest version,
         tag priority/specificity (as defined by self.tags), and then build tag.
         """
@@ -163,7 +163,7 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         else:
             raise ValueError("No compatible tags found for any wheels.")
 
-        return wheel.version, tag_priority, wheel.build_tag or ()
+        return wheel.version, len(self.tags) - tag_priority, wheel.build_tag or ()
 
     def sort_wheels(self, wheels: Iterable[Wheel]) -> list[Wheel]:
         """Sort wheels from most to least preferred."""
