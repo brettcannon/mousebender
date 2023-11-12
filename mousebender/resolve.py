@@ -192,8 +192,8 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         Provide a sort key based on the number of candidates for the
         requirement.
         """
-        # Since `candidates` contains iterators, we need to consume them to get
-        # a count of items.
+        # Since `candidates` contains iterators, we need to consume them to calculate
+        # their length.
         return sum(1 for _ in candidates[identifier])
 
     # Requirement -> Candidate
