@@ -6,7 +6,6 @@ import packaging.version
 import pytest
 
 from mousebender import resolve, simple
-from mousebender.resolve import Wheel
 
 
 class TestWheel:
