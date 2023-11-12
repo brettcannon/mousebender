@@ -83,7 +83,7 @@ class _Requirement:
     def __init__(self, req: packaging.requirements.Requirement, /) -> None:
         """Initialize from the provided requirement."""
         self.req = req
-        name = packaging.utils.NormalizedName(req.name)
+        name = packaging.utils.canonicalize_name(req.name)
         extras = frozenset(map(packaging.utils.canonicalize_name, req.extras))
         self.identifier = name, extras
 

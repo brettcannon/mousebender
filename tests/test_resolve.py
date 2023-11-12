@@ -1,6 +1,8 @@
+import packaging.requirements
 import packaging.tags
 import packaging.utils
 import packaging.version
+import pytest
 
 from mousebender import resolve, simple
 
@@ -61,7 +63,42 @@ class TestCandidate:
 
 
 class TestRequirement:
-    pass
+    def test_init_no_extras(self):
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve._Requirement(req)
+
+        assert requirement.req == req
+        assert requirement.identifier == ("spam", frozenset())
+
+    def test_init_with_extras(self):
+        req = packaging.requirements.Requirement("Spam[Foo,Bar]==1.2.3")
+        requirement = resolve._Requirement(req)
+
+        assert requirement.req == req
+        assert requirement.identifier == ("spam", frozenset(["foo", "bar"]))
+
+    @pytest.mark.parametrize(
+        ["requirement", "matches"],
+        [
+            ("Distro", True),
+            ("Spam", False),
+            ("Distro[Foo,Bar]", True),
+            ("Spam[Foo,Bar]", False),
+            ("Distro>=1.2.0", True),
+            ("Distro<1.2.3", False),
+        ],
+    )
+    def test_satisfied_by(self, requirement, matches):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        wheel = resolve.Wheel(details)
+        req = packaging.requirements.Requirement(requirement)
+
+        assert resolve._Requirement(req).is_satisfied_by(wheel) == matches
 
 
 class TestIdentifier:
