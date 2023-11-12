@@ -8,6 +8,14 @@ import pytest
 from mousebender import resolve, simple
 
 
+class NoopWheelProvider(resolve.WheelProvider):
+    def available_wheels(self, name):
+        raise NotImplementedError
+
+    def wheel_metadata(self, wheel):
+        raise NotImplementedError
+
+
 class TestWheel:
     def test_init(self):
         filename = "Distro-1.2.3-456-py3-none-any.whl"
@@ -103,21 +111,12 @@ class TestRequirement:
 
 
 class TestIdentify:
-    class WheelProviderTester(resolve.WheelProvider):
-        def available_wheels(self, name):
-            raise NotImplementedError
-
-        def wheel_metadata(self, wheel):
-            raise NotImplementedError
-
     def test_requirement(self):
         req = packaging.requirements.Requirement("Spam==1.2.3")
         requirement = resolve._Requirement(req)
 
         assert requirement.req == req
-        assert (
-            self.WheelProviderTester().identify(requirement) == requirement.identifier
-        )
+        assert NoopWheelProvider().identify(requirement) == requirement.identifier
 
     def test_candidate(self):
         details: simple.ProjectFileDetails_1_0 = {
@@ -129,11 +128,33 @@ class TestIdentify:
         wheel = resolve.Wheel(details)
         candidate = resolve._Candidate(wheel)
 
-        assert self.WheelProviderTester().identify(candidate) == candidate.identifier
+        assert NoopWheelProvider().identify(candidate) == candidate.identifier
 
 
 class TestGetPreference:
-    pass
+    def test_iterator(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+
+        wheel = resolve.Wheel(details)
+        candidate = resolve._Candidate(wheel)
+
+        count = 5
+
+        candidates = {
+            candidate.identifier: iter([candidate] * count),
+            ("foo", frozenset()): iter([]),
+        }
+
+        assert (
+            NoopWheelProvider().get_preference(
+                candidate.identifier, {}, candidates, {}, []
+            )
+            == count
+        )
 
 
 class TestSortWheels:
