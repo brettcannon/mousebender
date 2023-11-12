@@ -146,7 +146,7 @@ class TestGetPreference:
 
         candidates = {
             candidate.identifier: iter([candidate] * count),
-            ("foo", frozenset()): iter([]),
+            (packaging.utils.canonicalize_name("foo"), frozenset()): iter([]),
         }
 
         assert (
