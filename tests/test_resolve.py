@@ -1,3 +1,4 @@
+import packaging.metadata
 import packaging.requirements
 import packaging.tags
 import packaging.utils
@@ -5,6 +6,7 @@ import packaging.version
 import pytest
 
 from mousebender import resolve, simple
+from mousebender.resolve import Wheel
 
 
 class TestWheel:
@@ -101,8 +103,34 @@ class TestRequirement:
         assert resolve._Requirement(req).is_satisfied_by(wheel) == matches
 
 
-class TestIdentifier:
-    pass
+class TestIdentify:
+    class WheelProviderTester(resolve.WheelProvider):
+        def available_wheels(self, name):
+            raise NotImplementedError
+
+        def wheel_metadata(self, wheel):
+            raise NotImplementedError
+
+    def test_requirement(self):
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve._Requirement(req)
+
+        assert requirement.req == req
+        assert (
+            self.WheelProviderTester().identify(requirement) == requirement.identifier
+        )
+
+    def test_candidate(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+
+        wheel = resolve.Wheel(details)
+        candidate = resolve._Candidate(wheel)
+
+        assert self.WheelProviderTester().identify(candidate) == candidate.identifier
 
 
 class TestGetPreference:

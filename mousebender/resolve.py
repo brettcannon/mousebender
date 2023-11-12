@@ -264,6 +264,8 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
             requirements.append(_Requirement(req))
 
         if not (metadata := candidate.wheel.metadata):
+            # TODO: see if any wheels that make it through find_matches() don't get their
+            # metadata fetched.
             raw_metadata = self.wheel_metadata(candidate.wheel)
             metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
 
