@@ -14,7 +14,7 @@ class NoopWheelProvider(resolve.WheelProvider):
     def available_wheels(self, name):
         raise NotImplementedError
 
-    def wheel_metadata(self, wheel):
+    def fetch_wheel_metadata(self, wheel):
         raise NotImplementedError
 
 
@@ -55,7 +55,7 @@ class TestCandidate:
         }
 
         wheel = resolve.Wheel(details)
-        candidate = resolve._Candidate(wheel)
+        candidate = resolve.Candidate(wheel)
 
         assert candidate.identifier == ("spam", frozenset())
 
@@ -68,7 +68,7 @@ class TestCandidate:
 
         wheel = resolve.Wheel(details)
         extras = [packaging.utils.canonicalize_name(name) for name in ["foo", "bar"]]
-        candidate = resolve._Candidate(wheel, extras)
+        candidate = resolve.Candidate(wheel, extras)
 
         assert candidate.identifier == ("spam", frozenset(extras))
 
@@ -76,46 +76,23 @@ class TestCandidate:
 class TestRequirement:
     def test_init_no_extras(self):
         req = packaging.requirements.Requirement("Spam==1.2.3")
-        requirement = resolve._Requirement(req)
+        requirement = resolve.Requirement(req)
 
         assert requirement.req == req
         assert requirement.identifier == ("spam", frozenset())
 
     def test_init_with_extras(self):
         req = packaging.requirements.Requirement("Spam[Foo,Bar]==1.2.3")
-        requirement = resolve._Requirement(req)
+        requirement = resolve.Requirement(req)
 
         assert requirement.req == req
         assert requirement.identifier == ("spam", frozenset(["foo", "bar"]))
-
-    @pytest.mark.parametrize(
-        ["requirement", "matches"],
-        [
-            ("Distro", True),
-            ("Spam", False),
-            ("Distro[Foo,Bar]", True),
-            ("Spam[Foo,Bar]", False),
-            ("Distro>=1.2.0", True),
-            ("Distro<1.2.3", False),
-        ],
-    )
-    def test_satisfied_by(self, requirement, matches):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
-            "hashes": {},
-        }
-        wheel = resolve.Wheel(details)
-        req = packaging.requirements.Requirement(requirement)
-
-        assert resolve._Requirement(req).is_satisfied_by(wheel) == matches
 
 
 class TestIdentify:
     def test_requirement(self):
         req = packaging.requirements.Requirement("Spam==1.2.3")
-        requirement = resolve._Requirement(req)
+        requirement = resolve.Requirement(req)
 
         assert requirement.req == req
         assert NoopWheelProvider().identify(requirement) == requirement.identifier
@@ -128,7 +105,7 @@ class TestIdentify:
         }
 
         wheel = resolve.Wheel(details)
-        candidate = resolve._Candidate(wheel)
+        candidate = resolve.Candidate(wheel)
 
         assert NoopWheelProvider().identify(candidate) == candidate.identifier
 
@@ -142,7 +119,7 @@ class TestGetPreference:
         }
 
         wheel = resolve.Wheel(details)
-        candidate = resolve._Candidate(wheel)
+        candidate = resolve.Candidate(wheel)
 
         count = 5
 
@@ -159,7 +136,7 @@ class TestGetPreference:
         )
 
 
-class TestSortWheels:
+class TestSortCandidates:
     def test_version_preference(self):
         details_2_0_0: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-2.0.0-py3-none-any.whl",
@@ -189,7 +166,13 @@ class TestSortWheels:
             {}, tags=[packaging.tags.Tag("py3", "none", "any")]
         )
 
-        assert provider.sort_wheels(wheels) == [wheel_2_0_0, wheel_1_2_3, wheel_1_0_0]
+        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
+
+        assert [candidate.wheel for candidate in candidates] == [
+            wheel_2_0_0,
+            wheel_1_2_3,
+            wheel_1_0_0,
+        ]
 
     def test_tag_preference(self):
         details_platform: simple.ProjectFileDetails_1_0 = {
@@ -224,9 +207,9 @@ class TestSortWheels:
 
         provider = NoopWheelProvider({}, tags=tags)
 
-        sorted_wheels = provider.sort_wheels(wheels)
+        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
 
-        assert sorted_wheels == [
+        assert [candidate.wheel for candidate in candidates] == [
             wheel_platform,
             wheel_abi,
             wheel_interpreter,
@@ -273,7 +256,9 @@ class TestSortWheels:
             {}, tags=[packaging.tags.Tag("py3", "none", "any")]
         )
 
-        assert provider.sort_wheels(wheels) == [
+        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
+
+        assert [candidate.wheel for candidate in candidates] == [
             wheel_biggest,
             wheel_smaller_tag_alpha,
             wheel_smaller_tag_int,
@@ -314,18 +299,65 @@ class TestSortWheels:
             ],
         )
 
-        assert provider.sort_wheels(wheels) == [
+        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
+
+        assert [candidate.wheel for candidate in candidates] == [
             wheel_version,
             wheel_wheel_tag,
             wheel_build_tag,
         ]
 
 
-class TestFindMatches:
-    pass
-
-
 class TestIsSatisfiedBy:
+    @pytest.mark.parametrize(
+        ["requirement", "matches"],
+        [
+            ("Distro", True),
+            ("Spam", False),
+            ("Distro>=1.2.0", True),
+            ("Distro<1.2.3", False),
+        ],
+    )
+    def test_no_extras(self, requirement, matches):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        wheel = resolve.Wheel(details)
+        candidate = resolve.Candidate(wheel)
+        req = packaging.requirements.Requirement(requirement)
+        requirement = resolve.Requirement(req)
+        assert NoopWheelProvider().is_satisfied_by(requirement, candidate) == matches
+
+    @pytest.mark.parametrize(
+        ["req_extra", "candidate_extra", "matches"],
+        [
+            (frozenset(), frozenset(), True),
+            (frozenset(["extras"]), frozenset(), False),
+            (frozenset(), frozenset(["extras"]), False),
+            (frozenset(["extras"]), frozenset(["extras"]), True),
+            (frozenset(["extra1"]), frozenset(["extra2"]), False),
+        ],
+    )
+    def test_extras(self, req_extra, candidate_extra, matches):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        wheel = resolve.Wheel(details)
+        candidate = resolve.Candidate(wheel, candidate_extra)
+
+        req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
+        requirement = resolve.Requirement(packaging.requirements.Requirement(req))
+
+        assert NoopWheelProvider().is_satisfied_by(requirement, candidate) == matches
+
+
+class TestFindMatches:
     pass
 
 

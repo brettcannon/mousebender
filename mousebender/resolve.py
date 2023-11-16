@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import abc
+import operator
 import typing
 from typing import (
     Collection,
@@ -59,7 +60,7 @@ class Wheel:
         return self.details == other.details
 
 
-class _Candidate:
+class Candidate:
     """A candidate to satisfy a requirement."""
 
     identifier: _Identifier
@@ -74,7 +75,7 @@ class _Candidate:
         self.identifier = wheel.name, frozenset(extras)
 
 
-class _Requirement:
+class Requirement:
     """A requirement for a distribution."""
 
     identifier: _Identifier
@@ -86,13 +87,6 @@ class _Requirement:
         name = packaging.utils.canonicalize_name(req.name)
         extras = frozenset(map(packaging.utils.canonicalize_name, req.extras))
         self.identifier = name, extras
-
-    def is_satisfied_by(self, wheel: Wheel) -> bool:
-        """Check if a wheel satisfies the requirement."""
-        name, extras = self.identifier
-        # Markers should be unnecessary at this point as any incompatible
-        # requirements have already been filtered out.
-        return name == wheel.name and wheel.version in self.req.specifier
 
 
 _RT = TypeVar("_RT")  # Requirement.
@@ -143,8 +137,9 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def wheel_metadata(self, wheel: Wheel) -> packaging.metadata.RawMetadata:
-        """Get the requirements of a wheel."""
+    def fetch_wheel_metadata(self, wheels: Iterable[Wheel]) -> None:
+        """Fetch the metadata of a wheel and add it in-place."""
+        # A method so that subclasses can do paralle/async fetching of the metadata.
         raise NotImplementedError
 
     def _wheel_sort_key(
@@ -153,10 +148,11 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
     ) -> tuple[packaging.version.Version, int, packaging.utils.BuildTag]:
         """Create a sort key for a wheel.
 
-        The assumption is the sort will be reversed in order to go from most to
-        least desirable wheel. Preference is determined by the newest version,
-        tag priority/specificity (as defined by self.tags), and then build tag.
+        The key should lead to a sort of least to most preferred wheel.
+        Preference is determined by the newest version, tag priority/specificity
+        (as defined by self.tags), and then build tag.
         """
+        # A separate method so subclasses can e.g. prefer older versions.
         for tag_priority, tag in enumerate(self.tags):  # noqa: B007
             if tag in wheel.tags:
                 break
@@ -165,13 +161,16 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
 
         return wheel.version, len(self.tags) - tag_priority, wheel.build_tag or ()
 
-    def sort_wheels(self, wheels: Iterable[Wheel]) -> list[Wheel]:
-        """Sort wheels from most to least preferred."""
-        return sorted(wheels, key=self._wheel_sort_key, reverse=True)
+    def sort_candidates(self, candidates: Iterable[Candidate]) -> list[Candidate]:
+        """Sort candidates from most to least preferred."""
+        # A method so that subclasses can e.g. prefer older versions.
+        return sorted(
+            candidates, key=lambda c: self._wheel_sort_key(c.wheel), reverse=True
+        )
 
     @typing.override
     def identify(
-        self, requirement_or_candidate: Union[_Requirement, _Candidate]
+        self, requirement_or_candidate: Union[Requirement, Candidate]
     ) -> _Identifier:
         """Get the key for a requirement or candidate."""
         return requirement_or_candidate.identifier
@@ -180,12 +179,12 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
     def get_preference(
         self,
         identifier: _Identifier,
-        resolutions: Mapping[_Identifier, _Candidate],
-        candidates: Mapping[_Identifier, Iterator[_Candidate]],
+        resolutions: Mapping[_Identifier, Candidate],
+        candidates: Mapping[_Identifier, Iterator[Candidate]],
         information: Mapping[
-            _Identifier, Iterator[_RequirementInformation[_Requirement, _Candidate]]
+            _Identifier, Iterator[_RequirementInformation[Requirement, Candidate]]
         ],
-        backtrack_causes: Sequence[_RequirementInformation[_Requirement, _Candidate]],
+        backtrack_causes: Sequence[_RequirementInformation[Requirement, Candidate]],
     ) -> int:
         """Calculate the preference to solve for a requirement.
 
@@ -196,14 +195,23 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         # their length.
         return sum(1 for _ in candidates[identifier])
 
+    @typing.override
+    def is_satisfied_by(self, requirement: Requirement, candidate: Candidate) -> bool:
+        """Check if a candidate satisfies a requirement."""
+        # A method so subclasses can decide to e.g. allow for pre-releases.
+        return (
+            requirement.identifier == candidate.identifier
+            and candidate.wheel.version in requirement.req.specifier
+        )
+
     # Requirement -> Candidate
     @typing.override
     def find_matches(
         self,
         identifier: _Identifier,
-        requirements: Mapping[_Identifier, Iterator[_Requirement]],
-        incompatibilities: Mapping[_Identifier, Iterator[_Candidate]],
-    ) -> list[_Candidate]:
+        requirements: Mapping[_Identifier, Iterator[Requirement]],
+        incompatibilities: Mapping[_Identifier, Iterator[Candidate]],
+    ) -> list[Candidate]:
         """Get the potential candidates for a requirement.
 
         This involves getting all potential wheels for a distribution and
@@ -231,53 +239,48 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
                     break
             self._wheel_cache[name] = wheels
 
-        filtered_wheels_by_req = filter(
-            lambda w: all(r.is_satisfied_by(w) for r in requirements[identifier]),
-            wheels,
+        candidates = [Candidate(wheel, extras) for wheel in wheels]
+        filtered_candidates_by_req = filter(
+            lambda c: all(self.is_satisfied_by(r, c) for r in requirements[identifier]),
+            candidates,
         )
         incompat_candidates = frozenset(incompatibilities[identifier])
-        filtered_wheels = filter(
-            lambda w: w not in incompat_candidates, filtered_wheels_by_req
+        filtered_candidates = filter(
+            lambda c: c not in incompat_candidates, filtered_candidates_by_req
         )
-        return [
-            _Candidate(wheel, extras) for wheel in self.sort_wheels(filtered_wheels)
-        ]
 
-    @typing.override
-    def is_satisfied_by(self, requirement: _Requirement, candidate: _Candidate) -> bool:
-        """Check if a candidate satisfies a requirement."""
-        return (
-            requirement.identifier == candidate.identifier
-            and requirement.is_satisfied_by(candidate.wheel)
-        )
+        sorted_candidates = self.sort_candidates(filtered_candidates)
+
+        # Wait as long as possible to fetch the metadata while being able to do it in
+        # bulk to support parallel/async downloading.
+        missing_metadata = filter(lambda c: c.wheel.metadata is None, sorted_candidates)
+        self.fetch_wheel_metadata(map(operator.attrgetter("wheel"), missing_metadata))
+
+        return sorted_candidates
 
     # Candidate -> Requirement
     @typing.override
-    def get_dependencies(self, candidate: _Candidate) -> list[_Requirement]:
+    def get_dependencies(self, candidate: Candidate) -> list[Requirement]:
         """Get the requirements of a candidate."""
+        assert candidate.wheel.metadata is not None
+
         requirements = []
         name, extras = candidate.identifier
         if extras:
             req = packaging.requirements.Requirement(
                 f"{name}=={candidate.wheel.version}"
             )
-            requirements.append(_Requirement(req))
+            requirements.append(Requirement(req))
 
-        if not (metadata := candidate.wheel.metadata):
-            # TODO: see if any wheels that make it through find_matches() don't get their
-            # metadata fetched.
-            raw_metadata = self.wheel_metadata(candidate.wheel)
-            metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
-
-        for req in metadata.requires_dist:
+        for req in candidate.wheel.metadata.requires_dist:
             if req.marker is None:
-                requirements.append(_Requirement(req))
+                requirements.append(Requirement(req))
             elif req.marker.evaluate(self.environment):
-                requirements.append(_Requirement(req))
+                requirements.append(Requirement(req))
             elif extras and any(
                 req.marker.evaluate(self.environment | {"extra": extra})
                 for extra in extras
             ):
-                requirements.append(_Requirement(req))
+                requirements.append(Requirement(req))
 
         return requirements
