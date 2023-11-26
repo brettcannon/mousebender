@@ -15,8 +15,8 @@ Or put another way, this project wants to work towards a standard for what [pip-
 
 To achieve this goal, this project will need to be able to:
 
-- [x] Know what wheel files are available on a server (`mousebender.simple`)
-- [ ] Read the metadata from a wheel file (to be [in `packaging`](https://github.com/pypa/packaging/issues/570))
+- [x] Know what wheel files are available on an index server ([`mousebender.simple`](https://mousebender.readthedocs.io/en/latest/simple.html))
+- [x] Read the metadata from a wheel file (in [`packaging.metadata`](https://packaging.pypa.io/en/stable/metadata.html))
 - [ ] Resolve what wheel files are required to meet the requirements specified in `pyproject.toml`
 - [ ] Produce a lock file of wheel files for a platform
 - [ ] Consume a lock file for the platform to install the specified wheel files
