@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import abc
-import operator
 import typing
 from typing import (
     Collection,
@@ -39,40 +38,83 @@ class Wheel:
     version: packaging.version.Version
     build_tag: Optional[packaging.utils.BuildTag]
     tags: frozenset[packaging.tags.Tag]
-    metadata: Optional[packaging.metadata.Metadata]
-    details: simple.ProjectFileDetails_1_0 | simple.ProjectFileDetails_1_1
 
-    def __init__(
-        self, details: simple.ProjectFileDetails_1_0 | simple.ProjectFileDetails_1_1
-    ) -> None:
-        self.details = details
+    def __init__(self, details: simple.ProjectFileDetails) -> None:
+        self._filename_tuple = packaging.utils.parse_wheel_filename(details["filename"])
         (
             self.name,
             self.version,
             self.build_tag,
             self.tags,
-        ) = packaging.utils.parse_wheel_filename(details["filename"])
-        self.metadata = None
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Wheel):
-            return NotImplemented
-        return self.details == other.details
+        ) = self._filename_tuple
 
 
-class Candidate:
+# Subclass for sdists.
+class Candidate(typing.Protocol):
     """A candidate to satisfy a requirement."""
 
     identifier: _Identifier
+    version: packaging.version.Version
+    metadata: Optional[packaging.metadata.Metadata]
+
+    def is_env_compatible(
+        self, *, environment: dict[str, str], tags: Sequence[packaging.tags.Tag]
+    ) -> bool:
+        """Check if the candidate is compatible with the environment.
+
+        When compatibility is unknown due lack of details
+        (e.g., missing metadata), assume compatibility.
+        """
+        if self.metadata is None:
+            return True
+        elif self.metadata.requires_python is None:
+            return True
+        else:
+            python_version = packaging.version.Version(environment["python_version"])
+            return python_version in self.metadata.requires_python
+
+
+class WheelCandidate(Candidate):
+    """A candidate to satisfy a requirement."""
+
+    identifier: _Identifier
+    details: simple.ProjectFileDetails
     wheel: Wheel
+    version: packaging.version.Version
+    metadata: Optional[packaging.metadata.Metadata]
 
     def __init__(
         self,
-        wheel: Wheel,
+        details: simple.ProjectFileDetails,
         extras: Iterable[packaging.utils.NormalizedName] = frozenset(),
     ) -> None:
-        self.wheel = wheel
-        self.identifier = wheel.name, frozenset(extras)
+        self.details = details
+        self.wheel = Wheel(self.details)
+        self.version = self.wheel.version
+        self.metadata = None
+        self.identifier = self.wheel.name, frozenset(extras)
+
+    def __eq__(self, other: object) -> bool:
+        """Check if two candidates are equal."""
+        if not isinstance(other, WheelCandidate):
+            return NotImplemented
+        return self.details == other.details
+
+    def is_env_compatible(
+        self, *, environment: dict[str, str], tags: Sequence[packaging.tags.Tag]
+    ) -> bool:
+        """Check if the wheel is compatible with the platform."""
+        if "requires-python" in self.details:
+            requires_python = packaging.specifiers.SpecifierSet(
+                self.details["requires-python"]
+            )
+            # TODO need to care that "python_version" doesn't have release level?
+            python_version = packaging.version.parse(environment["python_version"])
+            if python_version not in requires_python:
+                return False
+        elif not super().is_env_compatible(environment=environment, tags=tags):
+            return False
+        return any(tag in tags for tag in self.wheel.tags)
 
 
 class Requirement:
@@ -105,10 +147,11 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
     tags: list[packaging.tags.Tag]
     # Assumed to have already been filtered down to only wheels that have any
     # chance to work with the specified environment details.
-    _wheel_cache: dict[packaging.utils.NormalizedName, Collection[Wheel]]
+    _candidate_cache: dict[packaging.utils.NormalizedName, Collection[Candidate]]
 
     def __init__(
         self,
+        *,
         environment: Optional[dict[str, str]] = None,
         tags: Optional[Sequence[packaging.tags.Tag]] = None,
     ) -> None:
@@ -127,18 +170,20 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
             self.tags = list(packaging.tags.sys_tags())
         else:
             self.tags = list(tags)
-        self._wheel_cache = {}
+        self._candidate_cache = {}
 
+    # Override for sdists.
     @abc.abstractmethod
-    def available_wheels(
+    def available_candidates(
         self, name: packaging.utils.NormalizedName
-    ) -> simple.ProjectDetails:
+    ) -> Iterable[Candidate]:
         """Get the available wheels for a distribution."""
         raise NotImplementedError
 
+    # Override for sdists.
     @abc.abstractmethod
-    def fetch_wheel_metadata(self, wheels: Iterable[Wheel]) -> None:
-        """Fetch the metadata of a wheel and add it in-place."""
+    def fetch_candidate_metadata(self, candidates: Iterable[Candidate]) -> None:
+        """Fetch the metadata of e.g. a wheel and add it in-place."""
         # A method so that subclasses can do paralle/async fetching of the metadata.
         raise NotImplementedError
 
@@ -161,12 +206,17 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
 
         return wheel.version, len(self.tags) - tag_priority, wheel.build_tag or ()
 
-    def sort_candidates(self, candidates: Iterable[Candidate]) -> list[Candidate]:
+    # Override for sdists.
+    def sort_candidates(self, candidates: Iterable[Candidate]) -> Sequence[Candidate]:
         """Sort candidates from most to least preferred."""
         # A method so that subclasses can e.g. prefer older versions.
-        return sorted(
-            candidates, key=lambda c: self._wheel_sort_key(c.wheel), reverse=True
+        sorted_candidates = sorted(
+            typing.cast(Iterable[WheelCandidate], candidates),
+            key=lambda c: self._wheel_sort_key(c.wheel),
+            reverse=True,
         )
+
+        return sorted_candidates
 
     @typing.override
     def identify(
@@ -201,7 +251,16 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         # A method so subclasses can decide to e.g. allow for pre-releases.
         return (
             requirement.identifier == candidate.identifier
-            and candidate.wheel.version in requirement.req.specifier
+            and candidate.version in requirement.req.specifier
+        )
+
+    def _filter_candidates(
+        self, candidates: Iterable[Candidate]
+    ) -> Iterable[Candidate]:
+        """Filter candidates based on environment details."""
+        return filter(
+            lambda c: c.is_env_compatible(environment=self.environment, tags=self.tags),
+            candidates,
         )
 
     # Requirement -> Candidate
@@ -211,50 +270,41 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         identifier: _Identifier,
         requirements: Mapping[_Identifier, Iterator[Requirement]],
         incompatibilities: Mapping[_Identifier, Iterator[Candidate]],
-    ) -> list[Candidate]:
+    ) -> Sequence[Candidate]:
         """Get the potential candidates for a requirement.
 
         This involves getting all potential wheels for a distribution and
         checking if they meet all requirements while not being considered
         an incompatible candidate.
         """
-        name, extras = identifier
-        if name in self._wheel_cache:
-            wheels = self._wheel_cache[name]
+        name, _extras = identifier
+        if name in self._candidate_cache:
+            candidates = self._candidate_cache[name]
         else:
-            possible_wheels = self.available_wheels(name)
-            python_version = packaging.version.parse(self.environment["python_version"])
-            wheels = []
-            for wheel_file_details in possible_wheels["files"]:
-                wheel = Wheel(wheel_file_details)
-                if "requires-python" in wheel_file_details:
-                    requires_python = packaging.specifiers.SpecifierSet(
-                        wheel_file_details["requires-python"]
-                    )
-                    # TODO need to care that "python_version" doesn't have release level?
-                    if python_version not in requires_python:
-                        continue
-                if any(tag in self.tags for tag in wheel.tags):
-                    wheels.append(wheel_file_details)
-                    break
-            self._wheel_cache[name] = wheels
+            potential_candidates = self.available_candidates(name)
+            # Quickly filter based on file details before fetching metadata.
+            filtered_on_details = self._filter_candidates(potential_candidates)
 
-        candidates = [Candidate(wheel, extras) for wheel in wheels]
+            self._candidate_cache[name] = list(filtered_on_details)
+            candidates = self._candidate_cache[name]
+
         filtered_candidates_by_req = filter(
             lambda c: all(self.is_satisfied_by(r, c) for r in requirements[identifier]),
             candidates,
         )
-        incompat_candidates = frozenset(incompatibilities[identifier])
-        filtered_candidates = filter(
-            lambda c: c not in incompat_candidates, filtered_candidates_by_req
+        incompat_candidates = list(incompatibilities[identifier])
+        filtered_candidates = list(
+            filter(lambda c: c not in incompat_candidates, filtered_candidates_by_req)
         )
 
-        sorted_candidates = self.sort_candidates(filtered_candidates)
+        # Wait as long as possible to fetch metadata; it might be expensive.
+        missing_metadata = filter(lambda c: c.metadata is None, filtered_candidates)
+        self.fetch_candidate_metadata(missing_metadata)
 
-        # Wait as long as possible to fetch the metadata while being able to do it in
-        # bulk to support parallel/async downloading.
-        missing_metadata = filter(lambda c: c.wheel.metadata is None, sorted_candidates)
-        self.fetch_wheel_metadata(map(operator.attrgetter("wheel"), missing_metadata))
+        # Filter again in case metadata clarified compatibility.
+        fully_filtered = self._filter_candidates(filtered_candidates)
+
+        sorted_candidates = self.sort_candidates(fully_filtered)
 
         return sorted_candidates
 
@@ -262,17 +312,15 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
     @typing.override
     def get_dependencies(self, candidate: Candidate) -> list[Requirement]:
         """Get the requirements of a candidate."""
-        assert candidate.wheel.metadata is not None
+        assert candidate.metadata is not None
 
         requirements = []
         name, extras = candidate.identifier
         if extras:
-            req = packaging.requirements.Requirement(
-                f"{name}=={candidate.wheel.version}"
-            )
+            req = packaging.requirements.Requirement(f"{name}=={candidate.version}")
             requirements.append(Requirement(req))
 
-        for req in candidate.wheel.metadata.requires_dist:
+        for req in candidate.metadata.requires_dist:
             if req.marker is None:
                 requirements.append(Requirement(req))
             elif req.marker.evaluate(self.environment):

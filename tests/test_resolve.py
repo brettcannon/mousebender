@@ -1,4 +1,5 @@
 import random
+import typing
 
 import packaging.metadata
 import packaging.requirements
@@ -10,11 +11,18 @@ import pytest
 from mousebender import resolve, simple
 
 
+class NoopCandidate(resolve.Candidate):
+    def __init__(self):
+        self.identifier = (packaging.utils.canonicalize_name("spam"), frozenset())
+        self.version = packaging.version.Version("1.2.3")
+        self.metadata = None
+
+
 class NoopWheelProvider(resolve.WheelProvider):
-    def available_wheels(self, name):
+    def available_candidates(self, name):
         raise NotImplementedError
 
-    def fetch_wheel_metadata(self, wheel):
+    def fetch_candidate_metadata(self, wheel):
         raise NotImplementedError
 
 
@@ -32,21 +40,50 @@ class TestWheel:
         assert wheel.version == packaging.version.Version("1.2.3")
         assert wheel.build_tag == (456, "")
         assert wheel.tags == {packaging.tags.Tag("py3", "none", "any")}
-        assert wheel.details == details
-        assert wheel.metadata is None
-
-    def test_equality(self):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
-            "hashes": {},
-        }
-
-        assert resolve.Wheel(details) == resolve.Wheel(details)
 
 
 class TestCandidate:
+    def test_is_env_compatible_no_metadata(self):
+        assert NoopCandidate().is_env_compatible(environment={}, tags=[])
+
+    def test_is_env_compatible(self):
+        raw_metadata = typing.cast(
+            packaging.metadata.RawMetadata,
+            {
+                "metadata_version": "2.3",
+                "name": "Spam",
+                "version": "1.2.3",
+                "requires_python": ">=3.6",
+            },
+        )
+        metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
+        candidate = NoopCandidate()
+        candidate.metadata = metadata
+
+        assert NoopCandidate().is_env_compatible(
+            environment={"python_version": "3.6"}, tags=[]
+        )
+
+    def test_is_not_env_compatible(self):
+        raw_metadata = typing.cast(
+            packaging.metadata.RawMetadata,
+            {
+                "metadata_version": "2.3",
+                "name": "Spam",
+                "version": "1.2.3",
+                "requires_python": ">=3.6",
+            },
+        )
+        metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
+        candidate = NoopCandidate()
+        candidate.metadata = metadata
+
+        assert not candidate.is_env_compatible(
+            environment={"python_version": "3.0.0"}, tags=[]
+        )
+
+
+class TestWheelCandidate:
     def test_default_id(self):
         details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
@@ -54,8 +91,7 @@ class TestCandidate:
             "hashes": {},
         }
 
-        wheel = resolve.Wheel(details)
-        candidate = resolve.Candidate(wheel)
+        candidate = resolve.WheelCandidate(details)
 
         assert candidate.identifier == ("spam", frozenset())
 
@@ -66,11 +102,88 @@ class TestCandidate:
             "hashes": {},
         }
 
-        wheel = resolve.Wheel(details)
         extras = [packaging.utils.canonicalize_name(name) for name in ["foo", "bar"]]
-        candidate = resolve.Candidate(wheel, extras)
+        candidate = resolve.WheelCandidate(details, extras)
 
         assert candidate.identifier == ("spam", frozenset(extras))
+
+    def test_equality(self):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        candidate = resolve.WheelCandidate(details)
+
+        assert candidate == resolve.WheelCandidate(details)
+
+    def test_is_not_env_compatible_metadata(self):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        candidate = resolve.WheelCandidate(details)
+        raw_metadata = typing.cast(
+            packaging.metadata.RawMetadata,
+            {
+                "metadata_version": "2.3",
+                "name": "Spam",
+                "version": "1.2.3",
+                "requires_python": ">=3.6",
+            },
+        )
+        metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
+        candidate = NoopCandidate()
+        candidate.metadata = metadata
+
+        assert not candidate.is_env_compatible(
+            environment={"python_version": "3.0"}, tags=[]
+        )
+
+    def test_is_not_env_compatible_requires_python(self):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+            "requires-python": ">=3.6",
+        }
+        candidate = resolve.WheelCandidate(details)
+
+        assert not candidate.is_env_compatible(
+            environment={"python_version": "3.0"}, tags=[]
+        )
+
+    def test_is_not_env_compatbile_wheel_tags(self):
+        filename = "Distro-1.2.3-456-py313-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        candidate = resolve.WheelCandidate(details)
+
+        assert not candidate.is_env_compatible(
+            environment={}, tags=[packaging.tags.Tag("py3", "none", "any")]
+        )
+
+    def test_is_env_compatible(self):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+            "requires-python": ">=3.6",
+        }
+        candidate = resolve.WheelCandidate(details)
+
+        assert candidate.is_env_compatible(
+            environment={"python_version": "3.6.0"},
+            tags=[packaging.tags.Tag("py3", "none", "any")],
+        )
 
 
 class TestRequirement:
@@ -103,9 +216,7 @@ class TestIdentify:
             "url": "spam.whl",
             "hashes": {},
         }
-
-        wheel = resolve.Wheel(details)
-        candidate = resolve.Candidate(wheel)
+        candidate = resolve.WheelCandidate(details)
 
         assert NoopWheelProvider().identify(candidate) == candidate.identifier
 
@@ -117,9 +228,7 @@ class TestGetPreference:
             "url": "spam.whl",
             "hashes": {},
         }
-
-        wheel = resolve.Wheel(details)
-        candidate = resolve.Candidate(wheel)
+        candidate = resolve.WheelCandidate(details)
 
         count = 5
 
@@ -143,36 +252,32 @@ class TestSortCandidates:
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_2_0_0 = resolve.Wheel(details_2_0_0)
+        candidate_2_0_0 = resolve.WheelCandidate(details_2_0_0)
 
         details_1_2_3: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_1_2_3 = resolve.Wheel(details_1_2_3)
+        candidate_1_2_3 = resolve.WheelCandidate(details_1_2_3)
 
         details_1_0_0: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_1_0_0 = resolve.Wheel(details_1_0_0)
+        candidate_1_0_0 = resolve.WheelCandidate(details_1_0_0)
 
-        wheels = [wheel_2_0_0, wheel_1_2_3, wheel_1_0_0]
-        random.shuffle(wheels)
+        candidates = [candidate_2_0_0, candidate_1_2_3, candidate_1_0_0]
+        randomized_candidates = candidates[:]
+        random.shuffle(randomized_candidates)
 
         provider = NoopWheelProvider(
-            {}, tags=[packaging.tags.Tag("py3", "none", "any")]
+            environment={}, tags=[packaging.tags.Tag("py3", "none", "any")]
         )
+        sorted_candidates = provider.sort_candidates(candidates)
 
-        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
-
-        assert [candidate.wheel for candidate in candidates] == [
-            wheel_2_0_0,
-            wheel_1_2_3,
-            wheel_1_0_0,
-        ]
+        assert sorted_candidates == candidates
 
     def test_tag_preference(self):
         details_platform: simple.ProjectFileDetails_1_0 = {
@@ -180,21 +285,21 @@ class TestSortCandidates:
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_platform = resolve.Wheel(details_platform)
+        wheel_platform = resolve.WheelCandidate(details_platform)
 
         details_abi: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-cp313-abi4-wasi.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_abi = resolve.Wheel(details_abi)
+        wheel_abi = resolve.WheelCandidate(details_abi)
 
         details_interpreter: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_interpreter = resolve.Wheel(details_interpreter)
+        wheel_interpreter = resolve.WheelCandidate(details_interpreter)
 
         wheels = [wheel_platform, wheel_abi, wheel_interpreter]
         random.shuffle(wheels)
@@ -205,15 +310,11 @@ class TestSortCandidates:
             packaging.tags.Tag("py3", "none", "any"),
         ]
 
-        provider = NoopWheelProvider({}, tags=tags)
+        provider = NoopWheelProvider(environment={}, tags=tags)
 
-        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
+        candidates = provider.sort_candidates(wheels)
 
-        assert [candidate.wheel for candidate in candidates] == [
-            wheel_platform,
-            wheel_abi,
-            wheel_interpreter,
-        ]
+        assert candidates == [wheel_platform, wheel_abi, wheel_interpreter]
 
     def test_build_tag_preference(self):
         details_no_tag: simple.ProjectFileDetails_1_0 = {
@@ -221,28 +322,28 @@ class TestSortCandidates:
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_no_tag = resolve.Wheel(details_no_tag)
+        wheel_no_tag = resolve.WheelCandidate(details_no_tag)
 
         details_smaller_tag_int: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-1-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_smaller_tag_int = resolve.Wheel(details_smaller_tag_int)
+        wheel_smaller_tag_int = resolve.WheelCandidate(details_smaller_tag_int)
 
         details_smaller_tag_alpha: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-2a-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_smaller_tag_alpha = resolve.Wheel(details_smaller_tag_alpha)
+        wheel_smaller_tag_alpha = resolve.WheelCandidate(details_smaller_tag_alpha)
 
         details_biggest: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-2b-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_biggest = resolve.Wheel(details_biggest)
+        wheel_biggest = resolve.WheelCandidate(details_biggest)
 
         wheels = [
             wheel_biggest,
@@ -253,12 +354,11 @@ class TestSortCandidates:
         random.shuffle(wheels)
 
         provider = NoopWheelProvider(
-            {}, tags=[packaging.tags.Tag("py3", "none", "any")]
+            environment={}, tags=[packaging.tags.Tag("py3", "none", "any")]
         )
+        candidates = provider.sort_candidates(wheels)
 
-        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
-
-        assert [candidate.wheel for candidate in candidates] == [
+        assert candidates == [
             wheel_biggest,
             wheel_smaller_tag_alpha,
             wheel_smaller_tag_int,
@@ -272,40 +372,36 @@ class TestSortCandidates:
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_version = resolve.Wheel(details_2_0_0)
+        wheel_version = resolve.WheelCandidate(details_2_0_0)
 
         details_wheel_tag: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-cp313-cp313-wasi.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_wheel_tag = resolve.Wheel(details_wheel_tag)
+        wheel_wheel_tag = resolve.WheelCandidate(details_wheel_tag)
 
         details_build_tag: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-2-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_build_tag = resolve.Wheel(details_build_tag)
+        wheel_build_tag = resolve.WheelCandidate(details_build_tag)
 
         wheels = [wheel_version, wheel_wheel_tag, wheel_build_tag]
         random.shuffle(wheels)
 
         provider = NoopWheelProvider(
-            {},
+            environment={},
             tags=[
                 packaging.tags.Tag("cp313", "cp313", "wasi"),
                 packaging.tags.Tag("py3", "none", "any"),
             ],
         )
 
-        candidates = provider.sort_candidates(map(resolve.Candidate, wheels))
+        candidates = provider.sort_candidates(wheels)
 
-        assert [candidate.wheel for candidate in candidates] == [
-            wheel_version,
-            wheel_wheel_tag,
-            wheel_build_tag,
-        ]
+        assert candidates == [wheel_version, wheel_wheel_tag, wheel_build_tag]
 
 
 class TestIsSatisfiedBy:
@@ -325,8 +421,7 @@ class TestIsSatisfiedBy:
             "url": f"https://example.com/{filename}",
             "hashes": {},
         }
-        wheel = resolve.Wheel(details)
-        candidate = resolve.Candidate(wheel)
+        candidate = resolve.WheelCandidate(details)
         req = packaging.requirements.Requirement(requirement)
         requirement = resolve.Requirement(req)
         assert NoopWheelProvider().is_satisfied_by(requirement, candidate) == matches
@@ -348,13 +443,16 @@ class TestIsSatisfiedBy:
             "url": f"https://example.com/{filename}",
             "hashes": {},
         }
-        wheel = resolve.Wheel(details)
-        candidate = resolve.Candidate(wheel, candidate_extra)
+        candidate = resolve.WheelCandidate(details, candidate_extra)
 
         req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
         requirement = resolve.Requirement(packaging.requirements.Requirement(req))
 
         assert NoopWheelProvider().is_satisfied_by(requirement, candidate) == matches
+
+
+class TestFilterCandidates:
+    pass
 
 
 class TestFindMatches:
