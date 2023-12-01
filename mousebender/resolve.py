@@ -100,6 +100,7 @@ class WheelCandidate(Candidate):
             return NotImplemented
         return self.details == other.details
 
+    @typing.override
     def is_env_compatible(
         self, *, environment: dict[str, str], tags: Sequence[packaging.tags.Tag]
     ) -> bool:

@@ -452,12 +452,58 @@ class TestIsSatisfiedBy:
 
 
 class TestFilterCandidates:
-    pass
+    def test_all_true(self):
+        class CompatibleCandidate(NoopCandidate):
+            def is_env_compatible(self, *, environment, tags):
+                return True
+
+        candidates = [
+            CompatibleCandidate(),
+            CompatibleCandidate(),
+            CompatibleCandidate(),
+        ]
+        provider = NoopWheelProvider(environment={}, tags=[])
+
+        assert list(provider._filter_candidates(candidates)) == candidates
+
+    def test_all_false(self):
+        class IncompatibleCandidate(NoopCandidate):
+            def is_env_compatible(self, *, environment, tags):
+                return False
+
+        candidates = [
+            IncompatibleCandidate(),
+            IncompatibleCandidate(),
+            IncompatibleCandidate(),
+        ]
+        provider = NoopWheelProvider(environment={}, tags=[])
+
+        assert list(provider._filter_candidates(candidates)) == []
+
+    def test_mix(self):
+        class MaybeCompatibleCandidate(NoopCandidate):
+            def __init__(self, compatible):
+                super().__init__()
+                self.compatible = compatible
+
+            def is_env_compatible(self, *, environment, tags):
+                return self.compatible
+
+        candidates = [
+            MaybeCompatibleCandidate(False),
+            MaybeCompatibleCandidate(True),
+            MaybeCompatibleCandidate(False),
+        ]
+        provider = NoopWheelProvider(environment={}, tags=[])
+
+        assert list(provider._filter_candidates(candidates)) == [candidates[1]]
 
 
 class TestFindMatches:
+    # XXX
     pass
 
 
 class TestGetDependencies:
+    # XXX
     pass
