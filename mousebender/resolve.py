@@ -293,7 +293,7 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
             lambda c: all(self.is_satisfied_by(r, c) for r in requirements[identifier]),
             candidates,
         )
-        incompat_candidates = list(incompatibilities[identifier])
+        incompat_candidates = list(incompatibilities.get(identifier, []))
         filtered_candidates = list(
             filter(lambda c: c not in incompat_candidates, filtered_candidates_by_req)
         )

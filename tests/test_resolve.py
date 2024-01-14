@@ -1,5 +1,6 @@
 import random
 import typing
+from typing import Iterable, Sequence
 
 import packaging.metadata
 import packaging.requirements
@@ -7,13 +8,22 @@ import packaging.tags
 import packaging.utils
 import packaging.version
 import pytest
+from packaging.tags import Tag
 
 from mousebender import resolve, simple
+from mousebender.resolve import Candidate
+
+
+def identifier(name: str, extras: Iterable[str] = ()) -> resolve._Identifier:
+    return (
+        packaging.utils.canonicalize_name(name),
+        frozenset(map(packaging.utils.canonicalize_name, extras)),
+    )
 
 
 class NoopCandidate(resolve.Candidate):
     def __init__(self):
-        self.identifier = (packaging.utils.canonicalize_name("spam"), frozenset())
+        self.identifier = identifier("spam")
         self.version = packaging.version.Version("1.2.3")
         self.metadata = None
 
@@ -227,7 +237,7 @@ class TestGetPreference:
 
         candidates = {
             candidate.identifier: iter([candidate] * count),
-            (packaging.utils.canonicalize_name("foo"), frozenset()): iter([]),
+            identifier("foo"): iter([]),
         }
 
         assert (
@@ -492,11 +502,67 @@ class TestFilterCandidates:
         assert list(provider._filter_candidates(candidates)) == [candidates[1]]
 
 
+class LocalWheelProvider(resolve.WheelProvider):
+    def __init__(
+        self,
+        *,
+        environment: dict[str, str] | None = None,
+        tags: Sequence[Tag] | None = None,
+        candidates: Iterable[Candidate] | None = None,
+        metadata: dict[resolve._Identifier, packaging.metadata.Metadata] | None = None,
+    ) -> None:
+        super().__init__(environment=environment, tags=tags)
+        self.candidates = candidates or []
+        self.metadata = metadata or {}
+
+    def available_candidates(
+        self, name: packaging.utils.NormalizedName
+    ) -> Iterable[Candidate]:
+        return self.candidates
+
+    def fetch_candidate_metadata(self, candidates: Iterable[Candidate]) -> None:
+        for candidate in candidates:
+            candidate.metadata = self.metadata.get(candidate.identifier)
+
+
 class TestFindMatches:
-    # XXX
+    def test_available_candidates_cached(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        candidate = resolve.WheelCandidate(details)
+        provider = LocalWheelProvider(
+            environment={},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[candidate],
+        )
+
+        assert not provider._candidate_cache
+
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+        provider.find_matches(
+            identifier("spam"), {candidate.identifier: iter([requirement])}, {}
+        )
+
+        assert provider._candidate_cache == {candidate.identifier[0]: [candidate]}
+
+    # XXX filter from available_candidates() based on environment and tags
+    # XXX candidates filtered by requirements
+    # XXX incompatible candidates filtered out
+    # XXX Fill in missing metadata
+    # XXX Filter based on newly fetched metadata
+    # XXX Candidates are sorted
     pass
 
 
 class TestGetDependencies:
+    # XXX
+    pass
+
+
+class TestResolution:
     # XXX
     pass
