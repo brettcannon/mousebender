@@ -119,13 +119,6 @@ class TestWheelCandidate:
         assert candidate == resolve.WheelCandidate(details)
 
     def test_is_not_env_compatible_metadata(self):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
-            "hashes": {},
-        }
-        candidate = resolve.WheelCandidate(details)
         raw_metadata = typing.cast(
             packaging.metadata.RawMetadata,
             {
