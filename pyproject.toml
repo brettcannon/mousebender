@@ -45,6 +45,9 @@ Changelog = "https://github.com/brettcannon/mousebender/releases"
 Repository = "https://github.com/brettcannon/mousebender"
 Issues = "https://github.com/brettcannon/mousebender/issues"
 
+[tool.mypy]
+check_untyped_defs = true
+
 [tool.coverage]
 run.source = ["mousebender/"]
 run.branch = true
