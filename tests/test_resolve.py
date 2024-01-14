@@ -629,6 +629,7 @@ class TestFindMatches:
         )
 
         assert found == [good_candidate]
+
     # XXX Fill in missing metadata
     # XXX Filter based on newly fetched metadata
     # XXX Candidates are sorted
