@@ -34,10 +34,11 @@ def check_types(session):
 @nox.session
 def format(session, check=False):
     """Format the code."""
-    tool = "black"
+    tool = "ruff"
     session.install(tool)
-    args = ["--check"] if check else []
-    args.append(".")
+    args = ["format"]
+    if check:
+        args.append("--check")
     session.run(tool, *args)
 
 
