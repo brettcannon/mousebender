@@ -549,9 +549,33 @@ class TestFindMatches:
 
         assert provider._candidate_cache == {candidate.identifier[0]: [candidate]}
 
-    # XXX filter from available_candidates() based on environment and tags
-    # XXX candidates filtered by requirements
-    # XXX incompatible candidates filtered out
+    def test_filter_available_candidates_by_file_details(self):
+        """Candidates from a server should be initially filtered by wheel tags."""
+        good_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        good_candidate = resolve.WheelCandidate(good_details)
+        bad_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-cp313-abi3-manylinux_2_24.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        bad_candidate = resolve.WheelCandidate(bad_details)
+        provider = LocalWheelProvider(
+            environment={},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[bad_candidate, good_candidate],
+        )
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+        found = provider.find_matches(
+            identifier("spam"), {good_candidate.identifier: iter([requirement])}, {}
+        )
+
+        assert found == [good_candidate]
+
     # XXX Fill in missing metadata
     # XXX Filter based on newly fetched metadata
     # XXX Candidates are sorted
