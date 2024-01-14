@@ -232,10 +232,10 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         identifier: _Identifier,
         resolutions: Mapping[_Identifier, Candidate],
         candidates: Mapping[_Identifier, Iterator[Candidate]],
-        information: Mapping[
+        information: Mapping[  # type: ignore[override]
             _Identifier, Iterator[_RequirementInformation[Requirement, Candidate]]
         ],
-        backtrack_causes: Sequence[_RequirementInformation[Requirement, Candidate]],
+        backtrack_causes: Sequence[_RequirementInformation[Requirement, Candidate]],  # type: ignore[override]
     ) -> int:
         """Calculate the preference to solve for a requirement.
 
