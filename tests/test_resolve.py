@@ -602,6 +602,33 @@ class TestFindMatches:
 
         assert found == [good_candidate]
 
+    def test_filter_by_incompatibility(self):
+        good_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        good_candidate = resolve.WheelCandidate(good_details)
+        bad_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        bad_candidate = resolve.WheelCandidate(bad_details)
+        provider = LocalWheelProvider(
+            environment={},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[bad_candidate, good_candidate],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        found = provider.find_matches(
+            identifier("spam"),
+            {good_candidate.identifier: iter([requirement])},
+            {good_candidate.identifier: iter([bad_candidate])},
+        )
+
+        assert found == [good_candidate]
     # XXX Fill in missing metadata
     # XXX Filter based on newly fetched metadata
     # XXX Candidates are sorted
