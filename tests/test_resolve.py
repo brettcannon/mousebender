@@ -664,8 +664,51 @@ class TestFindMatches:
 
         assert candidate.metadata == metadata[candidate.identifier]
 
-    # XXX Filter based on newly fetched metadata
-    # XXX Candidates are sorted
+    def test_candidates_filtered_on_fetched_metadata(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        candidate = resolve.WheelCandidate(details)
+        metadata = {
+            candidate.identifier: packaging.metadata.Metadata.from_raw(
+                typing.cast(
+                    packaging.metadata.RawMetadata,
+                    {
+                        "metadata_version": "2.3",
+                        "name": "Spam",
+                        "version": "1.2.3",
+                        "requires_python": ">=3.12",
+                    },
+                )
+            )
+        }
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+
+        provider = LocalWheelProvider(
+            environment={},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[candidate],
+            # No metadata
+        )
+
+        # Make sure the candidate is not filtered w/o metadata.
+        assert provider.find_matches(
+            identifier("spam"), {candidate.identifier: iter([requirement])}, {}
+        )
+
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.9"},  # Too old
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[candidate],
+            metadata=metadata,
+        )
+
+        assert not provider.find_matches(
+            identifier("spam"), {candidate.identifier: iter([requirement])}, {}
+        )
 
 
 class TestGetDependencies:
