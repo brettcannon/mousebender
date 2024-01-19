@@ -283,7 +283,8 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
             candidates = self._candidate_cache[name]
         else:
             potential_candidates = self.available_candidates(name)
-            # Quickly filter based on file details before fetching metadata.
+            # Quickly filter based on file details to avoid pointlessly fetching
+            # metadata.
             filtered_on_details = self._filter_candidates(potential_candidates)
 
             self._candidate_cache[name] = list(filtered_on_details)
