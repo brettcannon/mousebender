@@ -630,10 +630,42 @@ class TestFindMatches:
 
         assert found == [good_candidate]
 
-    # XXX Fill in missing metadata
+    def test_fetch_candidate_metadata(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        candidate = resolve.WheelCandidate(details)
+        metadata = {
+            candidate.identifier: packaging.metadata.Metadata.from_raw(
+                typing.cast(
+                    packaging.metadata.RawMetadata,
+                    {
+                        "metadata_version": "2.3",
+                        "name": "Spam",
+                        "version": "1.2.3",
+                        "requires_python": ">=3.6",
+                    },
+                )
+            )
+        }
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[candidate],
+            metadata=metadata,
+        )
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+        provider.find_matches(
+            identifier("spam"), {candidate.identifier: iter([requirement])}, {}
+        )
+
+        assert candidate.metadata == metadata[candidate.identifier]
+
     # XXX Filter based on newly fetched metadata
     # XXX Candidates are sorted
-    pass
 
 
 class TestGetDependencies:
