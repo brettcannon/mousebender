@@ -207,10 +207,10 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
 
         return wheel.version, len(self.tags) - tag_priority, wheel.build_tag or ()
 
+    # This exists as method so that subclasses can e.g. prefer older versions.
     # Override for sdists.
     def sort_candidates(self, candidates: Iterable[Candidate]) -> Sequence[Candidate]:
         """Sort candidates from most to least preferred."""
-        # A method so that subclasses can e.g. prefer older versions.
         sorted_candidates = sorted(
             typing.cast(Iterable[WheelCandidate], candidates),
             key=lambda c: self._wheel_sort_key(c.wheel),
