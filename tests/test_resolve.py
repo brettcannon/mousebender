@@ -710,6 +710,34 @@ class TestFindMatches:
             identifier("spam"), {candidate.identifier: iter([requirement])}, {}
         )
 
+    def test_candidates_sorted(self):
+        old_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        old_candidate = resolve.WheelCandidate(old_details)
+        new_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        new_candidate = resolve.WheelCandidate(new_details)
+        provider = LocalWheelProvider(
+            environment={},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            candidates=[new_candidate, old_candidate],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        found = provider.find_matches(
+            identifier("spam"), {old_candidate.identifier: iter([requirement])}, {}
+        )
+
+        # Candidates purposefully in least to most preferred order as that's
+        # reverse of what's expected.
+        assert found == provider.sort_candidates([old_candidate, new_candidate])
+
 
 class TestGetDependencies:
     # XXX
