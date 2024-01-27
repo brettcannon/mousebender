@@ -131,6 +131,12 @@ class Requirement:
         extras = frozenset(map(packaging.utils.canonicalize_name, req.extras))
         self.identifier = name, extras
 
+    def __eq__(self, other: object) -> bool:
+        """Check if two requirements are equal."""
+        if not isinstance(other, Requirement):
+            return NotImplemented
+        return self.identifier == other.identifier and self.req == other.req
+
 
 _RT = TypeVar("_RT")  # Requirement.
 _CT = TypeVar("_CT")  # Candidate.
@@ -319,6 +325,7 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
         requirements = []
         name, extras = candidate.identifier
         if extras:
+            # https://github.com/brettcannon/mousebender/issues/105#issuecomment-1704244739
             req = packaging.requirements.Requirement(f"{name}=={candidate.version}")
             requirements.append(Requirement(req))
 

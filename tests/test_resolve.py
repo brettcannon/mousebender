@@ -740,7 +740,39 @@ class TestFindMatches:
 
 
 class TestGetDependencies:
-    # XXX
+    def test_requirement_without_markers(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.12",
+                    "requires_dist": ["bacon", "eggs"],
+                },
+            )
+        )
+        candidate = resolve.WheelCandidate(details)
+        candidate.metadata = metadata
+        provider = LocalWheelProvider()
+
+        dependencies = provider.get_dependencies(candidate)
+        expected = [
+            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+            resolve.Requirement(packaging.requirements.Requirement("eggs")),
+        ]
+        assert dependencies == expected
+
+    # XXX all requirements
+    # XXX markers on requirements are evaluated
+    # XXX add pinned dependency when there's an extra
+    # XXX all requirements pulled in by the extra
     pass
 
 
