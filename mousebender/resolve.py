@@ -22,7 +22,7 @@ import packaging.specifiers
 import packaging.tags
 import packaging.utils
 import packaging.version
-import resolvelib.providers
+import resolvelib
 
 from . import simple
 
@@ -147,7 +147,7 @@ class _RequirementInformation(tuple, Generic[_RT, _CT]):
     parent: Optional[_CT]
 
 
-class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
+class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     """A provider for resolving requirements based on wheels."""
 
     environment: dict[str, str]  # packaging.markers has not TypedDict for this.
@@ -339,5 +339,10 @@ class WheelProvider(resolvelib.providers.AbstractProvider, abc.ABC):
                 for extra in extras
             ):
                 requirements.append(Requirement(req))
+
+        # Since the markers have been evaluated, they are no longer needed.
+        # Stripping them out simplifies testing.
+        for requirement in requirements:
+            requirement.req.marker = None
 
         return requirements
