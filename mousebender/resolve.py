@@ -137,6 +137,10 @@ class Requirement:
             return NotImplemented
         return self.identifier == other.identifier and self.req == other.req
 
+    def __repr__(self) -> str:
+        """Return a string representation of the requirement."""
+        return f"<Requirement: req={self.req}, identifier={self.identifier!r}>"
+
 
 _RT = TypeVar("_RT")  # Requirement.
 _CT = TypeVar("_CT")  # Candidate.
