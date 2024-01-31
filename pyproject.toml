@@ -56,6 +56,9 @@ report.fail_under = 100
 [tool.isort]
 profile = "black"
 
+[tool.pytest]
+xfail_strict = true
+
 [tool.ruff]
 select = ["E", "F", "W", "D", "B", "A", "ANN", "RUF", "I"]
 ignore = ["E501", "D105", "D107", "D203", "D213", "ANN101"]
