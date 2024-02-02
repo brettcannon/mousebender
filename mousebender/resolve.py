@@ -160,11 +160,12 @@ class _RequirementInformation(tuple, Generic[_RT, _CT]):
 class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     """A provider for resolving requirements based on wheels."""
 
-    environment: dict[str, str]  # packaging.markers has not TypedDict for this.
+    environment: dict[str, str]  # packaging.markers has no TypedDict for this.
     tags: list[packaging.tags.Tag]
-    # Assumed to have already been filtered down to only wheels that have any
-    # chance to work with the specified environment details.
-    _candidate_cache: dict[packaging.utils.NormalizedName, Collection[Candidate]]
+    # If is assumed the files have already been filtered down to only wheels
+    # that have any chance to work with the specified environment details.
+    _file_details_cache: dict[packaging.utils.NormalizedName, Collection[FileDetails]]
+    _python_version: packaging.version.Version
 
     def __init__(
         self,
@@ -187,19 +188,21 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             self.tags = list(packaging.tags.sys_tags())
         else:
             self.tags = list(tags)
-        self._candidate_cache = {}
+        self._file_details_cache = {}
+        # TODO need to care that "python_version" doesn't have release level?
+        self._python_version = packaging.version.parse(environment["python_version"])
 
     # Override for sdists.
     @abc.abstractmethod
-    def available_candidates(
+    def available_files(
         self, name: packaging.utils.NormalizedName
-    ) -> Iterable[Candidate]:
+    ) -> Iterable[FileDetails]:
         """Get the available wheels for a distribution."""
         raise NotImplementedError
 
     # Override for sdists.
     @abc.abstractmethod
-    def fetch_candidate_metadata(self, candidates: Iterable[Candidate]) -> None:
+    def fetch_metadata(self, file_details: Iterable[FileDetails]) -> None:
         """Fetch the metadata of e.g. a wheel and add it in-place."""
         # A method so that subclasses can do paralle/async fetching of the metadata.
         raise NotImplementedError
@@ -233,12 +236,10 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             reverse=True,
         )
 
-        return sorted_candidates
-
     @typing.override
     def identify(
         self, requirement_or_candidate: Union[Requirement, Candidate]
-    ) -> _Identifier:
+    ) -> Identifier:
         """Get the key for a requirement or candidate."""
         return requirement_or_candidate.identifier
 

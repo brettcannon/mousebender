@@ -14,25 +14,20 @@ from mousebender import resolve, simple
 from mousebender.resolve import Candidate
 
 
-def identifier(name: str, extras: Iterable[str] = ()) -> resolve._Identifier:
+def identifier(name: str, extras: Iterable[str] = ()) -> resolve.Identifier:
     return (
         packaging.utils.canonicalize_name(name),
         frozenset(map(packaging.utils.canonicalize_name, extras)),
     )
 
 
-class NoopCandidate(resolve.Candidate):
-    def __init__(self):
-        self.identifier = identifier("spam")
-        self.version = packaging.version.Version("1.2.3")
-        self.metadata = None
-
-
-class NoopWheelProvider(resolve.WheelProvider):
-    def available_candidates(self, name):
+class NothingWheelProvider(resolve.WheelProvider):
+    @typing.override
+    def available_files(self, name):
         raise NotImplementedError
 
-    def fetch_candidate_metadata(self, wheel):
+    @typing.override
+    def fetch_metadata(self, wheel):
         raise NotImplementedError
 
 
@@ -160,21 +155,27 @@ class TestRequirement:
         assert NoopWheelProvider().identify(candidate) == candidate.identifier
 
 
-class TestGetPreference:
-    def test_iterator(self):
+
+class TestIdentify:
+    def test_requirement(self):
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+
+        assert requirement.req == req
+        assert NothingWheelProvider().identify(requirement) == requirement.identifier
+
+    def test_candidate(self):
         details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.WheelCandidate(details)
+        candidate = resolve.Candidate(
+            identifier("spam"), resolve.WheelFileDetails(details)
+        )
 
-        count = 5
+        assert NothingWheelProvider().identify(candidate) == candidate.identifier
 
-        candidates = {
-            candidate.identifier: iter([candidate] * count),
-            identifier("foo"): iter([]),
-        }
 
         assert (
             NoopWheelProvider().get_preference(
