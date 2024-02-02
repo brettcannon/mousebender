@@ -152,8 +152,34 @@ class TestRequirement:
         assert str(req) in repr(requirement)
 
 
-        assert NoopWheelProvider().identify(candidate) == candidate.identifier
+class TestWheelProviderInit:
+    def test_defaults(self):
+        default_tags = list(packaging.tags.sys_tags())
+        default_env = packaging.markers.default_environment()
+        provider = NothingWheelProvider()
 
+        assert provider.tags == default_tags
+        assert provider.environment == default_env
+
+    def test_environment(self):
+        env = {"python_version": "3.12"}
+        provider = NothingWheelProvider(environment=env)
+
+        assert provider.environment == env
+
+    def test_tags(self):
+        tags = [packaging.tags.Tag("py3", "none", "any")]
+        provider = NothingWheelProvider(tags=tags)
+
+        assert provider.tags == tags
+
+    def test_python_version(self):
+        env = {"python_version": "3.12"}
+        provider = NothingWheelProvider(environment=env)
+
+        assert provider._python_version == packaging.version.Version(
+            env["python_version"]
+        )
 
 
 class TestIdentify:
