@@ -26,7 +26,7 @@ import resolvelib
 
 from . import simple
 
-_Identifier = tuple[
+Identifier = tuple[
     packaging.utils.NormalizedName, frozenset[packaging.utils.NormalizedName]
 ]
 
@@ -113,11 +113,21 @@ class WheelFileDetails(FileDetails):
         return super().is_compatible(python_version, environment, tags)
 
 
+class Candidate:
+    """A Candidate to satisfy a requirement."""
+
+    identifier: Identifier
+    file: FileDetails
+
+    def __init__(self, identifier: Identifier, file: FileDetails) -> None:
+        self.identifier = identifier
+        self.file = file
+
 
 class Requirement:
     """A requirement for a distribution."""
 
-    identifier: _Identifier
+    identifier: Identifier
     req: packaging.requirements.Requirement
 
     def __init__(self, req: packaging.requirements.Requirement, /) -> None:
@@ -135,7 +145,7 @@ class Requirement:
 
     def __repr__(self) -> str:
         """Return a string representation of the requirement."""
-        return f"<Requirement: req={self.req}, identifier={self.identifier!r}>"
+        return f'{type(self).__qualname__}("{self.req!s}")'
 
 
 _RT = TypeVar("_RT")  # Requirement.

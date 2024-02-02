@@ -143,22 +143,19 @@ class TestRequirement:
         assert requirement.req == req
         assert requirement.identifier == ("spam", frozenset(["foo", "bar"]))
 
+    def test_equality(self):
+        requirement_spec = "Spam[Foo,Bar]==1.2.3"
+        req1 = packaging.requirements.Requirement(requirement_spec)
+        req2 = packaging.requirements.Requirement(requirement_spec)
 
-class TestIdentify:
-    def test_requirement(self):
-        req = packaging.requirements.Requirement("Spam==1.2.3")
+        assert resolve.Requirement(req1) == resolve.Requirement(req2)
+
+    def test_repr(self):
+        req = packaging.requirements.Requirement("Spam[Foo,Bar]==1.2.3")
         requirement = resolve.Requirement(req)
 
-        assert requirement.req == req
-        assert NoopWheelProvider().identify(requirement) == requirement.identifier
+        assert str(req) in repr(requirement)
 
-    def test_candidate(self):
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
-            "url": "spam.whl",
-            "hashes": {},
-        }
-        candidate = resolve.WheelCandidate(details)
 
         assert NoopWheelProvider().identify(candidate) == candidate.identifier
 
