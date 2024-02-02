@@ -267,6 +267,13 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     def is_satisfied_by(self, requirement: Requirement, candidate: Candidate) -> bool:
         """Check if a candidate satisfies a requirement."""
         # A method so subclasses can decide to e.g. allow for pre-releases.
+        print("Is", requirement, "satisfied by", candidate, "?", end=" ")
+        is_satisfied = (
+            requirement.identifier == candidate.identifier
+            and self._is_satisfied_by_file(candidate.file, requirement)
+        )
+        print(is_satisfied)
+        return is_satisfied
         return (
             requirement.identifier == candidate.identifier
             and candidate.version in requirement.req.specifier

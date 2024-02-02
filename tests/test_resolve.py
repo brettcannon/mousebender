@@ -379,10 +379,12 @@ class TestIsSatisfiedBy:
             "url": f"https://example.com/{filename}",
             "hashes": {},
         }
-        candidate = resolve.WheelCandidate(details)
+        candidate = resolve.Candidate(
+            identifier("distro"), resolve.WheelFileDetails(details)
+        )
         req = packaging.requirements.Requirement(requirement)
         requirement = resolve.Requirement(req)
-        assert NoopWheelProvider().is_satisfied_by(requirement, candidate) == matches
+        assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
 
     @pytest.mark.parametrize(
         ["req_extra", "candidate_extra", "matches"],
@@ -401,12 +403,14 @@ class TestIsSatisfiedBy:
             "url": f"https://example.com/{filename}",
             "hashes": {},
         }
-        candidate = resolve.WheelCandidate(details, candidate_extra)
+        candidate = resolve.Candidate(
+            identifier("distro", candidate_extra), resolve.WheelFileDetails(details)
+        )
 
         req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
         requirement = resolve.Requirement(packaging.requirements.Requirement(req))
 
-        assert NoopWheelProvider().is_satisfied_by(requirement, candidate) == matches
+        assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
 
 
 class TestFilterCandidates:
