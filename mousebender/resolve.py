@@ -246,11 +246,11 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     @typing.override
     def get_preference(
         self,
-        identifier: _Identifier,
-        resolutions: Mapping[_Identifier, Candidate],
-        candidates: Mapping[_Identifier, Iterator[Candidate]],
+        identifier: Identifier,
+        resolutions: Mapping[Identifier, Candidate],
+        candidates: Mapping[Identifier, Iterator[Candidate]],
         information: Mapping[  # type: ignore[override]
-            _Identifier, Iterator[_RequirementInformation[Requirement, Candidate]]
+            Identifier, Iterator[_RequirementInformation[Requirement, Candidate]]
         ],
         backtrack_causes: Sequence[_RequirementInformation[Requirement, Candidate]],  # type: ignore[override]
     ) -> int:

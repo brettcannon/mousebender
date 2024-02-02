@@ -177,8 +177,26 @@ class TestIdentify:
         assert NothingWheelProvider().identify(candidate) == candidate.identifier
 
 
+class TestGetPreference:
+    def test_iterator(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        candidate = resolve.Candidate(
+            identifier("spam"), resolve.WheelFileDetails(details)
+        )
+
+        count = 5
+
+        candidates = {
+            candidate.identifier: iter([candidate] * count),
+            identifier("foo"): iter([]),
+        }
+
         assert (
-            NoopWheelProvider().get_preference(
+            NothingWheelProvider().get_preference(
                 candidate.identifier, {}, candidates, {}, []
             )
             == count
