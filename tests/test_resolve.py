@@ -21,6 +21,12 @@ def identifier(name: str, extras: Iterable[str] = ()) -> resolve.Identifier:
     )
 
 
+def candidate_from_details(details: simple.ProjectFileDetails_1_0) -> resolve.Candidate:
+    file_details = resolve.WheelFileDetails(details)
+
+    return resolve.Candidate((file_details.name, frozenset()), file_details)
+
+
 class NothingWheelProvider(resolve.WheelProvider):
     @typing.override
     def available_files(self, name):
@@ -196,9 +202,7 @@ class TestIdentify:
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.Candidate(
-            identifier("spam"), resolve.WheelFileDetails(details)
-        )
+        candidate = candidate_from_details(details)
 
         assert NothingWheelProvider().identify(candidate) == candidate.identifier
 
@@ -210,9 +214,7 @@ class TestGetPreference:
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.Candidate(
-            identifier("spam"), resolve.WheelFileDetails(details)
-        )
+        candidate = candidate_from_details(details)
 
         count = 5
 
@@ -229,39 +231,89 @@ class TestGetPreference:
         )
 
 
-class TestSortCandidates:
+class TestIsSatisfiedBy:
+    @pytest.mark.parametrize(
+        ["requirement", "matches"],
+        [
+            ("Distro", True),
+            ("Spam", False),
+            ("Distro>=1.2.0", True),
+            ("Distro<1.2.3", False),
+        ],
+    )
+    def test_no_extras(self, requirement, matches):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        candidate = candidate_from_details(details)
+        req = packaging.requirements.Requirement(requirement)
+        requirement = resolve.Requirement(req)
+        assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
+
+    @pytest.mark.parametrize(
+        ["req_extra", "candidate_extra", "matches"],
+        [
+            (frozenset(), frozenset(), True),
+            (frozenset(["extras"]), frozenset(), False),
+            (frozenset(), frozenset(["extras"]), False),
+            (frozenset(["extras"]), frozenset(["extras"]), True),
+            (frozenset(["extra1"]), frozenset(["extra2"]), False),
+        ],
+    )
+    def test_extras(self, req_extra, candidate_extra, matches):
+        filename = "Distro-1.2.3-456-py3-none-any.whl"
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": filename,
+            "url": f"https://example.com/{filename}",
+            "hashes": {},
+        }
+        candidate = resolve.Candidate(
+            identifier("distro", candidate_extra), resolve.WheelFileDetails(details)
+        )
+
+        req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
+        requirement = resolve.Requirement(packaging.requirements.Requirement(req))
+
+        assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
+
+
+class TestCandidateSortKey:
+    generate_key: Callable[
+        [resolve.Candidate], tuple
+    ] = NothingWheelProvider().candidate_sort_key
+
     def test_version_preference(self):
         details_2_0_0: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-2.0.0-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate_2_0_0 = resolve.WheelCandidate(details_2_0_0)
+        candidate_2_0_0 = candidate_from_details(details_2_0_0)
 
         details_1_2_3: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate_1_2_3 = resolve.WheelCandidate(details_1_2_3)
+        candidate_1_2_3 = candidate_from_details(details_1_2_3)
 
         details_1_0_0: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate_1_0_0 = resolve.WheelCandidate(details_1_0_0)
+        candidate_1_0_0 = candidate_from_details(details_1_0_0)
 
         candidates = [candidate_2_0_0, candidate_1_2_3, candidate_1_0_0]
         randomized_candidates = candidates[:]
         random.shuffle(randomized_candidates)
 
-        provider = NoopWheelProvider(
-            environment={}, tags=[packaging.tags.Tag("py3", "none", "any")]
-        )
-        sorted_candidates = provider.sort_candidates(candidates)
+        randomized_candidates.sort(key=self.generate_key, reverse=True)
 
-        assert sorted_candidates == candidates
+        assert randomized_candidates == candidates
 
     def test_tag_preference(self):
         details_platform: simple.ProjectFileDetails_1_0 = {
@@ -269,34 +321,31 @@ class TestSortCandidates:
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_platform = resolve.WheelCandidate(details_platform)
+        wheel_platform = candidate_from_details(details_platform)
 
         details_abi: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-cp313-abi4-wasi.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_abi = resolve.WheelCandidate(details_abi)
+        wheel_abi = candidate_from_details(details_abi)
 
         details_interpreter: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_interpreter = resolve.WheelCandidate(details_interpreter)
-
-        wheels = [wheel_platform, wheel_abi, wheel_interpreter]
-        random.shuffle(wheels)
+        wheel_interpreter = candidate_from_details(details_interpreter)
 
         tags = [
             packaging.tags.Tag("cp313", "cp313", "wasi"),
             packaging.tags.Tag("cp313", "abi4", "wasi"),
             packaging.tags.Tag("py3", "none", "any"),
         ]
-
-        provider = NoopWheelProvider(environment={}, tags=tags)
-
-        candidates = provider.sort_candidates(wheels)
+        provider = NothingWheelProvider(tags=tags)
+        candidates = [wheel_platform, wheel_abi, wheel_interpreter]
+        random.shuffle(candidates)
+        candidates.sort(key=provider.candidate_sort_key, reverse=True)
 
         assert candidates == [wheel_platform, wheel_abi, wheel_interpreter]
 
@@ -306,41 +355,38 @@ class TestSortCandidates:
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_no_tag = resolve.WheelCandidate(details_no_tag)
+        wheel_no_tag = candidate_from_details(details_no_tag)
 
         details_smaller_tag_int: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-1-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_smaller_tag_int = resolve.WheelCandidate(details_smaller_tag_int)
+        wheel_smaller_tag_int = candidate_from_details(details_smaller_tag_int)
 
         details_smaller_tag_alpha: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-2a-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_smaller_tag_alpha = resolve.WheelCandidate(details_smaller_tag_alpha)
+        wheel_smaller_tag_alpha = candidate_from_details(details_smaller_tag_alpha)
 
         details_biggest: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.0.0-2b-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_biggest = resolve.WheelCandidate(details_biggest)
+        wheel_biggest = candidate_from_details(details_biggest)
 
-        wheels = [
+        candidates = [
             wheel_biggest,
             wheel_smaller_tag_alpha,
             wheel_smaller_tag_int,
             wheel_no_tag,
         ]
-        random.shuffle(wheels)
+        random.shuffle(candidates)
 
-        provider = NoopWheelProvider(
-            environment={}, tags=[packaging.tags.Tag("py3", "none", "any")]
-        )
-        candidates = provider.sort_candidates(wheels)
+        candidates.sort(key=self.generate_key, reverse=True)
 
         assert candidates == [
             wheel_biggest,
@@ -349,41 +395,39 @@ class TestSortCandidates:
             wheel_no_tag,
         ]
 
-    def test_precedence(self):
+    def test_precedence_of_key_parts(self):
         "Version over wheel tag over build tag."
         details_2_0_0: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-2.0.0-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_version = resolve.WheelCandidate(details_2_0_0)
+        wheel_version = candidate_from_details(details_2_0_0)
 
         details_wheel_tag: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-cp313-cp313-wasi.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_wheel_tag = resolve.WheelCandidate(details_wheel_tag)
+        wheel_wheel_tag = candidate_from_details(details_wheel_tag)
 
         details_build_tag: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-2-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        wheel_build_tag = resolve.WheelCandidate(details_build_tag)
+        wheel_build_tag = candidate_from_details(details_build_tag)
 
-        wheels = [wheel_version, wheel_wheel_tag, wheel_build_tag]
-        random.shuffle(wheels)
-
-        provider = NoopWheelProvider(
-            environment={},
+        provider = NothingWheelProvider(
             tags=[
                 packaging.tags.Tag("cp313", "cp313", "wasi"),
                 packaging.tags.Tag("py3", "none", "any"),
             ],
         )
 
-        candidates = provider.sort_candidates(wheels)
+        candidates = [wheel_version, wheel_wheel_tag, wheel_build_tag]
+        random.shuffle(candidates)
+        candidates.sort(key=provider.candidate_sort_key, reverse=True)
 
         assert candidates == [wheel_version, wheel_wheel_tag, wheel_build_tag]
 

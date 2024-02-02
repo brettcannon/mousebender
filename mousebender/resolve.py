@@ -274,9 +274,29 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         )
         print(is_satisfied)
         return is_satisfied
+
+    # This exists as method so that subclasses can e.g. prefer older versions.
+    # Override for sdists.
+    def candidate_sort_key(self, candidate: Candidate) -> tuple:
+        """Provide a sort key for a candidate.
+
+        The key should lead to a sort of least to most preferred wheel.
+        Preference is determined by the newest version, tag priority/specificity
+        (as defined by self.tags), and then build tag.
+        """
+        assert isinstance(candidate.file, WheelFileDetails)
+
+        # A separate method so subclasses can e.g. prefer older versions.
+        for tag_priority, tag in enumerate(self.tags):  # noqa: B007
+            if tag in candidate.file.wheel.tags:
+                break
+        else:
+            raise ValueError("No compatible tags found for any wheels.")
+
         return (
-            requirement.identifier == candidate.identifier
-            and candidate.version in requirement.req.specifier
+            candidate.file.version,
+            len(self.tags) - tag_priority,
+            candidate.file.wheel.build_tag or (),
         )
 
     def _filter_candidates(
