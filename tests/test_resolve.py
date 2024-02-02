@@ -51,71 +51,26 @@ class TestWheel:
         assert wheel.build_tag == (456, "")
         assert wheel.tags == {packaging.tags.Tag("py3", "none", "any")}
 
-
-class TestCandidate:
-    def test_is_env_compatible_no_metadata(self):
-        assert NoopCandidate().is_env_compatible(environment={}, tags=[])
-
-    def test_is_env_compatible(self):
-        raw_metadata = typing.cast(
-            packaging.metadata.RawMetadata,
-            {
-                "metadata_version": "2.3",
-                "name": "Spam",
-                "version": "1.2.3",
-                "requires_python": ">=3.6",
-            },
-        )
-        metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
-        candidate = NoopCandidate()
-        candidate.metadata = metadata
-
-        assert NoopCandidate().is_env_compatible(
-            environment={"python_version": "3.6"}, tags=[]
-        )
-
-    def test_is_not_env_compatible(self):
-        raw_metadata = typing.cast(
-            packaging.metadata.RawMetadata,
-            {
-                "metadata_version": "2.3",
-                "name": "Spam",
-                "version": "1.2.3",
-                "requires_python": ">=3.6",
-            },
-        )
-        metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
-        candidate = NoopCandidate()
-        candidate.metadata = metadata
-
-        assert not candidate.is_env_compatible(
-            environment={"python_version": "3.0.0"}, tags=[]
-        )
-
-
-class TestWheelCandidate:
-    def test_default_id(self):
+    def test_equality(self):
         details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
 
-        candidate = resolve.WheelCandidate(details)
+        assert resolve.Wheel(details) == resolve.Wheel(details)
 
-        assert candidate.identifier == ("spam", frozenset())
-
-    def test_id_with_extras(self):
+    def test_hash(self):
         details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
 
-        extras = [packaging.utils.canonicalize_name(name) for name in ["foo", "bar"]]
-        candidate = resolve.WheelCandidate(details, extras)
+        assert hash(resolve.Wheel(details)) == hash(
+            packaging.utils.parse_wheel_filename(details["filename"])
+        )
 
-        assert candidate.identifier == ("spam", frozenset(extras))
 
     def test_equality(self):
         filename = "Distro-1.2.3-456-py3-none-any.whl"

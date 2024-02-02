@@ -48,6 +48,14 @@ class Wheel:
             self.tags,
         ) = self._filename_tuple
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Wheel):
+            return NotImplemented
+        return self._filename_tuple == other._filename_tuple
+
+    def __hash__(self) -> int:
+        return hash(self._filename_tuple)
+
 
 # Subclass for sdists.
 class Candidate(typing.Protocol):
