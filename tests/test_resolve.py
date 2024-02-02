@@ -72,75 +72,59 @@ class TestWheel:
         )
 
 
-    def test_equality(self):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
+class TestWheelFileDetails:
+    def test_init(self):
         details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.WheelCandidate(details)
+        file_details = resolve.WheelFileDetails(details)
 
-        assert candidate == resolve.WheelCandidate(details)
+        assert file_details.details == details
+        assert file_details.name == "spam"
+        assert file_details.version == packaging.version.Version("1.2.3")
+        assert file_details.wheel == resolve.Wheel(details)
 
-    def test_is_not_env_compatible_metadata(self):
-        raw_metadata = typing.cast(
-            packaging.metadata.RawMetadata,
-            {
-                "metadata_version": "2.3",
-                "name": "Spam",
-                "version": "1.2.3",
-                "requires_python": ">=3.6",
-            },
-        )
-        metadata = packaging.metadata.Metadata.from_raw(raw_metadata)
-        candidate = NoopCandidate()
-        candidate.metadata = metadata
-
-        assert not candidate.is_env_compatible(
-            environment={"python_version": "3.0"}, tags=[]
-        )
-
-    def test_is_not_env_compatible_requires_python(self):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
+    def test_wheel_tag_compatible(self):
+        tag = packaging.tags.Tag("py3", "none", "any")
         details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        file_details = resolve.WheelFileDetails(details)
+
+        assert file_details.is_compatible(
+            packaging.version.Version("3.12.0"), {}, [tag]
+        )
+
+    def test_is_python_compatible(self):
+        tag = packaging.tags.Tag("py3", "none", "any")
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
             "hashes": {},
             "requires-python": ">=3.6",
         }
-        candidate = resolve.WheelCandidate(details)
+        file_details = resolve.WheelFileDetails(details)
 
-        assert not candidate.is_env_compatible(
-            environment={"python_version": "3.0"}, tags=[]
+        assert file_details.is_compatible(
+            packaging.version.Version("3.12.0"), {}, [tag]
         )
 
-    def test_is_not_env_compatbile_wheel_tags(self):
-        filename = "Distro-1.2.3-456-py313-none-any.whl"
+    def test_is_not_python_compatible(self):
+        tag = packaging.tags.Tag("py3", "none", "any")
         details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
             "hashes": {},
+            "requires-python": ">=3.12",
         }
-        candidate = resolve.WheelCandidate(details)
+        file_details = resolve.WheelFileDetails(details)
 
-        assert not candidate.is_env_compatible(
-            environment={}, tags=[packaging.tags.Tag("py3", "none", "any")]
-        )
-
-    def test_is_env_compatible(self):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
-            "hashes": {},
-            "requires-python": ">=3.6",
-        }
-        candidate = resolve.WheelCandidate(details)
-
-        assert candidate.is_env_compatible(
-            environment={"python_version": "3.6.0"},
-            tags=[packaging.tags.Tag("py3", "none", "any")],
+        assert not file_details.is_compatible(
+            packaging.version.Version("3.6.0"), {}, [tag]
         )
 
 

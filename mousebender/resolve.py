@@ -58,72 +58,60 @@ class Wheel:
 
 
 # Subclass for sdists.
-class Candidate(typing.Protocol):
-    """A candidate to satisfy a requirement."""
+class FileDetails(typing.Protocol):
+    """Protocol for storing file details to potentially be candidates."""
 
-    identifier: _Identifier
-    version: packaging.version.Version
-    metadata: Optional[packaging.metadata.Metadata]
-
-    def is_env_compatible(
-        self, *, environment: dict[str, str], tags: Sequence[packaging.tags.Tag]
-    ) -> bool:
-        """Check if the candidate is compatible with the environment.
-
-        When compatibility is unknown due lack of details
-        (e.g., missing metadata), assume compatibility.
-        """
-        if self.metadata is None:
-            return True
-        elif self.metadata.requires_python is None:
-            return True
-        else:
-            python_version = packaging.version.Version(environment["python_version"])
-            return python_version in self.metadata.requires_python
-
-
-class WheelCandidate(Candidate):
-    """A candidate to satisfy a requirement."""
-
-    identifier: _Identifier
     details: simple.ProjectFileDetails
-    wheel: Wheel
+    name: packaging.utils.NormalizedName
     version: packaging.version.Version
     metadata: Optional[packaging.metadata.Metadata]
 
-    def __init__(
+    @abc.abstractmethod
+    def is_compatible(
         self,
-        details: simple.ProjectFileDetails,
-        extras: Iterable[packaging.utils.NormalizedName] = frozenset(),
-    ) -> None:
+        python_version: packaging.version.Version,
+        environment: dict[str, str],
+        tags: Collection[packaging.tags.Tag],
+    ) -> bool:
+        """Check if the file is compatible with the environment."""
+        return True
+
+
+class WheelFileDetails(FileDetails):
+    """Details of wheel files to potentially be candidates."""
+
+    details: simple.ProjectFileDetails
+    name: packaging.utils.NormalizedName
+    version: packaging.version.Version
+    metadata: Optional[packaging.metadata.Metadata]
+    wheel: Wheel
+
+    def __init__(self, details: simple.ProjectFileDetails) -> None:
         self.details = details
         self.wheel = Wheel(self.details)
+        self.name = self.wheel.name
         self.version = self.wheel.version
         self.metadata = None
-        self.identifier = self.wheel.name, frozenset(extras)
-
-    def __eq__(self, other: object) -> bool:
-        """Check if two candidates are equal."""
-        if not isinstance(other, WheelCandidate):
-            return NotImplemented
-        return self.details == other.details
 
     @typing.override
-    def is_env_compatible(
-        self, *, environment: dict[str, str], tags: Sequence[packaging.tags.Tag]
+    def is_compatible(
+        self,
+        python_version: packaging.version.Version,
+        environment: dict[str, str],
+        tags: Collection[packaging.tags.Tag],
     ) -> bool:
-        """Check if the wheel is compatible with the platform."""
-        if "requires-python" in self.details:
+        """Check if the wheel file is compatible with the environment and tags."""
+        if not any(tag in tags for tag in self.wheel.tags):
+            return False
+        elif "requires-python" in self.details:
             requires_python = packaging.specifiers.SpecifierSet(
                 self.details["requires-python"]
             )
-            # TODO need to care that "python_version" doesn't have release level?
-            python_version = packaging.version.parse(environment["python_version"])
             if python_version not in requires_python:
                 return False
-        elif not super().is_env_compatible(environment=environment, tags=tags):
-            return False
-        return any(tag in tags for tag in self.wheel.tags)
+
+        return super().is_compatible(python_version, environment, tags)
+
 
 
 class Requirement:
