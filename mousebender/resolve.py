@@ -165,7 +165,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     tags: list[packaging.tags.Tag]
     # If is assumed the files have already been filtered down to only wheels
     # that have any chance to work with the specified environment details.
-    _file_details_cache: dict[packaging.utils.NormalizedName, Collection[ProjectFile]]
+    _project_files_cache: dict[packaging.utils.NormalizedName, Collection[ProjectFile]]
     _python_version: packaging.version.Version
 
     def __init__(
@@ -189,7 +189,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             self.tags = list(packaging.tags.sys_tags())
         else:
             self.tags = list(tags)
-        self._file_details_cache = {}
+        self._project_files_cache = {}
         # TODO need to care that "python_version" doesn't have release level?
         self._python_version = packaging.version.parse(environment["python_version"])
 
@@ -292,9 +292,9 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     @typing.override
     def find_matches(
         self,
-        identifier: _Identifier,
-        requirements: Mapping[_Identifier, Iterator[Requirement]],
-        incompatibilities: Mapping[_Identifier, Iterator[Candidate]],
+        identifier: Identifier,
+        requirements: Mapping[Identifier, Iterator[Requirement]],
+        incompatibilities: Mapping[Identifier, Iterator[Candidate]],
     ) -> Sequence[Candidate]:
         """Get the potential candidates for a requirement.
 
@@ -302,35 +302,42 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         checking if they meet all requirements while not being considered
         an incompatible candidate.
         """
-        name, _extras = identifier
-        if name in self._candidate_cache:
-            candidates = self._candidate_cache[name]
-        else:
-            potential_candidates = self.available_candidates(name)
+        name = identifier[0]
+
+        if name not in self._project_files_cache:
+            potential_files = self.available_files(name)
             # Quickly filter based on file details to avoid pointlessly fetching
             # metadata.
-            filtered_on_details = self._filter_candidates(potential_candidates)
+            filtered_on_details = filter(
+                lambda f: f.is_compatible(
+                    self._python_version, self.environment, self.tags
+                ),
+                potential_files,
+            )
+            self._project_files_cache[name] = list(filtered_on_details)
+        files = self._project_files_cache[name]
 
-            self._candidate_cache[name] = list(filtered_on_details)
-            candidates = self._candidate_cache[name]
+        filtered_files: list[ProjectFile] = []
+        for file in files:
+            satisfies = functools.partial(self._is_satisfied_by_file, file)
+            if all(satisfies(req) for req in requirements[identifier]):
+                filtered_files.append(file)
 
-        filtered_candidates_by_req = filter(
-            lambda c: all(self.is_satisfied_by(r, c) for r in requirements[identifier]),
-            candidates,
+        # Filter out possibilities before fetching metadata; it might be expensive.
+        missing_metadata = filter(lambda c: c.metadata is None, filtered_files)
+        self.fetch_metadata(missing_metadata)
+
+        # Filter by metadata in case metadata clarified compatibility.
+        fully_filtered_files = filter(self._metadata_is_compatible, filtered_files)
+
+        candidates = (Candidate(identifier, file) for file in fully_filtered_files)
+        filtered_candidates = filter(
+            lambda c: c not in incompatibilities[identifier], candidates
         )
-        incompat_candidates = list(incompatibilities.get(identifier, []))
-        filtered_candidates = list(
-            filter(lambda c: c not in incompat_candidates, filtered_candidates_by_req)
+
+        sorted_candidates = sorted(
+            filtered_candidates, key=self.candidate_sort_key, reverse=True
         )
-
-        # Wait as long as possible to fetch metadata; it might be expensive.
-        missing_metadata = filter(lambda c: c.metadata is None, filtered_candidates)
-        self.fetch_candidate_metadata(missing_metadata)
-
-        # Filter again in case metadata clarified compatibility.
-        fully_filtered = self._filter_candidates(filtered_candidates)
-
-        sorted_candidates = self.sort_candidates(fully_filtered)
 
         return sorted_candidates
 
