@@ -282,6 +282,17 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
 
         return is_satisfied
 
+    def _metadata_is_compatible(self, details: ProjectFile) -> bool:
+        """Check if the file metadata is compatible with the environment."""
+        # Should have already been fetched.
+        assert details.metadata is not None
+
+        if requires_python := details.metadata.requires_python:
+            if self._python_version not in requires_python:
+                return False
+
+        return True
+
     # Requirement -> Candidate
     @typing.override
     def find_matches(
