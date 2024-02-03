@@ -124,6 +124,11 @@ class Candidate:
         self.identifier = identifier
         self.file = file
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Candidate):
+            return NotImplemented
+        return self.identifier == other.identifier and self.file == other.file
+
 
 class Requirement:
     """A requirement for a distribution."""
@@ -319,6 +324,8 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
 
         filtered_files: list[ProjectFile] = []
         for file in files:
+            if identifier not in requirements:
+                break
             satisfies = functools.partial(self._is_satisfied_by_file, file)
             if all(satisfies(req) for req in requirements[identifier]):
                 filtered_files.append(file)
@@ -332,7 +339,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
 
         candidates = (Candidate(identifier, file) for file in fully_filtered_files)
         filtered_candidates = filter(
-            lambda c: c not in incompatibilities[identifier], candidates
+            lambda c: c not in incompatibilities.get(identifier, []), candidates
         )
 
         sorted_candidates = sorted(

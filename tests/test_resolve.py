@@ -27,7 +27,7 @@ def candidate_from_details(details: simple.ProjectFileDetails_1_0) -> resolve.Ca
     return resolve.Candidate((file_details.name, frozenset()), file_details)
 
 
-def requirement_(requirement: str) -> resolve.Requirement:
+def create_requirement(requirement: str) -> resolve.Requirement:
     return resolve.Requirement(packaging.requirements.Requirement(requirement))
 
 
@@ -39,6 +39,33 @@ class NothingWheelProvider(resolve.WheelProvider):
     @typing.override
     def fetch_metadata(self, wheel):
         raise NotImplementedError
+
+
+class LocalWheelProvider(resolve.WheelProvider):
+    @typing.override
+    def __init__(
+        self,
+        *,
+        environment: dict[str, str] | None = None,
+        tags: Sequence[packaging.tags.Tag] | None = None,
+        files: Iterable[resolve.ProjectFile] | None = None,
+        metadata: dict[str, packaging.metadata.Metadata] | None = None,
+    ) -> None:
+        super().__init__(environment=environment, tags=tags)
+        self.files = files or []
+        self.metadata = metadata or {}
+
+    @typing.override
+    def available_files(
+        self, name: packaging.utils.NormalizedName
+    ) -> Iterable[resolve.ProjectFile]:
+        return self.files
+
+    @typing.override
+    def fetch_metadata(self, project_files: Iterable[resolve.ProjectFile]) -> None:
+        for file in project_files:
+            if file.metadata is None:
+                file.metadata = self.metadata[file.name]
 
 
 class TestWheel:
@@ -253,7 +280,7 @@ class TestIsSatisfiedBy:
             "hashes": {},
         }
         candidate = candidate_from_details(details)
-        requirement = requirement_(requirement)
+        requirement = create_requirement(requirement)
         assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
 
     @pytest.mark.parametrize(
@@ -278,7 +305,7 @@ class TestIsSatisfiedBy:
         )
 
         req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
-        requirement = requirement_(req)
+        requirement = create_requirement(req)
 
         assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
 
@@ -445,7 +472,7 @@ class TestIsSatisfiedByFile:
             "hashes": {},
         }
         wheel_file = resolve.WheelFile(file_details)
-        requirement = requirement_("spam==1.2.3")
+        requirement = create_requirement("spam==1.2.3")
 
         assert self.is_satisfied(wheel_file, requirement)
 
@@ -456,7 +483,7 @@ class TestIsSatisfiedByFile:
             "hashes": {},
         }
         wheel_file = resolve.WheelFile(file_details)
-        requirement = requirement_("spam")
+        requirement = create_requirement("spam")
 
         assert self.is_satisfied(wheel_file, requirement)
 
@@ -467,7 +494,7 @@ class TestIsSatisfiedByFile:
             "hashes": {},
         }
         wheel_file = resolve.WheelFile(file_details)
-        requirement = requirement_("eggs==1.2.3")
+        requirement = create_requirement("eggs==1.2.3")
 
         assert not self.is_satisfied(wheel_file, requirement)
 
@@ -478,7 +505,7 @@ class TestIsSatisfiedByFile:
             "hashes": {},
         }
         wheel_file = resolve.WheelFile(file_details)
-        requirement = requirement_("spam==3.2.1")
+        requirement = create_requirement("spam==3.2.1")
 
         assert not self.is_satisfied(wheel_file, requirement)
 
@@ -549,32 +576,6 @@ class TestMetadataIsCompatible:
         )
 
 
-class LocalWheelProvider(resolve.WheelProvider):
-    def __init__(
-        self,
-        *,
-        environment: dict[str, str] | None = None,
-        tags: Sequence[packaging.tags.Tag] | None = None,
-        files: Iterable[resolve.ProjectFile] | None = None,
-        metadata: dict[str, packaging.metadata.Metadata] | None = None,
-    ) -> None:
-        super().__init__(environment=environment, tags=tags)
-        self.files = files or []
-        self.metadata = metadata or {}
-
-    @typing.override
-    def available_files(
-        self, name: packaging.utils.NormalizedName
-    ) -> Iterable[resolve.ProjectFile]:
-        return self.files
-
-    @typing.override
-    def fetch_metadata(self, project_files: Iterable[resolve.ProjectFile]) -> None:
-        for file in project_files:
-            if file.metadata is None:
-                file.metadata = self.metadata[file.name]
-
-
 class TestFindMatches:
     def test_project_files_cached(self):
         details: simple.ProjectFileDetails_1_0 = {
@@ -611,19 +612,7 @@ class TestFindMatches:
 
         assert provider._project_files_cache == {"spam": [file]}
 
-
-        dependencies = provider.get_dependencies(candidate)
-        expected = [
-            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3"))
-        ]
-        assert dependencies == expected
-
-    def test_extra(self):
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
-            "url": "spam.whl",
-            "hashes": {},
-        }
+    def test_filter_project_files_by_details(self):
         metadata = packaging.metadata.Metadata.from_raw(
             typing.cast(
                 packaging.metadata.RawMetadata,
@@ -631,120 +620,34 @@ class TestFindMatches:
                     "metadata_version": "2.3",
                     "name": "Spam",
                     "version": "1.2.3",
-                    "requires_dist": ["bacon; extra=='bonus'"],
+                    "requires_python": ">=3.6",
                 },
             )
         )
-        candidate = resolve.WheelCandidate(
-            details, {packaging.utils.canonicalize_name("bonus")}
-        )
-        candidate.metadata = metadata
-        provider = LocalWheelProvider()
-
-        dependencies = provider.get_dependencies(candidate)
-        expected = [
-            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
-        ]
-        assert dependencies == expected
-
-    def test_extra_with_marker(self):
-        details: simple.ProjectFileDetails_1_0 = {
+        good_details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        metadata = packaging.metadata.Metadata.from_raw(
-            typing.cast(
-                packaging.metadata.RawMetadata,
-                {
-                    "metadata_version": "2.3",
-                    "name": "Spam",
-                    "version": "1.2.3",
-                    "requires_python": ">=3.12",
-                    "requires_dist": [
-                        "bacon; extra=='bonus'",
-                        "eggs; python_version<'3.12' and extra=='bonus'",
-                    ],
-                },
-            )
-        )
-        candidate = resolve.WheelCandidate(
-            details, {packaging.utils.canonicalize_name("bonus")}
-        )
-        candidate.metadata = metadata
-        provider = LocalWheelProvider(environment={"python_version": "3.12"})
-
-        dependencies = provider.get_dependencies(candidate)
-        expected = [
-            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
-        ]
-        assert dependencies == expected
-
-    def test_multiple_extras_simultaneously(self):
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+        good_file = resolve.WheelFile(good_details)
+        bad_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-cp313-abi3-manylinux_2_24.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        metadata = packaging.metadata.Metadata.from_raw(
-            typing.cast(
-                packaging.metadata.RawMetadata,
-                {
-                    "metadata_version": "2.3",
-                    "name": "Spam",
-                    "version": "1.2.3",
-                    "requires_dist": [
-                        "bacon; extra=='bonus'",
-                        "eggs; extra=='bonus-bonus'",
-                    ],
-                },
-            )
+        bad_file = resolve.WheelFile(bad_details)
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[bad_file, good_file],
+            metadata={"spam": metadata},
         )
-        candidate = resolve.WheelCandidate(
-            details,
-            {
-                packaging.utils.canonicalize_name("bonus"),
-                packaging.utils.canonicalize_name("bonus-bonus"),
-            },
-        )
-        candidate.metadata = metadata
-        provider = LocalWheelProvider()
+        req = create_requirement("Spam==1.2.3")
+        id_ = identifier("spam")
+        found = provider.find_matches(id_, {id_: iter([req])}, {})
 
-        dependencies = provider.get_dependencies(candidate)
-        expected = [
-            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
-            resolve.Requirement(packaging.requirements.Requirement("eggs")),
-        ]
-        assert dependencies == expected
+        assert found == [resolve.Candidate(id_, good_file)]
 
-    def test_requirement_listed_under_different_extras(self):
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
-            "url": "spam.whl",
-            "hashes": {},
-        }
-        metadata = packaging.metadata.Metadata.from_raw(
-            typing.cast(
-                packaging.metadata.RawMetadata,
-                {
-                    "metadata_version": "2.3",
-                    "name": "Spam",
-                    "version": "1.2.3",
-                    "requires_dist": [
-                        "bacon; extra=='bonus'",
-                        "bacon; extra=='unimportant'",
-                    ],
-                },
-            )
-        )
-        candidate = resolve.WheelCandidate(
-            details, {packaging.utils.canonicalize_name("bonus")}
-        )
-        candidate.metadata = metadata
-        provider = LocalWheelProvider()
 
         dependencies = provider.get_dependencies(candidate)
         expected = [
