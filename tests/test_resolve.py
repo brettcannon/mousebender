@@ -22,7 +22,7 @@ def identifier(name: str, extras: Iterable[str] = ()) -> resolve.Identifier:
 
 
 def candidate_from_details(details: simple.ProjectFileDetails_1_0) -> resolve.Candidate:
-    file_details = resolve.WheelFileDetails(details)
+    file_details = resolve.WheelFile(details)
 
     return resolve.Candidate((file_details.name, frozenset()), file_details)
 
@@ -80,7 +80,7 @@ class TestWheelFileDetails:
             "url": "spam.whl",
             "hashes": {},
         }
-        file_details = resolve.WheelFileDetails(details)
+        file_details = resolve.WheelFile(details)
 
         assert file_details.details == details
         assert file_details.name == "spam"
@@ -94,7 +94,7 @@ class TestWheelFileDetails:
             "url": "spam.whl",
             "hashes": {},
         }
-        file_details = resolve.WheelFileDetails(details)
+        file_details = resolve.WheelFile(details)
 
         assert file_details.is_compatible(
             packaging.version.Version("3.12.0"), {}, [tag]
@@ -108,7 +108,7 @@ class TestWheelFileDetails:
             "hashes": {},
             "requires-python": ">=3.6",
         }
-        file_details = resolve.WheelFileDetails(details)
+        file_details = resolve.WheelFile(details)
 
         assert file_details.is_compatible(
             packaging.version.Version("3.12.0"), {}, [tag]
@@ -122,7 +122,7 @@ class TestWheelFileDetails:
             "hashes": {},
             "requires-python": ">=3.12",
         }
-        file_details = resolve.WheelFileDetails(details)
+        file_details = resolve.WheelFile(details)
 
         assert not file_details.is_compatible(
             packaging.version.Version("3.6.0"), {}, [tag]
@@ -271,7 +271,7 @@ class TestIsSatisfiedBy:
             "hashes": {},
         }
         candidate = resolve.Candidate(
-            identifier("distro", candidate_extra), resolve.WheelFileDetails(details)
+            identifier("distro", candidate_extra), resolve.WheelFile(details)
         )
 
         req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
@@ -281,10 +281,6 @@ class TestIsSatisfiedBy:
 
 
 class TestCandidateSortKey:
-    generate_key: Callable[
-        [resolve.Candidate], tuple
-    ] = NothingWheelProvider().candidate_sort_key
-
     def test_version_preference(self):
         details_2_0_0: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-2.0.0-py3-none-any.whl",
@@ -311,7 +307,9 @@ class TestCandidateSortKey:
         randomized_candidates = candidates[:]
         random.shuffle(randomized_candidates)
 
-        randomized_candidates.sort(key=self.generate_key, reverse=True)
+        randomized_candidates.sort(
+            key=NothingWheelProvider().candidate_sort_key, reverse=True
+        )
 
         assert randomized_candidates == candidates
 
@@ -386,7 +384,7 @@ class TestCandidateSortKey:
         ]
         random.shuffle(candidates)
 
-        candidates.sort(key=self.generate_key, reverse=True)
+        candidates.sort(key=NothingWheelProvider().candidate_sort_key, reverse=True)
 
         assert candidates == [
             wheel_biggest,

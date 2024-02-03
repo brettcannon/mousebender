@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import abc
+import functools
 import typing
 from typing import (
     Collection,
@@ -58,7 +59,7 @@ class Wheel:
 
 
 # Subclass for sdists.
-class FileDetails(typing.Protocol):
+class ProjectFile(typing.Protocol):
     """Protocol for storing file details to potentially be candidates."""
 
     details: simple.ProjectFileDetails
@@ -77,7 +78,7 @@ class FileDetails(typing.Protocol):
         return True
 
 
-class WheelFileDetails(FileDetails):
+class WheelFile(ProjectFile):
     """Details of wheel files to potentially be candidates."""
 
     details: simple.ProjectFileDetails
@@ -117,9 +118,9 @@ class Candidate:
     """A Candidate to satisfy a requirement."""
 
     identifier: Identifier
-    file: FileDetails
+    file: ProjectFile
 
-    def __init__(self, identifier: Identifier, file: FileDetails) -> None:
+    def __init__(self, identifier: Identifier, file: ProjectFile) -> None:
         self.identifier = identifier
         self.file = file
 
@@ -164,7 +165,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     tags: list[packaging.tags.Tag]
     # If is assumed the files have already been filtered down to only wheels
     # that have any chance to work with the specified environment details.
-    _file_details_cache: dict[packaging.utils.NormalizedName, Collection[FileDetails]]
+    _file_details_cache: dict[packaging.utils.NormalizedName, Collection[ProjectFile]]
     _python_version: packaging.version.Version
 
     def __init__(
@@ -196,45 +197,16 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     @abc.abstractmethod
     def available_files(
         self, name: packaging.utils.NormalizedName
-    ) -> Iterable[FileDetails]:
+    ) -> Iterable[ProjectFile]:
         """Get the available wheels for a distribution."""
         raise NotImplementedError
 
     # Override for sdists.
     @abc.abstractmethod
-    def fetch_metadata(self, file_details: Iterable[FileDetails]) -> None:
+    def fetch_metadata(self, file_details: Iterable[ProjectFile]) -> None:
         """Fetch the metadata of e.g. a wheel and add it in-place."""
         # A method so that subclasses can do paralle/async fetching of the metadata.
         raise NotImplementedError
-
-    def _wheel_sort_key(
-        self,
-        wheel: Wheel,
-    ) -> tuple[packaging.version.Version, int, packaging.utils.BuildTag]:
-        """Create a sort key for a wheel.
-
-        The key should lead to a sort of least to most preferred wheel.
-        Preference is determined by the newest version, tag priority/specificity
-        (as defined by self.tags), and then build tag.
-        """
-        # A separate method so subclasses can e.g. prefer older versions.
-        for tag_priority, tag in enumerate(self.tags):  # noqa: B007
-            if tag in wheel.tags:
-                break
-        else:
-            raise ValueError("No compatible tags found for any wheels.")
-
-        return wheel.version, len(self.tags) - tag_priority, wheel.build_tag or ()
-
-    # This exists as method so that subclasses can e.g. prefer older versions.
-    # Override for sdists.
-    def sort_candidates(self, candidates: Iterable[Candidate]) -> Sequence[Candidate]:
-        """Sort candidates from most to least preferred."""
-        sorted_candidates = sorted(
-            typing.cast(Iterable[WheelCandidate], candidates),
-            key=lambda c: self._wheel_sort_key(c.wheel),
-            reverse=True,
-        )
 
     @typing.override
     def identify(
@@ -284,7 +256,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         Preference is determined by the newest version, tag priority/specificity
         (as defined by self.tags), and then build tag.
         """
-        assert isinstance(candidate.file, WheelFileDetails)
+        assert isinstance(candidate.file, WheelFile)
 
         # A separate method so subclasses can e.g. prefer older versions.
         for tag_priority, tag in enumerate(self.tags):  # noqa: B007
