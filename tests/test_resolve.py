@@ -27,6 +27,10 @@ def candidate_from_details(details: simple.ProjectFileDetails_1_0) -> resolve.Ca
     return resolve.Candidate((file_details.name, frozenset()), file_details)
 
 
+def requirement_(requirement: str) -> resolve.Requirement:
+    return resolve.Requirement(packaging.requirements.Requirement(requirement))
+
+
 class NothingWheelProvider(resolve.WheelProvider):
     @typing.override
     def available_files(self, name):
@@ -249,8 +253,7 @@ class TestIsSatisfiedBy:
             "hashes": {},
         }
         candidate = candidate_from_details(details)
-        req = packaging.requirements.Requirement(requirement)
-        requirement = resolve.Requirement(req)
+        requirement = requirement_(requirement)
         assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
 
     @pytest.mark.parametrize(
@@ -275,7 +278,7 @@ class TestIsSatisfiedBy:
         )
 
         req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
-        requirement = resolve.Requirement(packaging.requirements.Requirement(req))
+        requirement = requirement_(req)
 
         assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
 
@@ -430,71 +433,55 @@ class TestCandidateSortKey:
         assert candidates == [wheel_version, wheel_wheel_tag, wheel_build_tag]
 
 
-class TestIsSatisfiedBy:
-    @pytest.mark.parametrize(
-        ["requirement", "matches"],
-        [
-            ("Distro", True),
-            ("Spam", False),
-            ("Distro>=1.2.0", True),
-            ("Distro<1.2.3", False),
-        ],
-    )
-    def test_no_extras(self, requirement, matches):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
+class TestIsSatisfiedByFile:
+    is_satisfied: Callable[
+        [resolve.ProjectFile, resolve.Requirement], bool
+    ] = NothingWheelProvider()._is_satisfied_by_file
+
+    def test_all_satisfied(self):
+        file_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-2-py3-none-any.whl",
+            "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.Candidate(
-            identifier("distro"), resolve.WheelFileDetails(details)
-        )
-        req = packaging.requirements.Requirement(requirement)
-        requirement = resolve.Requirement(req)
-        assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
+        wheel_file = resolve.WheelFile(file_details)
+        requirement = requirement_("spam==1.2.3")
 
-    @pytest.mark.parametrize(
-        ["req_extra", "candidate_extra", "matches"],
-        [
-            (frozenset(), frozenset(), True),
-            (frozenset(["extras"]), frozenset(), False),
-            (frozenset(), frozenset(["extras"]), False),
-            (frozenset(["extras"]), frozenset(["extras"]), True),
-            (frozenset(["extra1"]), frozenset(["extra2"]), False),
-        ],
-    )
-    def test_extras(self, req_extra, candidate_extra, matches):
-        filename = "Distro-1.2.3-456-py3-none-any.whl"
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": filename,
-            "url": f"https://example.com/{filename}",
+        assert self.is_satisfied(wheel_file, requirement)
+
+    def test_no_version(self):
+        file_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-2-py3-none-any.whl",
+            "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.Candidate(
-            identifier("distro", candidate_extra), resolve.WheelFileDetails(details)
-        )
+        wheel_file = resolve.WheelFile(file_details)
+        requirement = requirement_("spam")
 
-        req = f"Distro[{','.join(req_extra)}]" if req_extra else "Distro"
-        requirement = resolve.Requirement(packaging.requirements.Requirement(req))
+        assert self.is_satisfied(wheel_file, requirement)
 
-        assert NothingWheelProvider().is_satisfied_by(requirement, candidate) == matches
+    def test_different_names(self):
+        file_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-2-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        wheel_file = resolve.WheelFile(file_details)
+        requirement = requirement_("eggs==1.2.3")
 
+        assert not self.is_satisfied(wheel_file, requirement)
 
-class TestFilterCandidates:
-    def test_all_true(self):
-        class CompatibleCandidate(NoopCandidate):
-            def is_env_compatible(self, *, environment, tags):
-                return True
+    def test_unwanted_version(self):
+        file_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-2-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        wheel_file = resolve.WheelFile(file_details)
+        requirement = requirement_("spam==3.2.1")
 
-        candidates = [
-            CompatibleCandidate(),
-            CompatibleCandidate(),
-            CompatibleCandidate(),
-        ]
-        provider = NoopWheelProvider(environment={}, tags=[])
+        assert not self.is_satisfied(wheel_file, requirement)
 
-        assert list(provider._filter_candidates(candidates)) == candidates
 
     def test_all_false(self):
         class IncompatibleCandidate(NoopCandidate):

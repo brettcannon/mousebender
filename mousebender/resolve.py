@@ -271,14 +271,16 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             candidate.file.wheel.build_tag or (),
         )
 
-    def _filter_candidates(
-        self, candidates: Iterable[Candidate]
-    ) -> Iterable[Candidate]:
-        """Filter candidates based on environment details."""
-        return filter(
-            lambda c: c.is_env_compatible(environment=self.environment, tags=self.tags),
-            candidates,
+    def _is_satisfied_by_file(
+        self, details: ProjectFile, requirement: Requirement
+    ) -> bool:
+        """Check if the file satisfies the requirement."""
+        is_satisfied = (
+            details.name == packaging.utils.canonicalize_name(requirement.req.name)
+            and details.version in requirement.req.specifier
         )
+
+        return is_satisfied
 
     # Requirement -> Candidate
     @typing.override
