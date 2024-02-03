@@ -239,13 +239,10 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     def is_satisfied_by(self, requirement: Requirement, candidate: Candidate) -> bool:
         """Check if a candidate satisfies a requirement."""
         # A method so subclasses can decide to e.g. allow for pre-releases.
-        print("Is", requirement, "satisfied by", candidate, "?", end=" ")
-        is_satisfied = (
+        return (
             requirement.identifier == candidate.identifier
             and self._is_satisfied_by_file(candidate.file, requirement)
         )
-        print(is_satisfied)
-        return is_satisfied
 
     # This exists as method so that subclasses can e.g. prefer older versions.
     # Override for sdists.
@@ -275,12 +272,10 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         self, details: ProjectFile, requirement: Requirement
     ) -> bool:
         """Check if the file satisfies the requirement."""
-        is_satisfied = (
+        return (
             details.name == packaging.utils.canonicalize_name(requirement.req.name)
             and details.version in requirement.req.specifier
         )
-
-        return is_satisfied
 
     def _metadata_is_compatible(self, details: ProjectFile) -> bool:
         """Check if the file metadata is compatible with the environment."""
