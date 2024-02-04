@@ -810,6 +810,61 @@ class TestFindMatches:
 
         assert found == [resolve.Candidate(requirement.identifier, good_file)]
 
+    def test_candidates_sorted(self):
+        old_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                },
+            )
+        )
+        old_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        old_file = resolve.WheelFile(old_details)
+        old_file.metadata = old_metadata
+        old_candidate = resolve.Candidate(identifier("spam"), old_file)
+        new_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.4",
+                },
+            )
+        )
+        new_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        new_file = resolve.WheelFile(new_details)
+        new_file.metadata = new_metadata
+        new_candidate = resolve.Candidate(identifier("spam"), new_file)
+        provider = LocalWheelProvider(
+            python_version=packaging.version.Version("3.12"),
+            environment={},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[old_file, new_file],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        found = provider.find_matches(
+            identifier("spam"), {old_candidate.identifier: iter([requirement])}, {}
+        )
+
+        # Candidates purposefully in least to most preferred order as that's
+        # reverse of what's expected.
+        expected_order = [old_candidate, new_candidate]
+        expected_order.sort(key=provider.candidate_sort_key, reverse=True)
+        assert found == expected_order
+
 
         assert len(resolution.mapping) == 5
         assert spam_candidate.identifier in resolution.mapping
