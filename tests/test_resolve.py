@@ -866,17 +866,38 @@ class TestFindMatches:
         assert found == expected_order
 
 
-        assert len(resolution.mapping) == 5
-        assert spam_candidate.identifier in resolution.mapping
-        assert resolution.mapping[spam_candidate.identifier] == spam_candidate
-        assert bacon_candidate.identifier in resolution.mapping
-        assert resolution.mapping[bacon_candidate.identifier] == bacon_candidate
-        assert eggs_candidate.identifier in resolution.mapping
-        assert resolution.mapping[eggs_candidate.identifier] == eggs_candidate
-        assert sausage_candidate.identifier in resolution.mapping
-        assert resolution.mapping[sausage_candidate.identifier] == sausage_candidate
-        assert toast_candidate.identifier in resolution.mapping
-        assert resolution.mapping[toast_candidate.identifier] == toast_candidate
+class TestGetDependencies:
+    def test_requirement_without_markers(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.12",
+                    "requires_dist": ["bacon", "eggs"],
+                },
+            )
+        )
+        file = resolve.WheelFile(details)
+        file.metadata = metadata
+        candidate = resolve.Candidate(identifier("spam"), file)
+        provider = LocalWheelProvider()
+
+        dependencies = provider.get_dependencies(candidate)
+        expected = [
+            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+            resolve.Requirement(packaging.requirements.Requirement("eggs")),
+        ]
+        assert dependencies == expected
+
+
 
     # XXX prefer newest release
     # XXX failure from no wheels

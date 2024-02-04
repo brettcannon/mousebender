@@ -353,23 +353,25 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     @typing.override
     def get_dependencies(self, candidate: Candidate) -> list[Requirement]:
         """Get the requirements of a candidate."""
-        assert candidate.metadata is not None
+        assert candidate.file.metadata is not None
 
         requirements = []
         name, extras = candidate.identifier
         if extras:
             # https://github.com/brettcannon/mousebender/issues/105#issuecomment-1704244739
-            req = packaging.requirements.Requirement(f"{name}=={candidate.version}")
+            req = packaging.requirements.Requirement(
+                f"{name}=={candidate.file.version}"
+            )
             requirements.append(Requirement(req))
 
-        for req in candidate.metadata.requires_dist:
+        for req in candidate.file.metadata.requires_dist:
             if req.marker is None:
                 requirements.append(Requirement(req))
             elif req.marker.evaluate(self.environment):
                 requirements.append(Requirement(req))
             elif extras and any(
                 req.marker.evaluate(self.environment | {"extra": extra})
-                for extra in extras
+                for extra in extras  # XXX is this causing a circular reference?
             ):
                 requirements.append(Requirement(req))
 
