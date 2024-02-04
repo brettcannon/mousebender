@@ -664,89 +664,52 @@ class TestFindMatches:
 
         assert found == [resolve.Candidate(id_, good_file)]
 
-
-        dependencies = provider.get_dependencies(candidate)
-        expected = [
-            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
-        ]
-        assert dependencies == expected
-
-    def test_extras_and_not(self):
-        details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
-            "url": "spam.whl",
-            "hashes": {},
-        }
-        metadata = packaging.metadata.Metadata.from_raw(
+    def test_filter_by_requirement(self):
+        good_metadata = packaging.metadata.Metadata.from_raw(
             typing.cast(
                 packaging.metadata.RawMetadata,
                 {
                     "metadata_version": "2.3",
                     "name": "Spam",
                     "version": "1.2.3",
-                    "requires_dist": [
-                        "bacon; extra=='bonus'",
-                        "eggs",
-                    ],
                 },
             )
         )
-        candidate = resolve.WheelCandidate(
-            details,
-            {
-                packaging.utils.canonicalize_name("bonus"),
-            },
-        )
-        candidate.metadata = metadata
-        provider = LocalWheelProvider()
-
-        dependencies = provider.get_dependencies(candidate)
-        expected = [
-            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
-            resolve.Requirement(packaging.requirements.Requirement("eggs")),
-        ]
-        assert dependencies == expected
-
-
-class TestResolution:
-    def test_depth_1(self):
-        details: simple.ProjectFileDetails_1_0 = {
+        good_details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        candidate = resolve.WheelCandidate(details)
-        metadata = {
-            candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "Spam",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
+        good_file = resolve.WheelFile(good_details)
+        good_file.metadata = good_metadata
+        bad_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.4",  # Too new.
+                },
             )
+        )
+        bad_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-py3-none-any.whl",  # Too new.
+            "url": "spam.whl",
+            "hashes": {},
         }
+        bad_file = resolve.WheelFile(bad_details)
+        bad_file.metadata = bad_metadata
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
-            candidates=[candidate],
-            metadata=metadata,
+            files=[bad_file, good_file],
         )
         req = packaging.requirements.Requirement("Spam==1.2.3")
         requirement = resolve.Requirement(req)
-        reporter = resolvelib.BaseReporter()
-        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-        resolution = resolver.resolve([requirement])
+        found = provider.find_matches(
+            identifier("spam"), {identifier("spam"): iter([requirement])}, {}
+        )
 
-        assert len(resolution.mapping) == 1
-        assert candidate.identifier in resolution.mapping
-        assert resolution.mapping[candidate.identifier] == candidate
+        assert found == [resolve.Candidate(requirement.identifier, good_file)]
 
     def test_depth_2(self):
         spam_details: simple.ProjectFileDetails_1_0 = {
