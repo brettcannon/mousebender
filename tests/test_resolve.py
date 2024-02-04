@@ -711,304 +711,56 @@ class TestFindMatches:
 
         assert found == [resolve.Candidate(requirement.identifier, good_file)]
 
-    def test_depth_2(self):
-        spam_details: simple.ProjectFileDetails_1_0 = {
+    def test_filter_by_incompatibility(self):
+        good_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                },
+            )
+        )
+        good_details: simple.ProjectFileDetails_1_0 = {
             "filename": "Spam-1.2.3-456-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        spam_candidate = resolve.WheelCandidate(spam_details)
-        bacon_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "bacon-1.2.3-456-py3-none-any.whl",
-            "url": "bacon.whl",
-            "hashes": {},
-        }
-        bacon_candidate = resolve.WheelCandidate(bacon_details)
-        eggs_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "eggs-1.2.3-456-py3-none-any.whl",
-            "url": "eggs.whl",
-            "hashes": {},
-        }
-        eggs_candidate = resolve.WheelCandidate(eggs_details)
-        metadata = {
-            spam_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "Spam",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        "requires_dist": ["bacon", "eggs"],
-                    },
-                )
-            ),
-            bacon_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "bacon",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
-            ),
-            eggs_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "eggs",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
-            ),
-        }
-        provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
-            tags=[packaging.tags.Tag("py3", "none", "Any")],
-            candidates=[spam_candidate, bacon_candidate, eggs_candidate],
-            metadata=metadata,
+        good_file = resolve.WheelFile(good_details)
+        good_file.metadata = good_metadata
+        bad_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.4",  # Newer.
+                },
+            )
         )
-        req = packaging.requirements.Requirement("Spam==1.2.3")
-        requirement = resolve.Requirement(req)
-        reporter = resolvelib.BaseReporter()
-        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-        resolution = resolver.resolve([requirement])
-
-        assert len(resolution.mapping) == 3
-        assert spam_candidate.identifier in resolution.mapping
-        assert resolution.mapping[spam_candidate.identifier] == spam_candidate
-        assert bacon_candidate.identifier in resolution.mapping
-        assert resolution.mapping[bacon_candidate.identifier] == bacon_candidate
-        assert eggs_candidate.identifier in resolution.mapping
-        assert resolution.mapping[eggs_candidate.identifier] == eggs_candidate
-
-    def test_depth_3(self):
-        spam_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+        bad_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-py3-none-any.whl",
             "url": "spam.whl",
             "hashes": {},
         }
-        spam_candidate = resolve.WheelCandidate(spam_details)
-        bacon_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "bacon-1.2.3-456-py3-none-any.whl",
-            "url": "bacon.whl",
-            "hashes": {},
-        }
-        bacon_candidate = resolve.WheelCandidate(bacon_details)
-        eggs_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "eggs-1.2.3-456-py3-none-any.whl",
-            "url": "eggs.whl",
-            "hashes": {},
-        }
-        eggs_candidate = resolve.WheelCandidate(eggs_details)
-        sausage_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "sausage-1.2.3-456-py3-none-any.whl",
-            "url": "sausage.whl",
-            "hashes": {},
-        }
-        sausage_candidate = resolve.WheelCandidate(sausage_details)
-        metadata = {
-            spam_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "Spam",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        "requires_dist": ["bacon", "eggs"],
-                    },
-                )
-            ),
-            bacon_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "bacon",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        "requires_dist": ["sausage"],
-                    },
-                )
-            ),
-            eggs_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "eggs",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        "requires_dist": ["sausage"],
-                    },
-                )
-            ),
-            sausage_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "sausage",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
-            ),
-        }
+        bad_file = resolve.WheelFile(bad_details)
+        bad_file.metadata = bad_metadata
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
-            candidates=[
-                spam_candidate,
-                bacon_candidate,
-                eggs_candidate,
-                sausage_candidate,
-            ],
-            metadata=metadata,
+            files=[bad_file, good_file],
         )
-        req = packaging.requirements.Requirement("Spam==1.2.3")
-        requirement = resolve.Requirement(req)
-        reporter = resolvelib.BaseReporter()
-        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-        resolution = resolver.resolve([requirement])
-
-        assert len(resolution.mapping) == 4
-        assert spam_candidate.identifier in resolution.mapping
-        assert resolution.mapping[spam_candidate.identifier] == spam_candidate
-        assert bacon_candidate.identifier in resolution.mapping
-        assert resolution.mapping[bacon_candidate.identifier] == bacon_candidate
-        assert eggs_candidate.identifier in resolution.mapping
-        assert resolution.mapping[eggs_candidate.identifier] == eggs_candidate
-        assert sausage_candidate.identifier in resolution.mapping
-        assert resolution.mapping[sausage_candidate.identifier] == sausage_candidate
-
-    @pytest.mark.xfail(reason="Bug to be fixed")
-    def test_extras(self):
-        spam_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "Spam-1.2.3-456-py3-none-any.whl",
-            "url": "spam.whl",
-            "hashes": {},
-        }
-        spam_candidate = resolve.WheelCandidate(spam_details)
-        bacon_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "bacon-1.2.3-456-py3-none-any.whl",
-            "url": "bacon.whl",
-            "hashes": {},
-        }
-        bacon_candidate = resolve.WheelCandidate(bacon_details)
-        eggs_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "eggs-1.2.3-456-py3-none-any.whl",
-            "url": "eggs.whl",
-            "hashes": {},
-        }
-        eggs_candidate = resolve.WheelCandidate(eggs_details)
-        sausage_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "sausage-1.2.3-456-py3-none-any.whl",
-            "url": "sausage.whl",
-            "hashes": {},
-        }
-        sausage_candidate = resolve.WheelCandidate(sausage_details)
-        toast_details: simple.ProjectFileDetails_1_0 = {
-            "filename": "toast-1.2.3-456-py3-none-any.whl",
-            "url": "toast.whl",
-            "hashes": {},
-        }
-        toast_candidate = resolve.WheelCandidate(toast_details)
-        metadata = {
-            spam_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "Spam",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # Extras which are requested separately, but resolve to the
-                        # same base dependency so that resolver has to merge
-                        # them.
-                        "requires_dist": ["bacon[sausage-bonus]", "bacon[eggs-bonus]"],
-                    },
-                )
-            ),
-            bacon_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "bacon",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        "requires_dist": [
-                            "toast",
-                            "sausage; extra=='sausage-bonus'",
-                            "eggs; extra=='eggs-bonus'",
-                        ],
-                        "provides_extra": ["sausage-bonus", "eggs-bonus"],
-                    },
-                )
-            ),
-            eggs_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "eggs",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
-            ),
-            sausage_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "sausage",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
-            ),
-            toast_candidate.identifier: packaging.metadata.Metadata.from_raw(
-                typing.cast(
-                    packaging.metadata.RawMetadata,
-                    {
-                        "metadata_version": "2.3",
-                        "name": "toast",
-                        "version": "1.2.3",
-                        "requires_python": ">=3.6",
-                        # No dependencies.
-                    },
-                )
-            ),
-        }
-        provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
-            tags=[packaging.tags.Tag("py3", "none", "Any")],
-            candidates=[
-                spam_candidate,
-                bacon_candidate,
-                eggs_candidate,
-                sausage_candidate,
-                toast_candidate,
-            ],
-            metadata=metadata,
-        )
+        bad_candidate = resolve.Candidate(identifier("spam"), bad_file)
         req = packaging.requirements.Requirement("Spam")
         requirement = resolve.Requirement(req)
-        reporter = resolvelib.BaseReporter()
-        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-        resolution = resolver.resolve([requirement])
+        found = provider.find_matches(
+            identifier("spam"),
+            {identifier("spam"): iter([requirement])},
+            {identifier("spam"): iter([bad_candidate])},
+        )
+
+        assert found == [resolve.Candidate(requirement.identifier, good_file)]
+
 
         assert len(resolution.mapping) == 5
         assert spam_candidate.identifier in resolution.mapping
