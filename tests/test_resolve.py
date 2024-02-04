@@ -761,6 +761,55 @@ class TestFindMatches:
 
         assert found == [resolve.Candidate(requirement.identifier, good_file)]
 
+    def test_files_filtered_on_fetched_metadata(self):
+        good_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                },
+            )
+        )
+        good_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        good_file = resolve.WheelFile(good_details)
+        good_file.metadata = good_metadata
+        bad_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.4",  # Newer.
+                    "requires_python": "> 3.12",  # Too new.
+                },
+            )
+        )
+        bad_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-py3-none-any.whl",  # Newer.
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        bad_file = resolve.WheelFile(bad_details)
+        bad_file.metadata = bad_metadata
+        provider = LocalWheelProvider(
+            python_version=packaging.version.Version("3.12"),
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[bad_file, good_file],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        found = provider.find_matches(
+            identifier("spam"), {identifier("spam"): iter([requirement])}, {}
+        )
+
+        assert found == [resolve.Candidate(requirement.identifier, good_file)]
+
 
         assert len(resolution.mapping) == 5
         assert spam_candidate.identifier in resolution.mapping
