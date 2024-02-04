@@ -68,12 +68,7 @@ class ProjectFile(typing.Protocol):
     metadata: Optional[packaging.metadata.Metadata]
 
     @abc.abstractmethod
-    def is_compatible(
-        self,
-        python_version: packaging.version.Version,
-        environment: dict[str, str],
-        tags: Collection[packaging.tags.Tag],
-    ) -> bool:
+    def is_compatible(self, provider: WheelProvider) -> bool:
         """Check if the file is compatible with the environment."""
         return True
 
@@ -97,21 +92,19 @@ class WheelFile(ProjectFile):
     @typing.override
     def is_compatible(
         self,
-        python_version: packaging.version.Version,
-        environment: dict[str, str],
-        tags: Collection[packaging.tags.Tag],
+        provider: WheelProvider,
     ) -> bool:
         """Check if the wheel file is compatible with the environment and tags."""
-        if not any(tag in tags for tag in self.wheel.tags):
+        if not any(tag in provider.tags for tag in self.wheel.tags):
             return False
         elif "requires-python" in self.details:
             requires_python = packaging.specifiers.SpecifierSet(
                 self.details["requires-python"]
             )
-            if python_version not in requires_python:
+            if provider.python_version not in requires_python:
                 return False
 
-        return super().is_compatible(python_version, environment, tags)
+        return super().is_compatible(provider)
 
 
 class Candidate:
@@ -166,16 +159,17 @@ class _RequirementInformation(tuple, Generic[_RT, _CT]):
 class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     """A provider for resolving requirements based on wheels."""
 
+    python_version: packaging.version.Version
     environment: dict[str, str]  # packaging.markers has no TypedDict for this.
     tags: list[packaging.tags.Tag]
     # If is assumed the files have already been filtered down to only wheels
     # that have any chance to work with the specified environment details.
     _project_files_cache: dict[packaging.utils.NormalizedName, Collection[ProjectFile]]
-    _python_version: packaging.version.Version
 
     def __init__(
         self,
         *,
+        python_version: Optional[packaging.version.Version] = None,
         environment: Optional[dict[str, str]] = None,
         tags: Optional[Sequence[packaging.tags.Tag]] = None,
     ) -> None:
@@ -189,14 +183,21 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         """
         if environment is None:
             environment = packaging.markers.default_environment()
+            if python_version is None:
+                version_str = sys.version.partition(" ")[0].removesuffix("+")
+                python_version = packaging.version.Version(version_str)
         self.environment = environment
         if tags is None:
             self.tags = list(packaging.tags.sys_tags())
         else:
             self.tags = list(tags)
+        if python_version is not None:
+            self.python_version = python_version
+        else:
+            self.python_version = packaging.version.Version(
+                environment["python_version"]
+            )
         self._project_files_cache = {}
-        # TODO need to care that "python_version" doesn't have release level?
-        self._python_version = packaging.version.parse(environment["python_version"])
 
     # Override for sdists.
     @abc.abstractmethod
@@ -288,7 +289,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         assert details.metadata is not None
 
         if requires_python := details.metadata.requires_python:
-            if self._python_version not in requires_python:
+            if self.python_version not in requires_python:
                 return False
 
         return True

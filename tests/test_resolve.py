@@ -11,7 +11,6 @@ import pytest
 import resolvelib
 
 from mousebender import resolve, simple
-from mousebender.resolve import Candidate
 
 
 def identifier(name: str, extras: Iterable[str] = ()) -> resolve.Identifier:
@@ -126,10 +125,11 @@ class TestWheelFileDetails:
             "hashes": {},
         }
         file_details = resolve.WheelFile(details)
-
-        assert file_details.is_compatible(
-            packaging.version.Version("3.12.0"), {}, [tag]
+        provider = NothingWheelProvider(
+            python_version=packaging.version.Version("3.12.0"), tags=[tag]
         )
+
+        assert file_details.is_compatible(provider)
 
     def test_is_python_compatible(self):
         tag = packaging.tags.Tag("py3", "none", "any")
@@ -140,10 +140,11 @@ class TestWheelFileDetails:
             "requires-python": ">=3.6",
         }
         file_details = resolve.WheelFile(details)
-
-        assert file_details.is_compatible(
-            packaging.version.Version("3.12.0"), {}, [tag]
+        provider = NothingWheelProvider(
+            python_version=packaging.version.Version("3.12.0"), tags=[tag]
         )
+
+        assert file_details.is_compatible(provider)
 
     def test_is_not_python_compatible(self):
         tag = packaging.tags.Tag("py3", "none", "any")
@@ -154,10 +155,11 @@ class TestWheelFileDetails:
             "requires-python": ">=3.12",
         }
         file_details = resolve.WheelFile(details)
-
-        assert not file_details.is_compatible(
-            packaging.version.Version("3.6.0"), {}, [tag]
+        provider = NothingWheelProvider(
+            python_version=packaging.version.Version("3.6.0"), tags=[tag]
         )
+
+        assert not file_details.is_compatible(provider)
 
 
 class TestRequirement:
@@ -210,13 +212,27 @@ class TestWheelProviderInit:
 
         assert provider.tags == tags
 
-    def test_python_version(self):
+    def test_python_version_provided(self):
+        version = packaging.version.Version("3.12.4")
         env = {"python_version": "3.12"}
         provider = NothingWheelProvider(environment=env)
 
-        assert provider._python_version == packaging.version.Version(
+        assert provider.python_version == version
+
+    def test_python_version_from_env(self):
+        env = {"python_version": "3.12"}
+        provider = NothingWheelProvider(environment=env)
+
+        assert provider.python_version == packaging.version.Version(
             env["python_version"]
         )
+
+    def test_python_version_default(self):
+        provider = NothingWheelProvider()
+        version_str = sys.version.partition(" ")[0].removesuffix("+")
+        version = packaging.version.Version(version_str)
+
+        assert provider.python_version == version
 
 
 class TestIdentify:
