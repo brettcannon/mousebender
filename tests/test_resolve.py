@@ -1,7 +1,9 @@
 import random
+import sys
 import typing
-from typing import Iterable, Sequence
+from typing import Callable, Iterable, Sequence
 
+import packaging.markers
 import packaging.metadata
 import packaging.requirements
 import packaging.tags
@@ -952,6 +954,39 @@ class TestGetDependencies:
         ]
         assert dependencies == expected
 
+    def test_extra_with_marker(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.12",
+                    "requires_dist": [
+                        "bacon; extra=='bonus'",
+                        "eggs; python_version<'3.12' and extra=='bonus'",
+                    ],
+                },
+            )
+        )
+        file = resolve.WheelFile(details)
+        file.metadata = metadata
+        candidate = resolve.Candidate(identifier("spam", {"bonus"}), file)
+
+        provider = LocalWheelProvider(environment={"python_version": "3.12"})
+
+        dependencies = provider.get_dependencies(candidate)
+        expected = [
+            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
+            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+        ]
+        assert dependencies == expected
 
 
     # XXX prefer newest release
