@@ -370,7 +370,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
                 requirements.append(Requirement(req))
             elif extras and any(
                 req.marker.evaluate(self.environment | {"extra": extra})
-                for extra in extras  # XXX is this causing a circular reference?
+                for extra in extras
             ):
                 requirements.append(Requirement(req))
 
