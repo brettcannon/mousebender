@@ -47,12 +47,15 @@ class LocalWheelProvider(resolve.WheelProvider):
     def __init__(
         self,
         *,
+        python_version: packaging.version.Version | None = None,
         environment: dict[str, str] | None = None,
         tags: Sequence[packaging.tags.Tag] | None = None,
         files: Iterable[resolve.ProjectFile] | None = None,
         metadata: dict[str, packaging.metadata.Metadata] | None = None,
     ) -> None:
-        super().__init__(environment=environment, tags=tags)
+        super().__init__(
+            python_version=python_version, environment=environment, tags=tags
+        )
         self.files = files or []
         self.metadata = metadata or {}
 
@@ -1310,8 +1313,149 @@ class TestResolution:
         assert sausage_candidate.identifier in resolution.mapping
         assert resolution.mapping[sausage_candidate.identifier] == sausage_candidate
 
+    def test_extras(self):
+        spam_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        spam_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    # Extras which are requested separately, but resolve to the
+                    # same base dependency so that resolver has to merge
+                    # them.
+                    "requires_dist": ["bacon[sausage-bonus]", "bacon[eggs-bonus]"],
+                },
+            )
+        )
+        spam_file = resolve.WheelFile(spam_details)
+        spam_file.metadata = spam_metadata
+        spam_candidate = resolve.Candidate(identifier("spam"), spam_file)
+        bacon_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "bacon-1.2.3-456-py3-none-any.whl",
+            "url": "bacon.whl",
+            "hashes": {},
+        }
+        bacon_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "bacon",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    "requires_dist": [
+                        "toast",
+                        "sausage; extra=='sausage-bonus'",
+                        "eggs; extra=='eggs-bonus'",
+                    ],
+                    "provides_extra": ["sausage-bonus", "eggs-bonus"],
+                },
+            )
+        )
+        bacon_file = resolve.WheelFile(bacon_details)
+        bacon_file.metadata = bacon_metadata
+        bacon_candidate = resolve.Candidate(identifier("bacon"), bacon_file)
+        eggs_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "eggs-1.2.3-456-py3-none-any.whl",
+            "url": "eggs.whl",
+            "hashes": {},
+        }
+        eggs_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "eggs",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    # No dependencies.
+                },
+            )
+        )
+        eggs_file = resolve.WheelFile(eggs_details)
+        eggs_file.metadata = eggs_metadata
+        eggs_candidate = resolve.Candidate(identifier("eggs"), eggs_file)
+        sausage_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "sausage-1.2.3-456-py3-none-any.whl",
+            "url": "sausage.whl",
+            "hashes": {},
+        }
+        sausage_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "sausage",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    # No dependencies.
+                },
+            )
+        )
+        sausage_file = resolve.WheelFile(sausage_details)
+        sausage_file.metadata = sausage_metadata
+        sausage_candidate = resolve.Candidate(identifier("sausage"), sausage_file)
+        toast_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "toast-1.2.3-456-py3-none-any.whl",
+            "url": "toast.whl",
+            "hashes": {},
+        }
+        toast_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "toast",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    # No dependencies.
+                },
+            )
+        )
+        toast_file = resolve.WheelFile(toast_details)
+        toast_file.metadata = toast_metadata
+        toast_candidate = resolve.Candidate(identifier("toast"), toast_file)
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[spam_file, bacon_file, eggs_file, sausage_file, toast_file],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        reporter = resolvelib.BaseReporter()
+        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
+        resolution = resolver.resolve([requirement], max_rounds=1_000_000)
 
-    # XXX prefer newest release
-    # XXX failure from no wheels
-    # XXX backtrack due to upper-bound
-    pass
+        assert len(resolution.mapping) == 7
+        assert spam_candidate.identifier in resolution.mapping
+        assert resolution.mapping[spam_candidate.identifier] == spam_candidate
+        assert bacon_candidate.identifier in resolution.mapping
+        assert resolution.mapping[bacon_candidate.identifier] == bacon_candidate
+        bacon_sausage_identifier = identifier("bacon", {"sausage-bonus"})
+        assert bacon_sausage_identifier in resolution.mapping
+        assert resolution.mapping[bacon_sausage_identifier] == resolve.Candidate(
+            bacon_sausage_identifier, bacon_file
+        )
+        bacon_eggs_identifier = identifier("bacon", {"eggs-bonus"})
+        assert bacon_eggs_identifier in resolution.mapping
+        assert resolution.mapping[bacon_eggs_identifier] == resolve.Candidate(
+            bacon_eggs_identifier, bacon_file
+        )
+        assert eggs_candidate.identifier in resolution.mapping
+        assert resolution.mapping[eggs_candidate.identifier] == eggs_candidate
+        assert sausage_candidate.identifier in resolution.mapping
+        assert resolution.mapping[sausage_candidate.identifier] == sausage_candidate
+        assert toast_candidate.identifier in resolution.mapping
+        assert resolution.mapping[toast_candidate.identifier] == toast_candidate
+
+
+# XXX prefer newest release
+# XXX failure from no wheels
+# XXX backtrack due to upper-bound
