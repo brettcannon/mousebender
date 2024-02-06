@@ -897,6 +897,32 @@ class TestGetDependencies:
         ]
         assert dependencies == expected
 
+    def test_markers_evaluated(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_dist": ["bacon", "eggs; python_version<'3.12'"],
+                },
+            )
+        )
+        file = resolve.WheelFile(details)
+        file.metadata = metadata
+        candidate = resolve.Candidate(identifier("spam"), file)
+        provider = LocalWheelProvider(environment={"python_version": "3.12"})
+
+        dependencies = provider.get_dependencies(candidate)
+        expected = [resolve.Requirement(packaging.requirements.Requirement("bacon"))]
+        assert dependencies == expected
+
 
 
     # XXX prefer newest release
