@@ -1127,6 +1127,85 @@ class TestResolution:
         assert candidate.identifier in resolution.mapping
         assert resolution.mapping[candidate.identifier] == candidate
 
+    def test_depth_2(self):
+        spam_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        spam_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    "requires_dist": ["bacon", "eggs"],
+                },
+            )
+        )
+        spam_file = resolve.WheelFile(spam_details)
+        spam_file.metadata = spam_metadata
+        spam_candidate = resolve.Candidate(identifier("spam"), spam_file)
+        bacon_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "bacon-1.2.3-456-py3-none-any.whl",
+            "url": "bacon.whl",
+            "hashes": {},
+        }
+        bacon_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "bacon",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    # No dependencies.
+                },
+            )
+        )
+        bacon_file = resolve.WheelFile(bacon_details)
+        bacon_file.metadata = bacon_metadata
+        bacon_candidate = resolve.Candidate(identifier("bacon"), bacon_file)
+        eggs_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "eggs-1.2.3-456-py3-none-any.whl",
+            "url": "eggs.whl",
+            "hashes": {},
+        }
+        eggs_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "eggs",
+                    "version": "1.2.3",
+                    "requires_python": ">=3.6",
+                    # No dependencies.
+                },
+            )
+        )
+        eggs_file = resolve.WheelFile(eggs_details)
+        eggs_file.metadata = eggs_metadata
+        eggs_candidate = resolve.Candidate(identifier("eggs"), eggs_file)
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[spam_file, bacon_file, eggs_file],
+        )
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+        reporter = resolvelib.BaseReporter()
+        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
+        resolution = resolver.resolve([requirement])
+
+        assert len(resolution.mapping) == 3
+        assert spam_candidate.identifier in resolution.mapping
+        assert resolution.mapping[spam_candidate.identifier] == spam_candidate
+        assert bacon_candidate.identifier in resolution.mapping
+        assert resolution.mapping[bacon_candidate.identifier] == bacon_candidate
+        assert eggs_candidate.identifier in resolution.mapping
+        assert resolution.mapping[eggs_candidate.identifier] == eggs_candidate
 
 
     # XXX prefer newest release
