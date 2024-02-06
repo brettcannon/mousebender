@@ -923,6 +923,35 @@ class TestGetDependencies:
         expected = [resolve.Requirement(packaging.requirements.Requirement("bacon"))]
         assert dependencies == expected
 
+    def test_extra(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    "requires_dist": ["bacon; extra=='bonus'"],
+                },
+            )
+        )
+        file = resolve.WheelFile(details)
+        file.metadata = metadata
+        candidate = resolve.Candidate(identifier("spam", {"bonus"}), file)
+        provider = LocalWheelProvider()
+
+        dependencies = provider.get_dependencies(candidate)
+        expected = [
+            resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
+            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+        ]
+        assert dependencies == expected
+
 
 
     # XXX prefer newest release

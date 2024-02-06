@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import abc
 import functools
+import sys
 import typing
 from typing import (
     Collection,
@@ -315,9 +316,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             # Quickly filter based on file details to avoid pointlessly fetching
             # metadata.
             filtered_on_details = filter(
-                lambda f: f.is_compatible(
-                    self._python_version, self.environment, self.tags
-                ),
+                lambda f: f.is_compatible(self),
                 potential_files,
             )
             self._project_files_cache[name] = list(filtered_on_details)
