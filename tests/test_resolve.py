@@ -11,6 +11,7 @@ import packaging.utils
 import packaging.version
 import pytest
 import resolvelib
+import resolvelib.resolvers
 
 from mousebender import resolve, simple
 
@@ -1547,6 +1548,19 @@ class TestResolution:
             in resolution.mapping.values()
         )
 
+    def test_no_wheels(self):
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        reporter = resolvelib.BaseReporter()
+        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
 
-# XXX failure from no wheels
+        with pytest.raises(resolvelib.resolvers.ResolutionImpossible):
+            resolver.resolve([requirement])
+
+
 # XXX backtrack due to upper-bound
