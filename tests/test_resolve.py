@@ -1431,7 +1431,7 @@ class TestResolution:
         requirement = resolve.Requirement(req)
         reporter = resolvelib.BaseReporter()
         resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-        resolution = resolver.resolve([requirement], max_rounds=1_000_000)
+        resolution = resolver.resolve([requirement])
 
         assert len(resolution.mapping) == 7
         assert spam_candidate.identifier in resolution.mapping
@@ -1455,7 +1455,98 @@ class TestResolution:
         assert toast_candidate.identifier in resolution.mapping
         assert resolution.mapping[toast_candidate.identifier] == toast_candidate
 
+    def test_prefer_newest_release(self):
+        old_spam_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",  # Older.
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        old_spam_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",  # Older.
+                    "requires_dist": ["bacon"],
+                },
+            )
+        )
+        old_spam_file = resolve.WheelFile(old_spam_details)
+        old_spam_file.metadata = old_spam_metadata
+        new_spam_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.4-456-py3-none-any.whl",  # Newer.
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        new_spam_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.4",  # Newer.
+                    "requires_dist": ["bacon"],
+                },
+            )
+        )
+        new_spam_file = resolve.WheelFile(new_spam_details)
+        new_spam_file.metadata = new_spam_metadata
+        old_bacon_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "bacon-1.2.3-456-py3-none-any.whl",  # Old.
+            "url": "bacon.whl",
+            "hashes": {},
+        }
+        old_bacon_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "bacon",
+                    "version": "1.2.3",  # Old.
+                },
+            )
+        )
+        old_bacon_file = resolve.WheelFile(old_bacon_details)
+        old_bacon_file.metadata = old_bacon_metadata
+        new_bacon_details: simple.ProjectFileDetails_1_0 = {
+            "filename": "bacon-1.2.5-456-py3-none-any.whl",  # Newer.
+            "url": "bacon.whl",
+            "hashes": {},
+        }
+        new_bacon_metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "bacon",
+                    "version": "1.2.5",  # Newer.
+                },
+            )
+        )
+        new_bacon_file = resolve.WheelFile(new_bacon_details)
+        new_bacon_file.metadata = new_bacon_metadata
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[old_spam_file, new_spam_file, old_bacon_file, new_bacon_file],
+        )
+        req = packaging.requirements.Requirement("Spam")
+        requirement = resolve.Requirement(req)
+        reporter = resolvelib.BaseReporter()
+        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
+        resolution = resolver.resolve([requirement])
 
-# XXX prefer newest release
+        assert len(resolution.mapping) == 2
+        assert (
+            resolve.Candidate(identifier("spam"), new_spam_file)
+            in resolution.mapping.values()
+        )
+        assert (
+            resolve.Candidate(identifier("bacon"), new_bacon_file)
+            in resolution.mapping.values()
+        )
+
+
 # XXX failure from no wheels
 # XXX backtrack due to upper-bound
