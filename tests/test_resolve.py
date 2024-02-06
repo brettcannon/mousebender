@@ -1089,6 +1089,44 @@ class TestGetDependencies:
         assert dependencies == expected
 
 
+class TestResolution:
+    def test_depth_1(self):
+        details: simple.ProjectFileDetails_1_0 = {
+            "filename": "Spam-1.2.3-456-py3-none-any.whl",
+            "url": "spam.whl",
+            "hashes": {},
+        }
+        metadata = packaging.metadata.Metadata.from_raw(
+            typing.cast(
+                packaging.metadata.RawMetadata,
+                {
+                    "metadata_version": "2.3",
+                    "name": "Spam",
+                    "version": "1.2.3",
+                    # No dependencies.
+                },
+            )
+        )
+
+        file = resolve.WheelFile(details)
+        file.metadata = metadata
+        candidate = resolve.Candidate(identifier("spam"), file)
+
+        provider = LocalWheelProvider(
+            environment={"python_version": "3.12"},
+            tags=[packaging.tags.Tag("py3", "none", "Any")],
+            files=[file],
+        )
+        req = packaging.requirements.Requirement("Spam==1.2.3")
+        requirement = resolve.Requirement(req)
+        reporter = resolvelib.BaseReporter()
+        resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
+        resolution = resolver.resolve([requirement])
+
+        assert len(resolution.mapping) == 1
+        assert candidate.identifier in resolution.mapping
+        assert resolution.mapping[candidate.identifier] == candidate
+
 
 
     # XXX prefer newest release
