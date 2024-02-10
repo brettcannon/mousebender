@@ -358,6 +358,8 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         name, extras = candidate.identifier
         if extras:
             # https://github.com/brettcannon/mousebender/issues/105#issuecomment-1704244739
+            # TODO: Create a ResolvedRequirement class that instantly knows its
+            #       requirement and candidate to avoid overhead.
             req = packaging.requirements.Requirement(
                 f"{name}=={candidate.file.version}"
             )
