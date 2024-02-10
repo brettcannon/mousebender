@@ -123,6 +123,9 @@ class Candidate:
             return NotImplemented
         return self.identifier == other.identifier and self.file == other.file
 
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self.identifier!r}: {self.file.details['filename']})"
+
 
 class Requirement:
     """A requirement for a distribution."""
@@ -287,7 +290,9 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     def _metadata_is_compatible(self, details: ProjectFile) -> bool:
         """Check if the file metadata is compatible with the environment."""
         # Should have already been fetched.
-        assert details.metadata is not None
+        assert (
+            details.metadata is not None
+        ), f"Metadata not fetched for {details.details['filename']}."
 
         if requires_python := details.metadata.requires_python:
             if self.python_version not in requires_python:
