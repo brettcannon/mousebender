@@ -254,8 +254,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # link. This exposes the Requires-Python metadata field ...
         # In the attribute value, < and > have to be HTML encoded as &lt; and
         # &gt;, respectively.
-        if "data-requires-python" in attrs and attrs["data-requires-python"]:
-            requires_python_data = html.unescape(attrs["data-requires-python"])
+        if attrs.get("data-requires-python"):
+            requires_python_data = html.unescape(attrs["data-requires-python"])  # type: ignore
             args["requires-python"] = requires_python_data
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with
