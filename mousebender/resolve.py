@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import abc
 import functools
-import sys
 import typing
 from typing import (
     Collection,
@@ -61,7 +60,7 @@ class Wheel:
 
 # Subclass for sdists.
 class ProjectFile(typing.Protocol):
-    """Protocol for storing file details to potentially be candidates."""
+    """Protocol for storing file details for a project."""
 
     details: simple.ProjectFileDetails
     name: packaging.utils.NormalizedName
@@ -75,7 +74,7 @@ class ProjectFile(typing.Protocol):
 
 
 class WheelFile(ProjectFile):
-    """Details of wheel files to potentially be candidates."""
+    """Details of a wheel file."""
 
     details: simple.ProjectFileDetails
     name: packaging.utils.NormalizedName
@@ -164,7 +163,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     """A provider for resolving requirements based on wheels."""
 
     python_version: packaging.version.Version
-    environment: dict[str, str]  # packaging.markers has no TypedDict for this.
+    markers: dict[str, str]  # packaging.markers has no TypedDict for this.
     tags: list[packaging.tags.Tag]
     # If is assumed the files have already been filtered down to only wheels
     # that have any chance to work with the specified environment details.
@@ -173,8 +172,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
     def __init__(
         self,
         *,
-        python_version: Optional[packaging.version.Version] = None,
-        environment: Optional[dict[str, str]] = None,
+        markers: Optional[dict[str, str]] = None,
         tags: Optional[Sequence[packaging.tags.Tag]] = None,
     ) -> None:
         """Initialize the provider.
@@ -185,22 +183,15 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         The 'tags' argument is expected to be in priority order, from most to
         least preferred tag.
         """
-        if environment is None:
-            environment = packaging.markers.default_environment()
-            if python_version is None:
-                version_str = sys.version.partition(" ")[0].removesuffix("+")
-                python_version = packaging.version.Version(version_str)
-        self.environment = environment
+        if markers is None:
+            markers = packaging.markers.default_environment()
+        self.markers = markers
         if tags is None:
-            self.tags = list(packaging.tags.sys_tags())
-        else:
-            self.tags = list(tags)
-        if python_version is not None:
-            self.python_version = python_version
-        else:
-            self.python_version = packaging.version.Version(
-                environment["python_version"]
-            )
+            tags = list(packaging.tags.sys_tags())
+        self.tags = list(tags)
+        self.python_version = packaging.version.Version(
+            self.markers["python_full_version"]
+        )
         self._project_files_cache = {}
 
     # Override for sdists.
@@ -373,11 +364,10 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
         for req in candidate.file.metadata.requires_dist:
             if req.marker is None:
                 requirements.append(Requirement(req))
-            elif req.marker.evaluate(self.environment):
+            elif req.marker.evaluate(self.markers):
                 requirements.append(Requirement(req))
             elif extras and any(
-                req.marker.evaluate(self.environment | {"extra": extra})
-                for extra in extras
+                req.marker.evaluate(self.markers | {"extra": extra}) for extra in extras
             ):
                 requirements.append(Requirement(req))
 

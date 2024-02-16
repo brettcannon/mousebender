@@ -48,15 +48,12 @@ class LocalWheelProvider(resolve.WheelProvider):
     def __init__(
         self,
         *,
-        python_version: packaging.version.Version | None = None,
-        environment: dict[str, str] | None = None,
+        markers: dict[str, str] | None = None,
         tags: Sequence[packaging.tags.Tag] | None = None,
         files: Iterable[resolve.ProjectFile] | None = None,
         metadata: dict[str, packaging.metadata.Metadata] | None = None,
     ) -> None:
-        super().__init__(
-            python_version=python_version, environment=environment, tags=tags
-        )
+        super().__init__(markers=markers, tags=tags)
         self.files = files or []
         self.metadata = metadata or {}
 
@@ -132,7 +129,7 @@ class TestWheelFileDetails:
         }
         file_details = resolve.WheelFile(details)
         provider = NothingWheelProvider(
-            python_version=packaging.version.Version("3.12.0"), tags=[tag]
+            markers={"python_full_version": "3.12.0"}, tags=[tag]
         )
 
         assert file_details.is_compatible(provider)
@@ -147,7 +144,7 @@ class TestWheelFileDetails:
         }
         file_details = resolve.WheelFile(details)
         provider = NothingWheelProvider(
-            python_version=packaging.version.Version("3.12.0"), tags=[tag]
+            markers={"python_full_version": "3.12.0"}, tags=[tag]
         )
 
         assert file_details.is_compatible(provider)
@@ -162,7 +159,7 @@ class TestWheelFileDetails:
         }
         file_details = resolve.WheelFile(details)
         provider = NothingWheelProvider(
-            python_version=packaging.version.Version("3.6.0"), tags=[tag]
+            markers={"python_full_version": "3.6.0"}, tags=[tag]
         )
 
         assert not file_details.is_compatible(provider)
@@ -204,13 +201,13 @@ class TestWheelProviderInit:
         provider = NothingWheelProvider()
 
         assert provider.tags == default_tags
-        assert provider.environment == default_env
+        assert provider.markers == default_env
 
     def test_environment(self):
-        env = {"python_version": "3.12"}
-        provider = NothingWheelProvider(environment=env)
+        env = {"python_full_version": "3.12.0"}
+        provider = NothingWheelProvider(markers=env)
 
-        assert provider.environment == env
+        assert provider.markers == env
 
     def test_tags(self):
         tags = [packaging.tags.Tag("py3", "none", "any")]
@@ -218,19 +215,12 @@ class TestWheelProviderInit:
 
         assert provider.tags == tags
 
-    def test_python_version_provided(self):
-        version = packaging.version.Version("3.12.4")
-        env = {"python_version": "3.12"}
-        provider = NothingWheelProvider(environment=env)
-
-        assert provider.python_version == version
-
     def test_python_version_from_env(self):
-        env = {"python_version": "3.12"}
-        provider = NothingWheelProvider(environment=env)
+        env = {"python_full_version": "3.12.0"}
+        provider = NothingWheelProvider(markers=env)
 
         assert provider.python_version == packaging.version.Version(
-            env["python_version"]
+            env["python_full_version"]
         )
 
     def test_python_version_default(self):
@@ -534,7 +524,7 @@ class TestIsSatisfiedByFile:
 
 class TestMetadataIsCompatible:
     is_compatible: Callable[[resolve.ProjectFile], bool] = NothingWheelProvider(
-        environment={"python_version": "3.12"}
+        markers={"python_full_version": "3.12.0"}
     )._metadata_is_compatible
 
     def test_no_requires_python(self):
@@ -618,7 +608,7 @@ class TestFindMatches:
             )
         )
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[file],
             metadata={"spam": metadata},
@@ -659,7 +649,7 @@ class TestFindMatches:
         }
         bad_file = resolve.WheelFile(bad_details)
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[bad_file, good_file],
             metadata={"spam": metadata},
@@ -804,7 +794,7 @@ class TestFindMatches:
         bad_file = resolve.WheelFile(bad_details)
         bad_file.metadata = bad_metadata
         provider = LocalWheelProvider(
-            python_version=packaging.version.Version("3.12"),
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[bad_file, good_file],
         )
@@ -854,8 +844,7 @@ class TestFindMatches:
         new_file.metadata = new_metadata
         new_candidate = resolve.Candidate(identifier("spam"), new_file)
         provider = LocalWheelProvider(
-            python_version=packaging.version.Version("3.12"),
-            environment={},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[old_file, new_file],
         )
@@ -923,7 +912,7 @@ class TestGetDependencies:
         file = resolve.WheelFile(details)
         file.metadata = metadata
         candidate = resolve.Candidate(identifier("spam"), file)
-        provider = LocalWheelProvider(environment={"python_version": "3.12"})
+        provider = LocalWheelProvider(markers={"python_full_version": "3.12.0"})
 
         dependencies = provider.get_dependencies(candidate)
         expected = [resolve.Requirement(packaging.requirements.Requirement("bacon"))]
@@ -983,7 +972,7 @@ class TestGetDependencies:
         file.metadata = metadata
         candidate = resolve.Candidate(identifier("spam", {"bonus"}), file)
 
-        provider = LocalWheelProvider(environment={"python_version": "3.12"})
+        provider = LocalWheelProvider(markers={"python_full_version": "3.12.0"})
 
         dependencies = provider.get_dependencies(candidate)
         expected = [
@@ -1117,7 +1106,7 @@ class TestResolution:
         candidate = resolve.Candidate(identifier("spam"), file)
 
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[file],
         )
@@ -1193,7 +1182,7 @@ class TestResolution:
         eggs_file.metadata = eggs_metadata
         eggs_candidate = resolve.Candidate(identifier("eggs"), eggs_file)
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[spam_file, bacon_file, eggs_file],
         )
@@ -1294,7 +1283,7 @@ class TestResolution:
         sausage_candidate = resolve.Candidate(identifier("sausage"), sausage_file)
 
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[spam_file, bacon_file, eggs_file, sausage_file],
         )
@@ -1424,7 +1413,7 @@ class TestResolution:
         toast_file.metadata = toast_metadata
         toast_candidate = resolve.Candidate(identifier("toast"), toast_file)
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[spam_file, bacon_file, eggs_file, sausage_file, toast_file],
         )
@@ -1528,7 +1517,7 @@ class TestResolution:
         new_bacon_file = resolve.WheelFile(new_bacon_details)
         new_bacon_file.metadata = new_bacon_metadata
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[old_spam_file, new_spam_file, old_bacon_file, new_bacon_file],
         )
@@ -1550,7 +1539,7 @@ class TestResolution:
 
     def test_no_wheels(self):
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[],
         )
@@ -1661,7 +1650,7 @@ class TestResolution:
         new_sausage_file.metadata = new_sausage_metadata
 
         provider = LocalWheelProvider(
-            environment={"python_version": "3.12"},
+            markers={"python_full_version": "3.12.0"},
             tags=[packaging.tags.Tag("py3", "none", "Any")],
             files=[
                 spam_file,
