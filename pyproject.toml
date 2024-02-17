@@ -39,6 +39,8 @@ doc = [
     "sphinx-prompt",
     ]
 
+cli = ["httpx", "trio"]
+
 [project.urls]
 Documentation = "https://mousebender.readthedocs.io/"
 Changelog = "https://github.com/brettcannon/mousebender/releases"
