@@ -113,7 +113,6 @@ dependencies = {dependencies}
 
 def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) -> str:
     """Generate the contents of a lock file."""
-    # XXX file hash
     contents = _FILE_TEMPLATE.format(
         dependencies=json.dumps(sorted(dependencies)), locks="\n\n".join(locks)
     ).strip()
