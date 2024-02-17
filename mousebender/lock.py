@@ -118,6 +118,6 @@ def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) ->
         dependencies=json.dumps(sorted(dependencies)), locks="\n\n".join(locks)
     ).strip()
 
-    hash = hashlib.sha256(contents.encode("utf-8")).hexdigest()
+    hash_value = hashlib.sha256(contents.encode("utf-8")).hexdigest()
 
-    return f'file-hashes = {{ sha256 = "{hash}" }}\n' + contents
+    return f'file-hashes = {{ sha256 = "{hash_value}" }}\n' + contents
