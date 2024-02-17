@@ -118,6 +118,7 @@ def main(args=sys.argv[1:]):
     lock_args = subcommands.add_parser("lock", help="Generate a lock file")
     lock_args.add_argument("requirements", nargs="*")
 
+    # XXX graph
     # XXX installer
 
     context = parser.parse_args(args)
