@@ -53,12 +53,21 @@ class PyPIProvider(mousebender.resolve.WheelProvider):
             response.text, response.headers["Content-Type"], name
         )
 
-        nothing_yanked = filter(
-            lambda f: not f.get("yanked", False), project_details["files"]
+        nothing_yanked = list(
+            filter(lambda f: not f.get("yanked", False), project_details["files"])
         )
 
-        wheels = filter(lambda f: f["filename"].endswith(".whl"), nothing_yanked)
-        has_metadata = filter(lambda f: f.get("core-metadata", False), wheels)
+        wheels = list(filter(lambda f: f["filename"].endswith(".whl"), nothing_yanked))
+        has_metadata = list(filter(lambda f: f.get("core-metadata", False), wheels))
+
+        if not nothing_yanked:
+            print(f"😱 {name} has **no** files available", file=sys.stderr)
+        elif not wheels:
+            print(f"🤬 {name} has **no** wheels", file=sys.stderr)
+        elif not has_metadata:
+            print(f"😨 {name} has **no** wheels w/ metadata", file=sys.stderr)
+        elif len(has_metadata) < len(wheels):
+            print(f"😬 {name} has *some* wheels w/o metadata", file=sys.stderr)
 
         return map(mousebender.resolve.WheelFile, has_metadata)
 
