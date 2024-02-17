@@ -114,4 +114,4 @@ def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) ->
     """Generate the contents of a lock file."""
     return _FILE_TEMPLATE.format(
         dependencies=json.dumps(sorted(dependencies)), locks="\n\n".join(locks)
-    )
+    ).strip()
