@@ -92,6 +92,7 @@ def lock(context):
     )
 
     provider, resolution = resolve(requirements)
+    # XXX also resolve for Windows
 
     lock_contents = mousebender.lock.generate_lock(provider, resolution)
     lock_file = mousebender.lock.generate_file_contents(
@@ -104,8 +105,11 @@ def lock(context):
 def main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
+
     lock_args = subcommands.add_parser("lock", help="Generate a lock file")
     lock_args.add_argument("requirements", nargs="*")
+
+    # XXX installer
 
     context = parser.parse_args(args)
     dispatch = {"lock": lock}

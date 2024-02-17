@@ -1,3 +1,4 @@
+file-hashes = { sha256 = "c3dfff61a7549657266223ceb2df2c927be6f586a8fb5301f1e6ad65ca57f681" }
 version = "1.0"
 
 dependencies = ["hatchling", "mousebender", "numpy", "pydantic", "requests"]

@@ -1,5 +1,6 @@
 """Generate a lock file."""
 import functools
+import hashlib
 import json
 from typing import Sequence
 
@@ -112,6 +113,11 @@ dependencies = {dependencies}
 
 def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) -> str:
     """Generate the contents of a lock file."""
-    return _FILE_TEMPLATE.format(
+    # XXX file hash
+    contents = _FILE_TEMPLATE.format(
         dependencies=json.dumps(sorted(dependencies)), locks="\n\n".join(locks)
     ).strip()
+
+    hash = hashlib.sha256(contents.encode("utf-8")).hexdigest()
+
+    return f'file-hashes = {{ sha256 = "{hash}" }}\n' + contents
