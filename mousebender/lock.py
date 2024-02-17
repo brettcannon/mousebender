@@ -92,7 +92,7 @@ def generate_lock(
         wheel = project_file_to_toml(candidate.file)
         wheel_dependencies = sorted(dependencies[id_]["children"])
         wheel_dependency_names = []
-        for name, extras in wheel_dependencies:
+        for name, _ in wheel_dependencies:
             # XXX what to do with extras?
             wheel_dependency_names.append(name)
         wheel += f"dependencies = {json.dumps(wheel_dependency_names)}"
