@@ -1,4 +1,4 @@
-file-hashes = { sha256 = "a04ac7ce69907ad2c5ff8cdfa1a09c50607f504470e067b85fe974be93befce5" }
+file-hashes = { sha256 = "b6336e954b8936393a5bb9f8cfc1850be4bb919e432f1230c8ce7e62f8512f75" }
 version = "1.0"
 
 dependencies = ["debugpy"]
@@ -12,7 +12,7 @@ filename = "debugpy-1.8.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.man
 origin = "https://files.pythonhosted.org/packages/3c/7a/e400d9f5ed6b4b5ec9f350b4d7974e986ca2d455221e567e648edfad898e/debugpy-1.8.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
 hashes = { sha256 = 'a2e658a9630f27534e63922ebf655a6ab60c370f4d2fc5c02a5b19baf4410ace' }
 direct = false
-requires-python = >=3.8
+requires-python = ">=3.8"
 
 
 [[lock]]

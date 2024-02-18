@@ -76,7 +76,7 @@ def lock_entry_dict_to_toml(entry_dict: dict[str, Any]) -> str:
             hashes=_dict_to_inline_table(wheel["hashes"]),
         )
         if requires_python := wheel.get("requires-python"):
-            entry += f"\nrequires-python = {requires_python}"
+            entry += f'\nrequires-python = "{requires_python}"'
         wheels.append(entry)
 
     return _LOCK_TEMPLATE.format(markers=markers, tags=tags, wheels="\n\n".join(wheels))
