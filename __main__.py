@@ -1,5 +1,6 @@
 # ruff: noqa: ANN001, ANN201, D100, D103
 import argparse
+import pathlib
 import sys
 
 import httpx
@@ -10,6 +11,7 @@ import resolvelib.resolvers
 import tomllib
 import trio
 
+import mousebender.install
 import mousebender.lock
 import mousebender.resolve
 import mousebender.simple
@@ -76,19 +78,6 @@ class PyPIProvider(mousebender.resolve.WheelProvider):
         trio.run(get_metadata, file_details)
 
 
-def resolve(requirements):
-    provider = PyPIProvider()
-    reporter = resolvelib.BaseReporter()
-    resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-    try:
-        resolution = resolver.resolve(requirements)
-    except resolvelib.ResolutionImpossible:
-        print("Resolution (currently) impossible 😢")
-        sys.exit(1)
-
-    return provider, resolution
-
-
 def lock(context):
     if not (dependencies := context.requirements):
         with open("pyproject.toml", "rb") as file:
@@ -100,7 +89,19 @@ def lock(context):
         map(packaging.requirements.Requirement, dependencies),
     )
 
-    provider, resolution = resolve(requirements)
+    tags = list(packaging.tags.sys_tags())
+    if context.maximize == "compatibility":
+        tags = list(reversed(tags))
+
+    provider = PyPIProvider(tags=tags)
+    reporter = resolvelib.BaseReporter()
+    resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
+    try:
+        resolution = resolver.resolve(requirements)
+    except resolvelib.ResolutionImpossible:
+        print("Resolution (currently) impossible 😢")
+        sys.exit(1)
+
     # XXX also resolve for Windows
 
     lock_contents = mousebender.lock.generate_lock(provider, resolution)
@@ -123,12 +124,20 @@ def install(context):
     for wheel in lock_entry["wheel"]:
         print(wheel["filename"])
 
+
 def main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
 
     lock_args = subcommands.add_parser("lock", help="Generate a lock file")
+    lock_args.add_argument(
+        "--maximize",
+        choices=["speed", "compatibility"],
+        help="What to maximize wheel selection for (speed or compatibility)",
+    )
     lock_args.add_argument("requirements", nargs="*")
+
+    # XXX add-lock
 
     install_args = subcommands.add_parser(
         "install", help="Install packages from a lock file"
@@ -136,11 +145,11 @@ def main(args=sys.argv[1:]):
     install_args.add_argument(
         "lock_file", type=pathlib.Path, help="The lock file to install from"
     )
+
     # XXX graph
-    # XXX installer
 
     context = parser.parse_args(args)
-    dispatch = {"lock": lock}
+    dispatch = {"lock": lock, "install": install}
     dispatch[context.subcommand](context)
 
 
