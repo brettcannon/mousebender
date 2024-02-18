@@ -2,7 +2,6 @@
 import functools
 import hashlib
 import json
-import re
 from typing import Any, Sequence
 
 import resolvelib.resolvers
@@ -62,6 +61,25 @@ tags = {tags}
 
 {wheels}
 """
+
+
+def lock_entry_dict_to_toml(entry_dict: dict[str, Any]) -> str:
+    """Convert a lock entry TOML table back to TOML."""
+    markers = _dict_to_inline_table(entry_dict["markers"])
+    tags = f"[{', '.join(map(repr, entry_dict['tags']))}]"
+
+    wheels = []
+    for wheel in entry_dict["wheel"]:
+        entry = _WHEEL_TEMPLATE.format(
+            filename=wheel["filename"],
+            url=wheel["origin"],
+            hashes=_dict_to_inline_table(wheel["hashes"]),
+        )
+        if requires_python := wheel.get("requires-python"):
+            entry += f"\nrequires-python = {requires_python}"
+        wheels.append(entry)
+
+    return _LOCK_TEMPLATE.format(markers=markers, tags=tags, wheels="\n\n".join(wheels))
 
 
 def generate_lock(

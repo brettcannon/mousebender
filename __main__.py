@@ -78,12 +78,7 @@ class PyPIProvider(mousebender.resolve.WheelProvider):
         trio.run(get_metadata, file_details)
 
 
-def lock(context):
-    if not (dependencies := context.requirements):
-        with open("pyproject.toml", "rb") as file:
-            pyproject = tomllib.load(file)
-        dependencies = pyproject["project"]["dependencies"]
-
+def lock_entry(context, dependencies):
     requirements = map(
         mousebender.resolve.Requirement,
         map(packaging.requirements.Requirement, dependencies),
@@ -104,10 +99,42 @@ def lock(context):
 
     # XXX also resolve for Windows
 
-    lock_contents = mousebender.lock.generate_lock(provider, resolution)
+    return mousebender.lock.generate_lock(provider, resolution)
+
+
+def add_lock(context):
+    with context.lock_file.open("rb") as file:
+        lock_file_contents = mousebender.lock.parse(file.read())
+
+    dependencies = lock_file_contents["dependencies"]
+
+    contents = list(
+        map(mousebender.lock.lock_entry_dict_to_toml, lock_file_contents["lock"])
+    )
+    contents.append(lock_entry(context, dependencies))
+
+    lock_file = mousebender.lock.generate_file_contents(dependencies, contents)
+
+    with context.lock_file.open("wb") as file:
+        file.write(lock_file.encode("utf-8"))
+
+    print(lock_file)
+
+
+def lock(context):
+    if not (dependencies := context.requirements):
+        with open("pyproject.toml", "rb") as file:
+            pyproject = tomllib.load(file)
+        dependencies = pyproject["project"]["dependencies"]
+
+    lock_contents = lock_entry(context, dependencies)
     lock_file = mousebender.lock.generate_file_contents(
         context.requirements, [lock_contents]
     )
+
+    if context.lock_file:
+        with context.lock_file.open("wb") as file:
+            file.write(lock_file.encode("utf-8"))
 
     print(lock_file)
 
@@ -130,14 +157,24 @@ def main(args=sys.argv[1:]):
     subcommands = parser.add_subparsers(dest="subcommand")
 
     lock_args = subcommands.add_parser("lock", help="Generate a lock file")
-    lock_args.add_argument(
-        "--maximize",
-        choices=["speed", "compatibility"],
-        help="What to maximize wheel selection for (speed or compatibility)",
-    )
     lock_args.add_argument("requirements", nargs="*")
+    lock_args.add_argument(
+        "--lock-file", type=pathlib.Path, help="Where to save the lock file"
+    )
 
-    # XXX add-lock
+    add_lock_args = subcommands.add_parser(
+        "add-lock", help="Add a lock entry to a lock file"
+    )
+    add_lock_args.add_argument(
+        "lock_file", default=None, type=pathlib.Path, help="The lock file to add to"
+    )
+
+    for subparser in (lock_args, add_lock_args):
+        subparser.add_argument(
+            "--maximize",
+            choices=["speed", "compatibility"],
+            help="What to maximize wheel selection for (speed or compatibility)",
+        )
 
     install_args = subcommands.add_parser(
         "install", help="Install packages from a lock file"
@@ -149,7 +186,7 @@ def main(args=sys.argv[1:]):
     # XXX graph
 
     context = parser.parse_args(args)
-    dispatch = {"lock": lock, "install": install}
+    dispatch = {"lock": lock, "add-lock": add_lock, "install": install}
     dispatch[context.subcommand](context)
 
 
