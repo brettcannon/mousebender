@@ -111,6 +111,18 @@ def lock(context):
     print(lock_file)
 
 
+def install(context):
+    with context.lock_file.open("rb") as file:
+        lock_file_contents = mousebender.lock.parse(file.read())
+    if (lock_entry := mousebender.install.strict_match(lock_file_contents)) is None:
+        lock_entry = mousebender.install.compatible_match(lock_file_contents)
+        if lock_entry is None:
+            print("No compatible lock entry found 😢")
+            sys.exit(1)
+
+    for wheel in lock_entry["wheel"]:
+        print(wheel["filename"])
+
 def main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -118,6 +130,12 @@ def main(args=sys.argv[1:]):
     lock_args = subcommands.add_parser("lock", help="Generate a lock file")
     lock_args.add_argument("requirements", nargs="*")
 
+    install_args = subcommands.add_parser(
+        "install", help="Install packages from a lock file"
+    )
+    install_args.add_argument(
+        "lock_file", type=pathlib.Path, help="The lock file to install from"
+    )
     # XXX graph
     # XXX installer
 

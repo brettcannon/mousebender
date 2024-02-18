@@ -2,9 +2,11 @@
 import functools
 import hashlib
 import json
-from typing import Sequence
+import re
+from typing import Any, Sequence
 
 import resolvelib.resolvers
+import tomllib
 
 from . import resolve
 
@@ -120,3 +122,18 @@ def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) ->
     hash_value = hashlib.sha256(contents.encode("utf-8")).hexdigest()
 
     return f'file-hashes = {{ sha256 = "{hash_value}" }}\n' + contents
+
+
+def parse(content: bytes) -> dict[str, Any]:
+    """Parse the lock file."""
+    raw_lines = content.splitlines()
+    for index, line in enumerate(raw_lines):
+        if line.startswith(b"file-hashes"):
+            file_hashes = tomllib.loads(line.decode("utf-8"))["file-hashes"]
+            del raw_lines[index]
+            proper_contents = b"\n".join(raw_lines)
+            if hashlib.sha256(proper_contents).hexdigest() != file_hashes["sha256"]:
+                raise ValueError("lock file contents do not match the hash")
+            return tomllib.loads(proper_contents.decode("utf-8"))
+    else:
+        raise ValueError("Lock file missing a `file-hashes` key")
