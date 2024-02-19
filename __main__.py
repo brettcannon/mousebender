@@ -1,4 +1,4 @@
-# ruff: noqa: ANN001, ANN201, D100, D103
+# ruff: noqa: ANN001, ANN201, ANN202, D100, D103
 import argparse
 import pathlib
 import sys
@@ -152,35 +152,45 @@ def install(context):
         print(wheel["filename"])
 
 
+def _name_from_filename(filename):
+    return packaging.utils.parse_wheel_filename(filename)[0]
+
+
 def graph(context):
     with context.lock_file.open("rb") as file:
         lock_file_contents = mousebender.lock.parse(file.read())
 
-    mermaid_lines = ["graph TD", "  subgraph top [Top-level dependencies]"]
+    mermaid_lines = []
+    if context.self_contained:
+        mermaid_lines.append("```mermaid")
+    mermaid_lines.extend(["graph LR", "  subgraph top [Top-level dependencies]"])
+
     for top_dep in lock_file_contents["dependencies"]:
-        mermaid_lines.append(f"  {top_dep}")
+        mermaid_lines.append(f"    {top_dep}")
     mermaid_lines.append("  end")
 
     for entry in lock_file_contents["lock"]:
+        nodes = set()
+        edges = {}  # type: ignore
         mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
         for wheel in entry["wheel"]:
-            mermaid_lines.append(
-                f"  {packaging.utils.parse_wheel_filename(wheel['filename'])[0]}"
-            )
+            name = _name_from_filename(wheel["filename"])
+            if name not in nodes:
+                mermaid_lines.append(f"    {name}")
+                nodes.add(name)
             for dep in wheel["dependencies"]:
-                mermaid_lines.append(f"  {dep}")
-        edges = {}
-        for wheel in entry["wheel"]:
-            mermaid_lines.append(
-                f"  {packaging.utils.parse_wheel_filename(wheel['filename'])[0]}"
-            )
-            edges[packaging.utils.parse_wheel_filename(wheel["filename"])[0]] = wheel[
-                "dependencies"
-            ]
+                if dep not in nodes:
+                    mermaid_lines.append(f"    {dep}")
+                    nodes.add(dep)
+                edges.setdefault(name, set()).add(dep)
+
         for parent, children in edges.items():
             for child in children:
-                mermaid_lines.append(f"  {parent} --> {child}")
+                mermaid_lines.append(f"    {parent} --> {child}")
         mermaid_lines.append("  end")
+
+    if context.self_contained:
+        mermaid_lines.append("```")
 
     print("\n".join(mermaid_lines))
 
@@ -217,7 +227,14 @@ def main(args=sys.argv[1:]):
     )
 
     graph_args = subcommands.add_parser(
-        "graph", help="Generate a visualization of the dependency graph"
+        "graph",
+        help="Generate a visualization of the dependency graph in Mermaid format",
+    )
+    graph_args.add_argument(
+        "--self-contained",
+        action="store_true",
+        default=False,
+        help="Include the surrounding Markdown to make the graph self-contained",
     )
     graph_args.add_argument(
         "lock_file", type=pathlib.Path, help="The lock file to visualize"
