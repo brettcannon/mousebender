@@ -152,6 +152,39 @@ def install(context):
         print(wheel["filename"])
 
 
+def graph(context):
+    with context.lock_file.open("rb") as file:
+        lock_file_contents = mousebender.lock.parse(file.read())
+
+    mermaid_lines = ["graph TD", "  subgraph top [Top-level dependencies]"]
+    for top_dep in lock_file_contents["dependencies"]:
+        mermaid_lines.append(f"  {top_dep}")
+    mermaid_lines.append("  end")
+
+    for entry in lock_file_contents["lock"]:
+        mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
+        for wheel in entry["wheel"]:
+            mermaid_lines.append(
+                f"  {packaging.utils.parse_wheel_filename(wheel['filename'])[0]}"
+            )
+            for dep in wheel["dependencies"]:
+                mermaid_lines.append(f"  {dep}")
+        edges = {}
+        for wheel in entry["wheel"]:
+            mermaid_lines.append(
+                f"  {packaging.utils.parse_wheel_filename(wheel['filename'])[0]}"
+            )
+            edges[packaging.utils.parse_wheel_filename(wheel["filename"])[0]] = wheel[
+                "dependencies"
+            ]
+        for parent, children in edges.items():
+            for child in children:
+                mermaid_lines.append(f"  {parent} --> {child}")
+        mermaid_lines.append("  end")
+
+    print("\n".join(mermaid_lines))
+
+
 def main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -183,10 +216,15 @@ def main(args=sys.argv[1:]):
         "lock_file", type=pathlib.Path, help="The lock file to install from"
     )
 
-    # XXX graph
+    graph_args = subcommands.add_parser(
+        "graph", help="Generate a visualization of the dependency graph"
+    )
+    graph_args.add_argument(
+        "lock_file", type=pathlib.Path, help="The lock file to visualize"
+    )
 
     context = parser.parse_args(args)
-    dispatch = {"lock": lock, "add-lock": add_lock, "install": install}
+    dispatch = {"lock": lock, "add-lock": add_lock, "install": install, "graph": graph}
     dispatch[context.subcommand](context)
 
 
