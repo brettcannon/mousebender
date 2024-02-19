@@ -97,12 +97,10 @@ def lock_entry(context, dependencies):
         print("Resolution (currently) impossible 😢")
         sys.exit(1)
 
-    # XXX also resolve for Windows
-
     return mousebender.lock.generate_lock(provider, resolution)
 
 
-def add_lock(context):
+def add_lock_entry(context):
     with context.lock_file.open("rb") as file:
         lock_file_contents = mousebender.lock.parse(file.read())
 
@@ -206,8 +204,9 @@ def main(args=sys.argv[1:]):
     )
 
     add_lock_args = subcommands.add_parser(
-        "add-lock", help="Add a lock entry to a lock file"
+        "add-lock-entry", help="Add a lock entry to a lock file"
     )
+    # XXX "--platform" for x64 Windows, x64 manylinux, and pure Python versions
     add_lock_args.add_argument(
         "lock_file", default=None, type=pathlib.Path, help="The lock file to add to"
     )
@@ -218,6 +217,8 @@ def main(args=sys.argv[1:]):
             choices=["speed", "compatibility"],
             help="What to maximize wheel selection for (speed or compatibility)",
         )
+
+    # XXX update-locks
 
     install_args = subcommands.add_parser(
         "install", help="Install packages from a lock file"
@@ -241,7 +242,12 @@ def main(args=sys.argv[1:]):
     )
 
     context = parser.parse_args(args)
-    dispatch = {"lock": lock, "add-lock": add_lock, "install": install, "graph": graph}
+    dispatch = {
+        "lock": lock,
+        "add-lock-entry": add_lock_entry,
+        "install": install,
+        "graph": graph,
+    }
     dispatch[context.subcommand](context)
 
 
