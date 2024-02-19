@@ -4,6 +4,9 @@
 # Inline table of hashes of this file w/o this line (including the newline); algorithm/value pairs.
 # This helps detect if someone accidentally modified the file by hand.
 file-hashes = {_ = "..."}
+# Version the file.
+# Since this file is designed to be human-readable but machine-writable, versioning makes sense as
+# we don't need to keep a backwards-compatible format for humans.
 version = "1.0"
 
 dependencies = ["..."]  # Array of top-levl dependency specifiers.
@@ -19,7 +22,7 @@ filename = "..."  # The wheel's file name.
 origin = "..."  # URL or file path where the wheel was found.
 hashes = { _ = "..." }  # Inline table of file hashes; algorithm/value pairs.
 direct = false  # Whether `origin` is the direct URL in terms of `direct_url.json`.
-requires-python = "..."  # Python version requirement.
+requires-python = "..."  # Python version requirement (optional).
 dependencies = ["..."]  # A list of project names which this project depends on. XXX include extras?
 
 [[lock.sdist]]
