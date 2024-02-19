@@ -2,7 +2,7 @@
 #  environment -- A Python interpreter and OS that a lock entry targets.
 #  lock entry -- The locked project files for a specific environment.
 
-# Inline table of hashes of this file w/o this line (including the newline); algorithm/value pairs.
+# Inline table of hashes of this file w/o this line (including the newline); algorithm:value pairs.
 # This helps detect if someone accidentally modified the file by hand.
 file-hashes = {_ = "..."}
 # Version the file.
@@ -22,9 +22,14 @@ tags = ["..."]  # Array of supported tag triples
 
 # A wheel file.
 [[lock.wheel]]
-filename = "..."  # The wheel's file name.
-origin = "..."  # URL or file path where the wheel was found.
-hashes = { _ = "..." }  # Inline table of file hashes; algorithm/value pairs.
+# The project's normalized name.
+# Necessary due to
+# https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references .
+name = "..."
+filename = "..."  # The wheel's file name (optional due to direct references).
+# URL or file path (via `file://`) where the wheel that was locked against was found.
+origin = "..."
+hashes = { _ = "..." }  # Inline table of file hashes; algorithm:value pairs.
 direct = false  # Whether `origin` is the direct URL in terms of `direct_url.json`.
 requires-python = "..."  # Python version requirement (optional).
 # A list of project names which this project depends on.
@@ -39,13 +44,14 @@ dependencies = ["..."]
 # XXX hashes
 # XXX direct
 # XXX requires-python
-# XXX dependencies (include extras?); Only if Metadata-Version >= 2.2 or always build to get?
-# XXX lock build-system.requires ? https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-build-system-dependencies-the-build-system-table
+# XXX dependencies; only if Metadata-Version >= 2.2 and Requires-Dist not dynamic or build if necessary?
+# XXX [[build-requires]] same as [[lock]]? Always or only if Metadata-Version < 2.2 or Requires-Dist is dynamic? https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-build-system-dependencies-the-build-system-table
 
-[[lock.git]]  # https://pip.pypa.io/en/stable/topics/vcs-support/
+# XXX
+[[lock.git]]  # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references
 # XXX name
 # XXX repo URL
 # XXX commit
 # XXX requires-python
-# XXX dependencies only if `pyproject.toml` or build as necessary?
+# XXX dependencies only if `pyproject.toml` and `projecct.dependencies` not dynamic or build as needed?
 # XXX lock build-system.requires ?

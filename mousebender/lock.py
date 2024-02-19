@@ -24,9 +24,10 @@ def project_file_to_toml(file: resolve.ProjectFile) -> str:
     raise NotImplementedError(f"unrecongized project file type: {type(file)}")
 
 
-# XXX `direct` is statically specified.
+# TODO `direct` is statically specified.
 _WHEEL_TEMPLATE = """\
 [[lock.wheel]]
+name = "{name}"
 filename = "{filename}"
 origin = "{url}"
 hashes = {hashes}
@@ -37,6 +38,7 @@ direct = false"""
 def _(file: resolve.WheelFile) -> str:
     """Convert a wheel file to its TOML lock representation."""
     wheel = _WHEEL_TEMPLATE.format(
+        name=file.name,
         filename=file.details["filename"],
         url=file.details["url"],
         hashes=_dict_to_inline_table(file.details["hashes"]),
@@ -71,6 +73,7 @@ def lock_entry_dict_to_toml(entry_dict: dict[str, Any]) -> str:
     wheels = []
     for wheel in entry_dict["wheel"]:
         entry = _WHEEL_TEMPLATE.format(
+            name=wheel["name"],
             filename=wheel["filename"],
             url=wheel["origin"],
             hashes=_dict_to_inline_table(wheel["hashes"]),
@@ -114,7 +117,6 @@ def generate_lock(
         wheel_dependencies = sorted(dependencies[id_]["children"])
         wheel_dependency_names = []
         for name, _ in wheel_dependencies:
-            # XXX what to do with extras?
             wheel_dependency_names.append(name)
         wheel += f"dependencies = {json.dumps(wheel_dependency_names)}"
         wheels.append(wheel)
