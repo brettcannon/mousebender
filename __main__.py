@@ -185,7 +185,7 @@ def graph(context):
                 edges.setdefault(name, set()).add(dep)
 
         for parent, children in edges.items():
-            for child in children:
+            for child in sorted(children):
                 mermaid_lines.append(f"    {parent} --> {child}")
         mermaid_lines.append("  end")
 

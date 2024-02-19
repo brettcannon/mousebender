@@ -25,20 +25,20 @@ graph LR
     pydantic-core
     requests
     urllib3
-    hatchling --> pluggy
-    hatchling --> trove-classifiers
-    hatchling --> pathspec
     hatchling --> editables
     hatchling --> packaging
+    hatchling --> pathspec
+    hatchling --> pluggy
+    hatchling --> trove-classifiers
     mousebender --> packaging
     mousebender --> typing-extensions
     pydantic --> annotated-types
     pydantic --> pydantic-core
     pydantic --> typing-extensions
     pydantic-core --> typing-extensions
-    requests --> idna
     requests --> certifi
-    requests --> urllib3
     requests --> charset-normalizer
+    requests --> idna
+    requests --> urllib3
   end
 ```
