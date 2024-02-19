@@ -1,5 +1,6 @@
 # Terminology:
 #  environment -- A Python interpreter and OS that a lock entry targets.
+#  lock entry -- The locked project files for a specific environment.
 
 # Inline table of hashes of this file w/o this line (including the newline); algorithm/value pairs.
 # This helps detect if someone accidentally modified the file by hand.
