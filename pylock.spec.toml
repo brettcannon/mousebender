@@ -24,10 +24,13 @@ tags = ["..."]  # Array of supported tag triples
 # A wheel file.
 [[lock.wheel]]
 # The project's normalized name.
-# Necessary due to
+# Cannot solely rely on the wheel filename to calculate this as the file name
+# may not be a valid `.whl` file name due to
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references .
 name = "..."
-filename = "..."  # The wheel's file name (optional due to direct references).
+# The wheel's file name (optional due to direct references making the file name
+# potentially not a valid `.whl` file name).
+filename = "..."
 # URL or file path (via `file://`) where the wheel that was locked against was found.
 origin = "..."
 hashes = { _ = "..." }  # Inline table of file hashes; algorithm:value pairs.
