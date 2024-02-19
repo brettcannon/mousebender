@@ -12,7 +12,8 @@ file-hashes = {_ = "..."}
 version = "1.0"
 
 # Array of top-level dependency specifiers.
-# Includes all details necessary to generate a lock file entry.
+# Includes all dependency specifiers necessary to generate a lock file entry
+# given a specific environment.
 dependencies = ["..."]
 
 # An environment's lock entry.
@@ -39,6 +40,7 @@ requires-python = "..."  # Python version requirement (optional).
 dependencies = ["..."]
 
 [[lock.sdist]]
+# XXX name
 # XXX filename
 # XXX origin
 # XXX hashes
@@ -47,8 +49,8 @@ dependencies = ["..."]
 # XXX dependencies; only if Metadata-Version >= 2.2 and Requires-Dist not dynamic or build if necessary?
 # XXX [[build-requires]] same as [[lock]]? Always or only if Metadata-Version < 2.2 or Requires-Dist is dynamic? https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-build-system-dependencies-the-build-system-table
 
-# XXX
-[[lock.git]]  # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references
+# https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references
+[[lock.git]]
 # XXX name
 # XXX repo URL
 # XXX commit
