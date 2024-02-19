@@ -149,11 +149,7 @@ def install(context):
             sys.exit(1)
 
     for wheel in lock_entry["wheel"]:
-        print(wheel["filename"])
-
-
-def _name_from_filename(filename):
-    return packaging.utils.parse_wheel_filename(filename)[0]
+        print(wheel["name"], "@", wheel.get("filename") or wheel["origin"])
 
 
 def graph(context):
@@ -178,7 +174,7 @@ def graph(context):
         edges = {}  # type: ignore
         mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
         for wheel in entry["wheel"]:
-            name = _name_from_filename(wheel["filename"])
+            name = wheel["name"]
             if name not in nodes:
                 mermaid_lines.append(f"    {name}")
                 nodes.add(name)
