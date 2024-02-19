@@ -23,7 +23,7 @@ async def get_metadata_for_file(client, file):
     response = await client.get(url)
     raw_data = response.content
     if isinstance(file.details.get("core-metadata", True), dict):
-        # XXX If core-metadata is a dict, verify the hash of the data
+        # TODO If core-metadata is a dict, verify the hash of the data
         pass
     metadata = packaging.metadata.Metadata.from_email(raw_data, validate=False)
     file.metadata = metadata
