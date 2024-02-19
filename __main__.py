@@ -166,7 +166,11 @@ def graph(context):
     mermaid_lines.extend(["graph LR", "  subgraph top [Top-level dependencies]"])
 
     for top_dep in lock_file_contents["dependencies"]:
-        mermaid_lines.append(f"    {top_dep}")
+        requirement = packaging.requirements.Requirement(top_dep)
+        line = f"    {requirement.name}"
+        if requirement.name != top_dep:
+            line += f"[{top_dep}]"
+        mermaid_lines.append(line)
     mermaid_lines.append("  end")
 
     for entry in lock_file_contents["lock"]:
