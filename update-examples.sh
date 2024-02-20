@@ -1,10 +1,12 @@
 #!/bin/sh
 echo "Lock graph example ..."
-py . lock numpy mousebender hatchling requests pydantic > pylock.graph-example.toml
+GRAPH_TOML=pylock.graph-example.toml
+py . lock numpy mousebender hatchling requests pydantic > $GRAPH_TOML
 echo "Generate graph ..."
-py . graph --self-contained pylock.graph-example.toml > pylock.graph-example.md
+py . graph --self-contained $GRAPH_TOML > pylock.graph-example.md
 
 echo "Initial 'maximize' example ..."
-py . lock debugpy > pylock.maximize-example.toml
+COMPATIBILITY_TOML=pylock.compatibility-example.toml
+py . lock debugpy > $COMPATIBILITY_TOML
 echo "Add compatibility lock entry ..."
-py . add-lock-entry --maximize compatibility pylock.maximize-example.toml > /dev/null
+py . add-lock-entry --platform python3.12 $COMPATIBILITY_TOML > /dev/null
