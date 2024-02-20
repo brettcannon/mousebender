@@ -90,6 +90,8 @@ def pure_python_details(version):
         "python_version": version_str,
         "python_full_version": f"{version_str}.0",
     }
+    # https://github.com/pypa/packaging/issues/781 to get rid of the `filter()`
+    # call.
     tags = filter(
         lambda tag: tag.platform != "_",
         packaging.tags.compatible_tags(version, platforms=["_"]),
@@ -98,12 +100,45 @@ def pure_python_details(version):
     return markers, tags
 
 
-def lock_entry(context, dependencies):
+def generate_lock_entry(dependencies, markers, tags):
     requirements = map(
         mousebender.resolve.Requirement,
         map(packaging.requirements.Requirement, dependencies),
     )
+    provider = PyPIProvider(markers=markers, tags=tags)
+    reporter = resolvelib.BaseReporter()
+    resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
+    try:
+        resolution = resolver.resolve(requirements)
+    except resolvelib.ResolutionImpossible:
+        print("Resolution (currently) impossible 😢")
+        sys.exit(1)
 
+    return mousebender.lock.generate_lock(provider, resolution)
+
+
+def update_lock(context):
+    with context.lock_file.open("rb") as file:
+        lock_file_contents = mousebender.lock.parse(file.read())
+
+    lock_entries = []
+    for entry in lock_file_contents["lock"]:
+        print("Updating", entry["tags"][0], "...")
+        tags = map(lambda t: packaging.tags.Tag(*t.split("-")), entry["tags"])
+        lock_entries.append(
+            generate_lock_entry(
+                lock_file_contents["dependencies"], entry["markers"], tags
+            )
+        )
+
+    new_lock_file = mousebender.lock.generate_file_contents(
+        lock_file_contents["dependencies"], lock_entries
+    )
+    with context.lock_file.open("wb") as file:
+        file.write(new_lock_file.encode("utf-8"))
+
+
+def lock_entry(context, dependencies):
     tags = list(packaging.tags.sys_tags())
     if context.maximize == "compatibility":
         tags = list(reversed(tags))
@@ -116,16 +151,8 @@ def lock_entry(context, dependencies):
         )
     else:
         raise ValueError(f"Unknown platform: {context.platform}")
-    provider = PyPIProvider(markers=markers, tags=tags)
-    reporter = resolvelib.BaseReporter()
-    resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
-    try:
-        resolution = resolver.resolve(requirements)
-    except resolvelib.ResolutionImpossible:
-        print("Resolution (currently) impossible 😢")
-        sys.exit(1)
 
-    return mousebender.lock.generate_lock(provider, resolution)
+    return generate_lock_entry(dependencies, markers, tags)
 
 
 def add_lock_entry(context):
@@ -258,9 +285,28 @@ def main(args=sys.argv[1:]):
             default="system",
             help="The platform to lock for",
         )
-        # XXX "--platform" for x64 Windows, x64 manylinux 2_17 (aka 2014)
+        # XXX x64 Windows
+        # XXX x64 manylinux 2_17 (aka 2014)
+        # {
+        #     "implementation_name": "cpython",
+        #     "implementation_version": "3.12.2",
+        #     "os_name": "posix",
+        #     "platform_machine": "x86_64",
+        #     "platform_release": "6.7.4-200.fc39.x86_64",
+        #     "platform_system": "Linux",
+        #     "platform_version": "#1 SMP PREEMPT_DYNAMIC Mon Feb  5 22:21:14 UTC 2024",
+        #     "python_full_version": "3.12.2",
+        #     "platform_python_implementation": "CPython",
+        #     "python_version": "3.12",
+        #     "sys_platform": "linux",
+        # }
 
-    # XXX update-locks
+    update_lock_args = subcommands.add_parser(
+        "update-lock", help="Update the a lock file"
+    )
+    update_lock_args.add_argument(
+        "lock_file", type=pathlib.Path, help="The lock file to update"
+    )
 
     install_args = subcommands.add_parser(
         "install", help="Install packages from a lock file"
@@ -287,6 +333,7 @@ def main(args=sys.argv[1:]):
     dispatch = {
         "lock": lock,
         "add-lock-entry": add_lock_entry,
+        "update-lock": update_lock,
         "install": install,
         "graph": graph,
     }
