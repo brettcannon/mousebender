@@ -78,6 +78,26 @@ class PyPIProvider(mousebender.resolve.WheelProvider):
         trio.run(get_metadata, file_details)
 
 
+def system_details():
+    """Get the details of the current environment."""
+    return packaging.markers.default_environment(), packaging.tags.sys_tags()
+
+
+def pure_python_details(version):
+    """Calculate the details for a specific Python version."""
+    version_str = f"{version[0]}.{version[1]}"
+    markers = {
+        "python_version": version_str,
+        "python_full_version": f"{version_str}.0",
+    }
+    tags = filter(
+        lambda tag: tag.platform != "_",
+        packaging.tags.compatible_tags(version, platforms=["_"]),
+    )
+
+    return markers, tags
+
+
 def lock_entry(context, dependencies):
     requirements = map(
         mousebender.resolve.Requirement,
@@ -88,7 +108,15 @@ def lock_entry(context, dependencies):
     if context.maximize == "compatibility":
         tags = list(reversed(tags))
 
-    provider = PyPIProvider(tags=tags)
+    if context.platform == "system":
+        markers, tags = system_details()
+    elif context.platform.startswith("python"):
+        markers, tags = pure_python_details(
+            tuple(map(int, context.platform.removeprefix("python").split(".", 1)))
+        )
+    else:
+        raise ValueError(f"Unknown platform: {context.platform}")
+    provider = PyPIProvider(markers=markers, tags=tags)
     reporter = resolvelib.BaseReporter()
     resolver: resolvelib.Resolver = resolvelib.Resolver(provider, reporter)
     try:
@@ -206,7 +234,7 @@ def main(args=sys.argv[1:]):
     add_lock_args = subcommands.add_parser(
         "add-lock-entry", help="Add a lock entry to a lock file"
     )
-    # XXX "--platform" for x64 Windows, x64 manylinux, and pure Python versions
+
     add_lock_args.add_argument(
         "lock_file", default=None, type=pathlib.Path, help="The lock file to add to"
     )
@@ -217,6 +245,20 @@ def main(args=sys.argv[1:]):
             choices=["speed", "compatibility"],
             help="What to maximize wheel selection for (speed or compatibility)",
         )
+        subparser.add_argument(
+            "--platform",
+            choices=[
+                "system",
+                "python3.8",
+                "python3.9",
+                "python3.10",
+                "python3.11",
+                "python3.12",
+            ],
+            default="system",
+            help="The platform to lock for",
+        )
+        # XXX "--platform" for x64 Windows, x64 manylinux 2_17 (aka 2014)
 
     # XXX update-locks
 
