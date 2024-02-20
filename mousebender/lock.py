@@ -46,12 +46,12 @@ def _(file: resolve.WheelFile) -> str:
 
     requires_python = None
     if details_requires := file.details.get("requires-python"):
-        requires_python = repr(details_requires)
+        requires_python = details_requires
     elif metadata_requires := getattr(file.metadata, "requires_python", None):
-        requires_python = repr(str(metadata_requires))
+        requires_python = str(metadata_requires)
 
     if requires_python:
-        wheel += f"\nrequires-python = {requires_python}"
+        wheel += f'\nrequires-python = "{requires_python}"'
 
     return wheel + "\n"
 

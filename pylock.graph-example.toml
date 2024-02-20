@@ -1,4 +1,4 @@
-file-hashes = { sha256 = "c0d1b599586b7311794a18b7c2f16af53d49f2ee247e6c724f1665c53eade86f" }
+file-hashes = { sha256 = "ae8075f9cffad612a881a7cafa1dee7039585c98371e5f8903f4bb12c40f4142" }
 version = "1.0"
 
 dependencies = ["hatchling", "mousebender", "numpy", "pydantic", "requests"]
@@ -13,7 +13,7 @@ filename = "annotated_types-0.6.0-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/28/78/d31230046e58c207284c6b2c4e8d96e6d3cb4e52354721b944d3e1ee4aa5/annotated_types-0.6.0-py3-none-any.whl"
 hashes = { sha256 = '0641064de18ba7a25dee8f96403ebc39113d0cb953a01429249d5c7564666a43' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = []
 
 [[lock.wheel]]
@@ -22,7 +22,7 @@ filename = "certifi-2024.2.2-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/ba/06/a07f096c664aeb9f01624f858c3add0a4e913d6c96257acb4fce61e7de14/certifi-2024.2.2-py3-none-any.whl"
 hashes = { sha256 = 'dc383c07b76109f368f6106eee2b593b04a011ea4d55f652c6ca24a754d1cdd1' }
 direct = false
-requires-python = '>=3.6'
+requires-python = ">=3.6"
 dependencies = []
 
 [[lock.wheel]]
@@ -31,7 +31,7 @@ filename = "charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux
 origin = "https://files.pythonhosted.org/packages/ee/fb/14d30eb4956408ee3ae09ad34299131fb383c47df355ddb428a7331cfa1e/charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
 hashes = { sha256 = '90d558489962fd4918143277a773316e56c72da56ec7aa3dc3dbbe20fdfed15b' }
 direct = false
-requires-python = '>=3.7.0'
+requires-python = ">=3.7.0"
 dependencies = []
 
 [[lock.wheel]]
@@ -40,7 +40,7 @@ filename = "editables-0.5-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/6b/be/0f2f4a5e8adc114a02b63d92bf8edbfa24db6fc602fca83c885af2479e0e/editables-0.5-py3-none-any.whl"
 hashes = { sha256 = '61e5ffa82629e0d8bfe09bc44a07db3c1ab8ed1ce78a6980732870f19b5e7d4c' }
 direct = false
-requires-python = '>=3.7'
+requires-python = ">=3.7"
 dependencies = []
 
 [[lock.wheel]]
@@ -49,7 +49,7 @@ filename = "hatchling-1.21.1-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/3a/bb/40528a09a33845bd7fd75c33b3be7faec3b5c8f15f68a58931da67420fb9/hatchling-1.21.1-py3-none-any.whl"
 hashes = { sha256 = '21e8c13f8458b219a91cb84e5b61c15bf786695d1c4fabc29e91e78f94bfe892' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = ["editables", "packaging", "pathspec", "pluggy", "trove-classifiers"]
 
 [[lock.wheel]]
@@ -58,7 +58,7 @@ filename = "idna-3.6-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/c2/e7/a82b05cf63a603df6e68d59ae6a68bf5064484a0718ea5033660af4b54a9/idna-3.6-py3-none-any.whl"
 hashes = { sha256 = 'c05567e9c24a6b9faaa835c4821bad0590fbb9d5779e7caa6e1cc4978e7eb24f' }
 direct = false
-requires-python = '>=3.5'
+requires-python = ">=3.5"
 dependencies = []
 
 [[lock.wheel]]
@@ -67,7 +67,7 @@ filename = "mousebender-2023.2-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/db/c1/b0f7859dc59d527cbcade44f81453158f8b782cbeeb8acb5b5b27f1fbdfc/mousebender-2023.2-py3-none-any.whl"
 hashes = { sha256 = 'b14d382f26bad190f9fa6f11716f0c3f16588517739554db90102ad0cf156ac1' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = ["packaging", "typing-extensions"]
 
 [[lock.wheel]]
@@ -76,7 +76,7 @@ filename = "numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.
 origin = "https://files.pythonhosted.org/packages/0f/50/de23fde84e45f5c4fda2488c759b69990fd4512387a8632860f3ac9cd225/numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
 hashes = { sha256 = '675d61ffbfa78604709862923189bad94014bef562cc35cf61d3a07bba02a7ed' }
 direct = false
-requires-python = '>=3.9'
+requires-python = ">=3.9"
 dependencies = []
 
 [[lock.wheel]]
@@ -85,7 +85,7 @@ filename = "packaging-23.2-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl"
 hashes = { sha256 = '8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7' }
 direct = false
-requires-python = '>=3.7'
+requires-python = ">=3.7"
 dependencies = []
 
 [[lock.wheel]]
@@ -94,7 +94,7 @@ filename = "pathspec-0.12.1-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl"
 hashes = { sha256 = 'a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = []
 
 [[lock.wheel]]
@@ -103,7 +103,7 @@ filename = "pluggy-1.4.0-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/a5/5b/0cc789b59e8cc1bf288b38111d002d8c5917123194d45b29dcdac64723cc/pluggy-1.4.0-py3-none-any.whl"
 hashes = { sha256 = '7db9f7b503d67d1c5b95f59773ebb58a8c1c288129a88665838012cfb07b8981' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = []
 
 [[lock.wheel]]
@@ -112,7 +112,7 @@ filename = "pydantic-2.6.1-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/db/dc/afecbd9650f486889181c6d1a0d675b580c06253ea7e304588e4c7485bdb/pydantic-2.6.1-py3-none-any.whl"
 hashes = { sha256 = '0b6a909df3192245cb736509a92ff69e4fef76116feffec68e93a567347bae6f' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = ["annotated-types", "pydantic-core", "typing-extensions"]
 
 [[lock.wheel]]
@@ -121,7 +121,7 @@ filename = "pydantic_core-2.16.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014
 origin = "https://files.pythonhosted.org/packages/bd/03/c7f7083583748c2bb6d077320021cdca7d9e283cb84f1d9278b01ccf8543/pydantic_core-2.16.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
 hashes = { sha256 = '3ac426704840877a285d03a445e162eb258924f014e2f074e209d9b4ff7bf380' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = ["typing-extensions"]
 
 [[lock.wheel]]
@@ -130,7 +130,7 @@ filename = "requests-2.31.0-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/70/8e/0e2d847013cb52cd35b38c009bb167a1a26b2ce6cd6965bf26b47bc0bf44/requests-2.31.0-py3-none-any.whl"
 hashes = { sha256 = '58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f' }
 direct = false
-requires-python = '>=3.7'
+requires-python = ">=3.7"
 dependencies = ["certifi", "charset-normalizer", "idna", "urllib3"]
 
 [[lock.wheel]]
@@ -147,7 +147,7 @@ filename = "typing_extensions-4.9.0-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/b7/f4/6a90020cd2d93349b442bfcb657d0dc91eee65491600b2cb1d388bc98e6b/typing_extensions-4.9.0-py3-none-any.whl"
 hashes = { sha256 = 'af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = []
 
 [[lock.wheel]]
@@ -156,5 +156,5 @@ filename = "urllib3-2.2.1-py3-none-any.whl"
 origin = "https://files.pythonhosted.org/packages/a2/73/a68704750a7679d0b6d3ad7aa8d4da8e14e151ae82e6fee774e6e0d05ec8/urllib3-2.2.1-py3-none-any.whl"
 hashes = { sha256 = '450b20ec296a467077128bff42b73080516e71b56ff59a60a02bef2232c4fa9d' }
 direct = false
-requires-python = '>=3.8'
+requires-python = ">=3.8"
 dependencies = []
