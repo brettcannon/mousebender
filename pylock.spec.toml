@@ -1,20 +1,26 @@
 # Terminology:
 #  environment -- A Python interpreter and OS that a lock entry targets.
 #  lock entry -- The locked distribution files for a specific environment.
+#  distribution -- A Python project/package that can be installed.
+# -----
 
-# Inline table of hashes of this file w/o this line (including the newline);
-# algorithm:value pairs.
+# Inline table of hashes of this file's contents w/o this line
+#(including the newline); algorithm:value pairs.
 # This file is meant to be human-readable but machine-writable, so this makes
 # sure people don't accidentally try to edit the file by hand and break
 # associations between various parts of the file.
 file-hashes = {_ = "..."}
-# Version the file.
+# Metadata version pf the file.
 # Since this file is designed to be human-readable but machine-writable,
-#versioning makes sense as we don't need to keep a backwards-compatible format
-# for humans.
-version = "1.0"
+# versioning the metadata makes sense as we don't need to keep a
+# backwards-compatible format for humans to directly work with and instead
+# need a way to help tools migrate to newer metadata versions.
+meta = "1.0"
 # The date and time the lock file was created.
-# This helps to know how fresh/old the lock file is
+# This helps to know how fresh/old the lock file is.
+# It can also facilitate appending more lock entries later on by relying on
+# e.g. `upload-time` from the simple API (PEP 700) to know what worldview to
+# lock against so all lock entries are cohesive.
 created-at = 2022-01-12T00:33:00Z
 
 # Array of top-level dependency specifiers.
@@ -32,6 +38,7 @@ tags = ["..."]  # Array of supported tag triples in preference order.
 # Cannot solely rely on the wheel filename to calculate this as the file name
 # may not be a valid `.whl` file name due to
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references .
+# It's also easier to read.
 name = "..."
 # The wheel's file name (optional due to direct references making the file
 # name potentially not a valid `.whl` file name).
@@ -53,15 +60,18 @@ direct = false
 # If an installer chooses to determine environment compatibility that is not
 # as strict as an exact match of `lock.markers` and `lock.tags`, knowing the
 # supporting Python versions is important to determine if this wheel file is
-# compatible.
+# compatible as this is not necessarily communicated via the wheel file name
+# itself.
 requires-python = "..."
-# A list of distribution names which this distribution depends on.
+# A list of normalized distribution names which this distribution depends on.
 # Viewing the overall lock entry as the entire worldview of distributions
 # available, each entry can be just the distribution name (a perk of Python
 # not allowing multiple distribution versions simultaneously).
+# This allows for introspection as to why a distribution is included in the
+# lock entry (i.e. calculate the dependency graph between distributions).
 dependencies = ["..."]
 
-# source distribution (sdist) that's included in the lock entry.
+# Source distribution (sdist) that's included in the lock entry.
 [[lock.sdist]]
 name = "..."  # See `lock.wheel.name`.
 filename = "..."  # See `lock.wheel.filename`.
@@ -71,15 +81,18 @@ direct = false  # See `lock.wheel.direct`.
 requires-python = "..."  # See `lock.wheel.requires-python`.
 # See `lock.wheel.dependencies` for what is recorded in this array.
 # The contents come from either:
-# - `PKG-INFO` if `Metadata-Version` is 2.2 or higher and the necessary fields
-#   are not `Dynamic`.
+# - `PKG-INFO` if `Metadata-Version` is 2.2 or higher and the appropriate
+#   fields are not `Dynamic`.
 # - From building the sdist.
 dependencies = ["..."]
 
 # An array of files that *can* be used or *was* used to build the sdist.
 # The acceptable keys are `wheel` and `sdist` and their values match what is
-# acceptable unde the same name directly under `[[lock]]`. Any future expansion
-# of acceptable distribution types will also be supported here.
+# acceptable unde the same name directly under `[[lock]]`. Any future
+# expansion of acceptable distribution types under `[[lock]]` will also be
+# supported here.
+# This effectively makes the table a self-contained lock entry just for this
+# sdist.
 [[lock.sdist.build-requires]]
 # ...
 
@@ -90,12 +103,14 @@ name = "..."  # See `lock.wheel.name`.
 # It may be a `file://` path.
 repo = "..."
 # The commit of the repository to use.
-# It should be a specific commit and not a tag or branch as those can move.
+# It should be a specific commit and not a tag or branch as those can change.
 commit = "..."
 requires-python = "..."  # See `lock.wheel.requires-python`.
 # See `lock.wheel.dependencies` for what is recorded in this array.
 # The contents come from either:
-# - `pyproject.toml` if `project.dependencies` exists and is not `dynamic`.
+# - `pyproject.toml` if `project.dependencies` (and
+#   `project.optional-dependencies` as appropriate) exists and is not
+#   `dynamic`.
 # - From building the repository based on its `pyproject.toml` file.
 dependencies = ["..."]
 
