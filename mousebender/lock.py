@@ -1,4 +1,5 @@
 """Generate a lock file."""
+import datetime
 import functools
 import hashlib
 import json
@@ -126,7 +127,7 @@ def generate_lock(
 
 _FILE_TEMPLATE = """\
 version = "1.0"
-
+created-at = {creation_timestamp}
 dependencies = {dependencies}
 
 {locks}
@@ -135,8 +136,11 @@ dependencies = {dependencies}
 
 def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) -> str:
     """Generate the contents of a lock file."""
+    timestamp = datetime.datetime.now(datetime.timezone.utc)
     contents = _FILE_TEMPLATE.format(
-        dependencies=json.dumps(sorted(dependencies)), locks="\n\n".join(locks)
+        creation_timestamp=timestamp.isoformat(),
+        dependencies=json.dumps(sorted(dependencies)),
+        locks="\n\n".join(locks),
     ).strip()
 
     hash_value = hashlib.sha256(contents.encode("utf-8")).hexdigest()
