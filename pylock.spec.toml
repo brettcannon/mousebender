@@ -29,7 +29,8 @@ created-at = 2022-01-12T00:33:00Z
 # the potential distributions consistent.
 indexes = ["..."]
 # Array of top-level dependency specifiers.
-# This acts as the input of what to resolve for.
+# This acts as the input of what to resolve for, so all details are to be
+# included (e.g. extras, markers, etc.).
 dependencies = ["..."]
 
 # A specific environment's lock entry.
@@ -42,21 +43,22 @@ tags = ["..."]  # Array of supported tag triples in most- to least-preferred ord
 # The distribution's normalized name.
 # Cannot solely rely on the wheel filename to calculate this as the file name
 # may not be a valid `.whl` file name due to
-# https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references .
-# It's also easier to read.
+# https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references
+# (technically a tool could download the arbitrary URL and inspect it to
+# determine the wheel file details if one so desired).
+# Having the name as a distinct key makes it easy to read.
 name = "..."
-# The wheel's file name (optional due to direct references making the file
-# name potentially not a valid `.whl` file name).
+# The wheel's file name.
 filename = "..."
 # URL or file path (via `file://`) where the wheel that was locked against was
 # found.
-# The location may not need to exist in the future, so this should be treated
+# The location does not need to exist in the future, so this should be treated
 # as only a hint to where to look and/or recording where the wheel file
 # originally came from.
 # https://packaging.python.org/en/latest/specifications/version-specifiers/
 origin = "..."
 # Inline table of file hashes; algorithm:value pairs.
-# This makes sure that the one is getting the wheel file that was locked
+# This makes sure that one is getting the wheel file that was locked
 # against for reproducibility and security purposes.
 hashes = { _ = "..." }
 # Whether `origin` is the direct URL in terms of `direct_url.json`.
@@ -74,6 +76,8 @@ requires-python = "..."
 # not allowing multiple distribution versions simultaneously).
 # This allows for introspection as to why a distribution is included in the
 # lock entry (i.e. calculate the dependency graph between distributions).
+# Details like extras and markers are not necessary as the resolver has
+# already handled them.
 dependencies = ["..."]
 
 # Source distribution (sdist) that's included in the lock entry.
