@@ -1,62 +1,103 @@
 # Terminology:
 #  environment -- A Python interpreter and OS that a lock entry targets.
-#  lock entry -- The locked project files for a specific environment.
+#  lock entry -- The locked distribution files for a specific environment.
 
-# Inline table of hashes of this file w/o this line (including the newline); algorithm:value pairs.
-# This helps detect if someone accidentally modified the file by hand.
+# Inline table of hashes of this file w/o this line (including the newline);
+# algorithm:value pairs.
+# This file is meant to be human-readable but machine-writable, so this makes
+# sure people don't accidentally try to edit the file by hand and break
+# associations between various parts of the file.
 file-hashes = {_ = "..."}
 # Version the file.
 # Since this file is designed to be human-readable but machine-writable,
 #versioning makes sense as we don't need to keep a backwards-compatible format
 # for humans.
 version = "1.0"
+# The date and time the lock file was created.
+# This helps to know how fresh/old the lock file is
+created-at = 2022-01-12T00:33:00Z
 
 # Array of top-level dependency specifiers.
-# Includes all dependency specifiers necessary to generate a lock file entry
-# given a specific environment.
+# This acts as the input of what to resolve for.
 dependencies = ["..."]
 
-# An environment's lock entry.
+# A specific environment's lock entry.
 [[lock]]
 markers = { _ = "..."}  # Inline table of environment markers.
-tags = ["..."]  # Array of supported tag triples
+tags = ["..."]  # Array of supported tag triples in preference order.
 
-# A wheel file.
+# A wheel file that's included in the lock entry.
 [[lock.wheel]]
-# The project's normalized name.
+# The distribution's normalized name.
 # Cannot solely rely on the wheel filename to calculate this as the file name
 # may not be a valid `.whl` file name due to
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references .
 name = "..."
-# The wheel's file name (optional due to direct references making the file name
-# potentially not a valid `.whl` file name).
+# The wheel's file name (optional due to direct references making the file
+# name potentially not a valid `.whl` file name).
 filename = "..."
-# URL or file path (via `file://`) where the wheel that was locked against was found.
+# URL or file path (via `file://`) where the wheel that was locked against was
+# found.
+# The location may not need to exist in the future, so this should be treated
+# as only a hint to where to look and/or recording where the wheel file
+# originally came from.
+# https://packaging.python.org/en/latest/specifications/version-specifiers/
 origin = "..."
-hashes = { _ = "..." }  # Inline table of file hashes; algorithm:value pairs.
-direct = false  # Whether `origin` is the direct URL in terms of `direct_url.json`.
-requires-python = "..."  # Python version requirement (optional).
-# A list of project names which this project depends on.
-# Each entry can be just the project name as though the lock entry overall was
-# the entire worldview of projects available (perk of Python not allowing
-# multiple project versions simultaneously).
+# Inline table of file hashes; algorithm:value pairs.
+# This makes sure that the one is getting the wheel file that was locked
+# against for reproducibility and security purposes.
+hashes = { _ = "..." }
+# Whether `origin` is the direct URL in terms of `direct_url.json`.
+direct = false
+# Python version requirement (optional).
+# If an installer chooses to determine environment compatibility that is not
+# as strict as an exact match of `lock.markers` and `lock.tags`, knowing the
+# supporting Python versions is important to determine if this wheel file is
+# compatible.
+requires-python = "..."
+# A list of distribution names which this distribution depends on.
+# Viewing the overall lock entry as the entire worldview of distributions
+# available, each entry can be just the distribution name (a perk of Python
+# not allowing multiple distribution versions simultaneously).
 dependencies = ["..."]
 
+# source distribution (sdist) that's included in the lock entry.
 [[lock.sdist]]
-# XXX name
-# XXX filename
-# XXX origin
-# XXX hashes
-# XXX direct
-# XXX requires-python
-# XXX dependencies; only if Metadata-Version >= 2.2 and Requires-Dist not dynamic or build if necessary?
-# XXX [[build-requires]] same as [[lock]]? Always or only if Metadata-Version < 2.2 or Requires-Dist is dynamic? https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-build-system-dependencies-the-build-system-table
+name = "..."  # See `lock.wheel.name`.
+filename = "..."  # See `lock.wheel.filename`.
+origin = "..."  # See `lock.wheel.origin`.
+hashes = { _ = "..." }  # See `lock.wheel.hashes`.
+direct = false  # See `lock.wheel.direct`.
+requires-python = "..."  # See `lock.wheel.requires-python`.
+# See `lock.wheel.dependencies` for what is recorded in this array.
+# The contents come from either:
+# - `PKG-INFO` if `Metadata-Version` is 2.2 or higher and the necessary fields
+#   are not `Dynamic`.
+# - From building the sdist.
+dependencies = ["..."]
+
+# An array of files that *can* be used or *was* used to build the sdist.
+# The acceptable keys are `wheel` and `sdist` and their values match what is
+# acceptable unde the same name directly under `[[lock]]`. Any future expansion
+# of acceptable distribution types will also be supported here.
+[[lock.sdist.build-requires]]
+# ...
 
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references
 [[lock.git]]
-# XXX name
-# XXX repo URL
-# XXX commit
-# XXX requires-python
-# XXX dependencies only if `pyproject.toml` and `projecct.dependencies` not dynamic or build as needed?
-# XXX lock build-system.requires ?
+name = "..."  # See `lock.wheel.name`.
+# URL to the Git repository.
+# It may be a `file://` path.
+repo = "..."
+# The commit of the repository to use.
+# It should be a specific commit and not a tag or branch as those can move.
+commit = "..."
+requires-python = "..."  # See `lock.wheel.requires-python`.
+# See `lock.wheel.dependencies` for what is recorded in this array.
+# The contents come from either:
+# - `pyproject.toml` if `project.dependencies` exists and is not `dynamic`.
+# - From building the repository based on its `pyproject.toml` file.
+dependencies = ["..."]
+
+# Same as `pyproject.toml`.
+[tool]
