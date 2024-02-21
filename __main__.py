@@ -187,7 +187,7 @@ def update_lock(context):
         )
 
     new_lock_file = mousebender.lock.generate_file_contents(
-        lock_file_contents["dependencies"], lock_entries
+        lock_file_contents["dependencies"], ["https://pypi.org/simple"], lock_entries
     )
     with context.lock_file.open("wb") as file:
         file.write(new_lock_file.encode("utf-8"))
@@ -235,7 +235,9 @@ def add_lock_entry(context):
     )
     contents.append(lock_entry(context, dependencies))
 
-    lock_file = mousebender.lock.generate_file_contents(dependencies, contents)
+    lock_file = mousebender.lock.generate_file_contents(
+        dependencies, lock_file_contents["indexes"], contents
+    )
 
     with context.lock_file.open("wb") as file:
         file.write(lock_file.encode("utf-8"))
@@ -251,7 +253,7 @@ def lock(context):
 
     lock_contents = lock_entry(context, dependencies)
     lock_file = mousebender.lock.generate_file_contents(
-        context.requirements, [lock_contents]
+        context.requirements, ["https://pypi.org/simple"], [lock_contents]
     )
 
     if context.lock_file:

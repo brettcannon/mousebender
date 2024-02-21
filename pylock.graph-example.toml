@@ -1,6 +1,7 @@
-file-hashes = { sha256 = "884f2abb2503e9df39d85de3c97df86727addfc195b2eba3b2ec4e420ed24422" }
+file-hashes = { sha256 = "7d80ad26a1aa680c6ef8256b6cfd413f9a4037c40a4d341065d54beac8714358" }
 version = "1.0"
-created-at = 2024-02-21T01:39:40.762494+00:00
+created-at = 2024-02-21T05:12:51.987716+00:00
+indexes = ["https://pypi.org/simple"]
 dependencies = ["hatchling", "mousebender", "numpy", "pydantic", "requests"]
 
 [[lock]]

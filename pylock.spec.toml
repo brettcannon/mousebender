@@ -23,6 +23,11 @@ meta = "1.0"
 # lock against so all lock entries are cohesive.
 created-at = 2022-01-12T00:33:00Z
 
+# URLs to package indexes to use to find distributions.
+# Recorded in most- to least-preferred order.
+# Recording the indexes used helps when adding new lock entries by making
+# the potential distributions consistent.
+indexes = ["..."]
 # Array of top-level dependency specifiers.
 # This acts as the input of what to resolve for.
 dependencies = ["..."]
@@ -30,7 +35,7 @@ dependencies = ["..."]
 # A specific environment's lock entry.
 [[lock]]
 markers = { _ = "..."}  # Inline table of environment markers.
-tags = ["..."]  # Array of supported tag triples in preference order.
+tags = ["..."]  # Array of supported tag triples in most- to least-preferred order.
 
 # A wheel file that's included in the lock entry.
 [[lock.wheel]]

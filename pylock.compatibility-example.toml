@@ -1,6 +1,7 @@
-file-hashes = { sha256 = "33ba697a3e3e93fe01eb85d4fa6a55797ec78553d7c482c754ce3abc794e5f94" }
+file-hashes = { sha256 = "9d8a8cd0de24a5782a35087c94ddb772ae59722d03f9185e659c3f7cb06d455d" }
 version = "1.0"
-created-at = 2024-02-21T01:39:42.109155+00:00
+created-at = 2024-02-21T05:12:53.234988+00:00
+indexes = ["https://pypi.org/simple"]
 dependencies = ["debugpy"]
 
 [[lock]]

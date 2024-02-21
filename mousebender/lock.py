@@ -128,17 +128,21 @@ def generate_lock(
 _FILE_TEMPLATE = """\
 version = "1.0"
 created-at = {creation_timestamp}
+indexes = {indexes}
 dependencies = {dependencies}
 
 {locks}
 """
 
 
-def generate_file_contents(dependencies: Sequence[str], locks: Sequence[str]) -> str:
+def generate_file_contents(
+    dependencies: Sequence[str], indexes: Sequence[str], locks: Sequence[str]
+) -> str:
     """Generate the contents of a lock file."""
     timestamp = datetime.datetime.now(datetime.timezone.utc)
     contents = _FILE_TEMPLATE.format(
         creation_timestamp=timestamp.isoformat(),
+        indexes=json.dumps(indexes),
         dependencies=json.dumps(sorted(dependencies)),
         locks="\n\n".join(locks),
     ).strip()
