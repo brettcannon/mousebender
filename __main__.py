@@ -100,6 +100,33 @@ def pure_python_details(version):
     return markers, tags
 
 
+def cpython_windows_details(version):
+    version_str = f"{version[0]}.{version[1]}"
+    markers = {
+        "implementation_name": "cpython",
+        "implementation_version": f"{version_str}.0",
+        "os_name": "nt",
+        "platform_machine": "AMD64",
+        "platform_release": "10",
+        "platform_system": "Windows",
+        "python_full_version": f"{version_str}.0",
+        "platform_python_implementation": "CPython",
+        "python_version": version_str,
+        "sys_platform": "win32",
+    }
+
+    tags = [
+        *packaging.tags.cpython_tags(
+            version, [f"cp{version[0]}{version[1]}", "abi3"], ["win_amd64"]
+        ),
+        *packaging.tags.compatible_tags(
+            version, f"cp{version[0]}{version[1]}", platforms=["win_amd64"]
+        ),
+    ]
+
+    return markers, tags
+
+
 def generate_lock_entry(dependencies, markers, tags):
     requirements = map(
         mousebender.resolve.Requirement,
@@ -149,6 +176,11 @@ def lock_entry(context, dependencies):
         markers, tags = pure_python_details(
             tuple(map(int, context.platform.removeprefix("python").split(".", 1)))
         )
+    elif context.platform.startswith("cpython") and context.platform.endswith(
+        "windows-x64"
+    ):
+        version = context.platform.removeprefix("cpython").removesuffix("-windows-x64")
+        markers, tags = cpython_windows_details(tuple(map(int, version.split(".", 1))))
     else:
         raise ValueError(f"Unknown platform: {context.platform}")
 
@@ -276,6 +308,11 @@ def main(args=sys.argv[1:]):
             "--platform",
             choices=[
                 "system",
+                "cpython3.8-windows-x64",
+                "cpython3.9-windows-x64",
+                "cpython3.10-windows-x64",
+                "cpython3.11-windows-x64",
+                "cpython3.12-windows-x64",
                 "python3.8",
                 "python3.9",
                 "python3.10",
@@ -285,7 +322,6 @@ def main(args=sys.argv[1:]):
             default="system",
             help="The platform to lock for",
         )
-        # XXX x64 Windows
         # XXX x64 manylinux 2_17 (aka 2014)
         # {
         #     "implementation_name": "cpython",

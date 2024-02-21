@@ -1,4 +1,4 @@
-file-hashes = { sha256 = "8fcc118608185613f907f9ca19d74e77adb3c50c920c6cff9f36e85e790e9d72" }
+file-hashes = { sha256 = "e9b65b651921b5637a8f6b63232cc8fe40cefeb7e9ab797fda2898c46a6b140e" }
 version = "1.0"
 
 dependencies = ["debugpy"]
@@ -14,7 +14,19 @@ origin = "https://files.pythonhosted.org/packages/3c/7a/e400d9f5ed6b4b5ec9f350b4
 hashes = { sha256 = 'a2e658a9630f27534e63922ebf655a6ab60c370f4d2fc5c02a5b19baf4410ace' }
 direct = false
 requires-python = ">=3.8"
-dependencies = []
+
+
+[[lock]]
+markers = { implementation_name = 'cpython', implementation_version = '3.12.0', os_name = 'nt', platform_machine = 'AMD64', platform_python_implementation = 'CPython', platform_release = '10', platform_system = 'Windows', python_full_version = '3.12.0', python_version = '3.12', sys_platform = 'win32' }
+tags = ['cp312-cp312-win_amd64', 'cp312-abi3-win_amd64', 'cp312-none-win_amd64', 'cp311-abi3-win_amd64', 'cp310-abi3-win_amd64', 'cp39-abi3-win_amd64', 'cp38-abi3-win_amd64', 'cp37-abi3-win_amd64', 'cp36-abi3-win_amd64', 'cp35-abi3-win_amd64', 'cp34-abi3-win_amd64', 'cp33-abi3-win_amd64', 'cp32-abi3-win_amd64', 'py312-none-win_amd64', 'py3-none-win_amd64', 'py311-none-win_amd64', 'py310-none-win_amd64', 'py39-none-win_amd64', 'py38-none-win_amd64', 'py37-none-win_amd64', 'py36-none-win_amd64', 'py35-none-win_amd64', 'py34-none-win_amd64', 'py33-none-win_amd64', 'py32-none-win_amd64', 'py31-none-win_amd64', 'py30-none-win_amd64', 'cp312-none-any', 'py312-none-any', 'py3-none-any', 'py311-none-any', 'py310-none-any', 'py39-none-any', 'py38-none-any', 'py37-none-any', 'py36-none-any', 'py35-none-any', 'py34-none-any', 'py33-none-any', 'py32-none-any', 'py31-none-any', 'py30-none-any']
+
+[[lock.wheel]]
+name = "debugpy"
+filename = "debugpy-1.8.1-cp312-cp312-win_amd64.whl"
+origin = "https://files.pythonhosted.org/packages/f5/6d/d4e819e7e8a9f946eb1ce51492fbe8f8d03ad033f233096da864a5262084/debugpy-1.8.1-cp312-cp312-win_amd64.whl"
+hashes = { sha256 = 'edcc9f58ec0fd121a25bc950d4578df47428d72e1a0d66c07403b04eb93bcf98' }
+direct = false
+requires-python = ">=3.8"
 
 
 [[lock]]
