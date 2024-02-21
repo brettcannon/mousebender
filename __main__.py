@@ -127,6 +127,34 @@ def cpython_windows_details(version):
     return markers, tags
 
 
+def cpython_manylinux_details(version):
+    version_str = f"{version[0]}.{version[1]}"
+    markers = {
+        "implementation_name": "cpython",
+        "implementation_version": f"{version_str}.0",
+        "os_name": "posix",
+        "platform_machine": "x86_64",
+        "platform_system": "Linux",
+        "python_full_version": f"{version_str}.0",
+        "platform_python_implementation": "CPython",
+        "python_version": version_str,
+        "sys_platform": "linux",
+    }
+
+    # manylinux 2014 and older.
+    platforms = [f"manylinux_2_{minor}_x86_64" for minor in range(17, 4, -1)]
+    tags = [
+        *packaging.tags.cpython_tags(
+            version, [f"cp{version[0]}{version[1]}", "abi3"], platforms
+        ),
+        *packaging.tags.compatible_tags(
+            version, f"cp{version[0]}{version[1]}", platforms=platforms
+        ),
+    ]
+
+    return markers, tags
+
+
 def generate_lock_entry(dependencies, markers, tags):
     requirements = map(
         mousebender.resolve.Requirement,
@@ -181,6 +209,15 @@ def lock_entry(context, dependencies):
     ):
         version = context.platform.removeprefix("cpython").removesuffix("-windows-x64")
         markers, tags = cpython_windows_details(tuple(map(int, version.split(".", 1))))
+    elif context.platform.startswith("cpython") and context.platform.endswith(
+        "-manylinux2014-x64"
+    ):
+        version = context.platform.removeprefix("cpython").removesuffix(
+            "-manylinux2014-x64"
+        )
+        markers, tags = cpython_manylinux_details(
+            tuple(map(int, version.split(".", 1)))
+        )
     else:
         raise ValueError(f"Unknown platform: {context.platform}")
 
@@ -308,6 +345,11 @@ def main(args=sys.argv[1:]):
             "--platform",
             choices=[
                 "system",
+                "cpython3.8-manylinux2014-x64",
+                "cpython3.9-manylinux2014-x64",
+                "cpython3.10-manylinux2014-x64",
+                "cpython3.11-manylinux2014-x64",
+                "cpython3.12-manylinux2014-x64",
                 "cpython3.8-windows-x64",
                 "cpython3.9-windows-x64",
                 "cpython3.10-windows-x64",
@@ -322,20 +364,6 @@ def main(args=sys.argv[1:]):
             default="system",
             help="The platform to lock for",
         )
-        # XXX x64 manylinux 2_17 (aka 2014)
-        # {
-        #     "implementation_name": "cpython",
-        #     "implementation_version": "3.12.2",
-        #     "os_name": "posix",
-        #     "platform_machine": "x86_64",
-        #     "platform_release": "6.7.4-200.fc39.x86_64",
-        #     "platform_system": "Linux",
-        #     "platform_version": "#1 SMP PREEMPT_DYNAMIC Mon Feb  5 22:21:14 UTC 2024",
-        #     "python_full_version": "3.12.2",
-        #     "platform_python_implementation": "CPython",
-        #     "python_version": "3.12",
-        #     "sys_platform": "linux",
-        # }
 
     update_lock_args = subcommands.add_parser(
         "update-lock", help="Update the a lock file"
