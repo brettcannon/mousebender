@@ -10,7 +10,7 @@
 # sure people don't accidentally try to edit the file by hand and break
 # associations between various parts of the file.
 file-hashes = {_ = "..."}
-# Metadata version pf the file.
+# Metadata version of the file.
 # Since this file is designed to be human-readable but machine-writable,
 # versioning the metadata makes sense as we don't need to keep a
 # backwards-compatible format for humans to directly work with and instead
@@ -38,7 +38,7 @@ dependencies = ["..."]
 markers = { _ = "..."}  # Inline table of environment markers.
 tags = ["..."]  # Array of supported tag triples in most- to least-preferred order.
 
-# A wheel file that's included in the lock entry.
+# A wheel file that's included in the lock entry (optional).
 [[lock.wheel]]
 # The distribution's normalized name.
 # Cannot solely rely on the wheel filename to calculate this as the file name
@@ -55,9 +55,8 @@ filename = "..."
 # The location does not need to exist in the future, so this should be treated
 # as only a hint to where to look and/or recording where the wheel file
 # originally came from.
-# https://packaging.python.org/en/latest/specifications/version-specifiers/
 origin = "..."
-# Inline table of file hashes; algorithm:value pairs.
+# A table of file hashes; algorithm:value pairs.
 # This makes sure that one is getting the wheel file that was locked
 # against for reproducibility and security purposes.
 hashes = { _ = "..." }
@@ -80,7 +79,7 @@ requires-python = "..."
 # already handled them.
 dependencies = ["..."]
 
-# Source distribution (sdist) that's included in the lock entry.
+# Source distribution (sdist) that's included in the lock entry (optional).
 [[lock.sdist]]
 name = "..."  # See `lock.wheel.name`.
 filename = "..."  # See `lock.wheel.filename`.
@@ -97,7 +96,7 @@ dependencies = ["..."]
 
 # An array of files that *can* be used or *was* used to build the sdist.
 # The acceptable keys are `wheel` and `sdist` and their values match what is
-# acceptable unde the same name directly under `[[lock]]`. Any future
+# acceptable under the same name directly under `[[lock]]`. Any future
 # expansion of acceptable distribution types under `[[lock]]` will also be
 # supported here.
 # This effectively makes the table a self-contained lock entry just for this
@@ -105,6 +104,7 @@ dependencies = ["..."]
 [[lock.sdist.build-requires]]
 # ...
 
+# A Git repository of source code (optional).
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#direct-references
 [[lock.git]]
 name = "..."  # See `lock.wheel.name`.
