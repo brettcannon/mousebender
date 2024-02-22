@@ -94,13 +94,14 @@ requires-python = "..."  # See `lock.wheel.requires-python`.
 # - From building the sdist.
 dependencies = ["..."]
 
-# An array of files that *can* be used or *was* used to build the sdist.
+# An array of files that *can* be used or *were* used to build the sdist based
+# on `build-system.requires` from `pyproject.toml`.
 # The acceptable keys are `wheel` and `sdist` and their values match what is
 # acceptable under the same name directly under `[[lock]]`. Any future
 # expansion of acceptable distribution types under `[[lock]]` will also be
 # supported here.
 # This effectively makes the table a self-contained lock entry just for this
-# sdist.
+# sdist with `build-system.requires` providing the value for `dependencies`.
 [[lock.sdist.build-requires]]
 # ...
 
