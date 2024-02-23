@@ -4,8 +4,10 @@
 #  distribution -- A Python project/package that can be installed.
 # -----
 
-# Inline table of hashes of this file's contents w/o this line
-#(including the newline); algorithm:value pairs.
+# Table of hashes of this file's contents; algorithm:value pairs.
+# The hash is calculated by converting all tables to arrays of two-item
+# arrays, joining all the values in order info a single string, and then
+# hashing that string.
 # This file is meant to be human-readable but machine-writable, so this makes
 # sure people don't accidentally try to edit the file by hand and break
 # associations between various parts of the file.
@@ -69,7 +71,8 @@ direct = false
 # compatible as this is not necessarily communicated via the wheel file name
 # itself.
 requires-python = "..."
-# A list of normalized distribution names which this distribution depends on.
+# A list of normalized distribution names which this distribution depends on
+# (optional).
 # Viewing the overall lock entry as the entire worldview of distributions
 # available, each entry can be just the distribution name (a perk of Python
 # not allowing multiple distribution versions simultaneously).
@@ -87,15 +90,11 @@ origin = "..."  # See `lock.wheel.origin`.
 hashes = { _ = "..." }  # See `lock.wheel.hashes`.
 direct = false  # See `lock.wheel.direct`.
 requires-python = "..."  # See `lock.wheel.requires-python`.
-# See `lock.wheel.dependencies` for what is recorded in this array.
-# The contents come from either:
-# - `PKG-INFO` if `Metadata-Version` is 2.2 or higher and the appropriate
-#   fields are not `Dynamic`.
-# - From building the sdist.
+# See `lock.wheel.dependencies`.
 dependencies = ["..."]
 
-# An array of files that *can* be used or *were* used to build the sdist based
-# on `build-system.requires` from `pyproject.toml`.
+# An array of files that *can* be used or *were* used to build the sdist
+# (optional).
 # The acceptable keys are `wheel` and `sdist` and their values match what is
 # acceptable under the same name directly under `[[lock]]`. Any future
 # expansion of acceptable distribution types under `[[lock]]` will also be
@@ -116,13 +115,8 @@ repo = "..."
 # It should be a specific commit and not a tag or branch as those can change.
 commit = "..."
 requires-python = "..."  # See `lock.wheel.requires-python`.
-# See `lock.wheel.dependencies` for what is recorded in this array.
-# The contents come from either:
-# - `pyproject.toml` if `project.dependencies` (and
-#   `project.optional-dependencies` as appropriate) exists and is not
-#   `dynamic`.
-# - From building the repository based on its `pyproject.toml` file.
-dependencies = ["..."]
+dependencies = ["..."]  # See `lock.wheel.dependencies`.
+[[lock.git.build-requires]]  # See `lock.sdist.build-requires`.
 
-# Same as `pyproject.toml`.
+# Same as `pyproject.toml` (optional).
 [tool]
