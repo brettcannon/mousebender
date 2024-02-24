@@ -1,6 +1,6 @@
-file-hashes = { sha256 = "7d80ad26a1aa680c6ef8256b6cfd413f9a4037c40a4d341065d54beac8714358" }
+file-hashes = { sha256 = "70b8f5d2920911d6b46b63f109b0cf91c9dc6551824bcc6eb5bab455ee6a2347" }
 version = "1.0"
-created-at = 2024-02-21T05:12:51.987716+00:00
+created-at = 2024-02-24T00:41:37.530034+00:00
 indexes = ["https://pypi.org/simple"]
 dependencies = ["hatchling", "mousebender", "numpy", "pydantic", "requests"]
 
@@ -109,18 +109,18 @@ dependencies = []
 
 [[lock.wheel]]
 name = "pydantic"
-filename = "pydantic-2.6.1-py3-none-any.whl"
-origin = "https://files.pythonhosted.org/packages/db/dc/afecbd9650f486889181c6d1a0d675b580c06253ea7e304588e4c7485bdb/pydantic-2.6.1-py3-none-any.whl"
-hashes = { sha256 = '0b6a909df3192245cb736509a92ff69e4fef76116feffec68e93a567347bae6f' }
+filename = "pydantic-2.6.2-py3-none-any.whl"
+origin = "https://files.pythonhosted.org/packages/42/28/f19be8d493c59a8ddf32c15d69765c6423ad712da1c6255b418df2fc1443/pydantic-2.6.2-py3-none-any.whl"
+hashes = { sha256 = '37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3' }
 direct = false
 requires-python = ">=3.8"
 dependencies = ["annotated-types", "pydantic-core", "typing-extensions"]
 
 [[lock.wheel]]
 name = "pydantic-core"
-filename = "pydantic_core-2.16.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-origin = "https://files.pythonhosted.org/packages/bd/03/c7f7083583748c2bb6d077320021cdca7d9e283cb84f1d9278b01ccf8543/pydantic_core-2.16.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-hashes = { sha256 = '3ac426704840877a285d03a445e162eb258924f014e2f074e209d9b4ff7bf380' }
+filename = "pydantic_core-2.16.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+origin = "https://files.pythonhosted.org/packages/dc/df/cd1cdd79a307c06fbea11be2cd8f361604b82f9b28c7712bd1220c44f226/pydantic_core-2.16.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+hashes = { sha256 = '500960cb3a0543a724a81ba859da816e8cf01b0e6aaeedf2c3775d12ee49cade' }
 direct = false
 requires-python = ">=3.8"
 dependencies = ["typing-extensions"]
@@ -136,9 +136,9 @@ dependencies = ["certifi", "charset-normalizer", "idna", "urllib3"]
 
 [[lock.wheel]]
 name = "trove-classifiers"
-filename = "trove_classifiers-2024.1.31-py3-none-any.whl"
-origin = "https://files.pythonhosted.org/packages/6b/4e/599b1d41680dc063166bc8872e96f05967200245a338bd404d669e1ae3fa/trove_classifiers-2024.1.31-py3-none-any.whl"
-hashes = { sha256 = '854aba3358f3cf10e5c0916aa533f5a39e27aadd8ade26a54cdc2a93257e39c4' }
+filename = "trove_classifiers-2024.2.23-py3-none-any.whl"
+origin = "https://files.pythonhosted.org/packages/56/45/6887993f3d1fd941fe129c8dc3aa648d5bd20e0e02c08f99df961fd1e908/trove_classifiers-2024.2.23-py3-none-any.whl"
+hashes = { sha256 = '3094534b8021dc1822aadb1d11d4c7b62a854d464d19458fd0a49d6fe2b68b77' }
 direct = false
 dependencies = []
 
