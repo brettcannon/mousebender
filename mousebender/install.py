@@ -30,15 +30,17 @@ def compatible_match(lock_file_contents: dict[str, Any]) -> dict[str, Any] | Non
     python_version = packaging.version.Version(platform.python_version())
 
     for lock_entry in lock_file_contents["lock"]:
-        lock_tags = frozenset(lock_entry["tags"])
-        if env_tags.issuperset(lock_tags):
-            for wheel in lock_entry["wheel"]:
-                requires_python = packaging.specifiers.SpecifierSet(
-                    wheel.get("requires-python", "")
-                )
-                if python_version not in requires_python:
-                    break
-            else:
-                return lock_entry
+        for wheel in lock_entry["wheel"]:
+            requires_python = packaging.specifiers.SpecifierSet(
+                wheel.get("requires-python", "")
+            )
+            if python_version not in requires_python:
+                break
+
+            wheel_tags = packaging.utils.parse_wheel_filename(wheel["filename"])[3]
+            if all(tag not in env_tags for tag in wheel_tags):
+                break
+        else:
+            return lock_entry
     else:
         return None
