@@ -97,10 +97,8 @@ class WheelFile(ProjectFile):
         """Check if the wheel file is compatible with the environment and tags."""
         if not any(tag in provider.tags for tag in self.wheel.tags):
             return False
-        elif "requires-python" in self.details:
-            requires_python = packaging.specifiers.SpecifierSet(
-                self.details["requires-python"]
-            )
+        elif requires_python_details := self.details.get("requires-python"):
+            requires_python = packaging.specifiers.SpecifierSet(requires_python_details)
             if provider.python_version not in requires_python:
                 return False
 
