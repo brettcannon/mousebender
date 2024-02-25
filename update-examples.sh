@@ -14,5 +14,10 @@ py . add-lock-entry --platform cpython3.12-windows-x64 $COMPATIBILITY_TOML > /de
 echo "Add pure Python 3.12 lock entry ..."
 py . add-lock-entry --platform python3.12 $COMPATIBILITY_TOML > /dev/null
 
+MARKER_TOML=pylock.marker-example.toml
+echo "Example where an environment marker changes what's locked ..."
+py . lock --platform python3.12 rich > $MARKER_TOML
+py . add-lock-entry --platform python3.8 $MARKER_TOML > /dev/null
+
 echo "Install from $COMPATIBILITY_TOML ..."
 py . install $COMPATIBILITY_TOML
