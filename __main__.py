@@ -274,10 +274,19 @@ def install(context):
         print("No compatible lock entry found 😢")
         sys.exit(1)
 
-    for count, entry in enumerate(found_entries, start=1):
-        print("Lock entry", count, "of", len(found_entries))
-        for wheel in entry["wheel"]:
-            print(" ", wheel["name"], "@", wheel.get("filename") or wheel["origin"])
+    print(
+        "Found",
+        len(found_entries),
+        "of",
+        len(lock_file_contents["lock"]),
+        "compatible lock entries 😃",
+    )
+    print("")
+    print("Best match has:")
+    best_match = mousebender.install.best_match(found_entries)
+    for wheel in best_match["wheel"]:
+        print(" ", wheel["name"], "@", wheel.get("filename") or wheel["origin"])
+    print("")
 
 
 def graph(context):
