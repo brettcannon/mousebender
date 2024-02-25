@@ -68,7 +68,7 @@ tags = {tags}
 
 def lock_entry_dict_to_toml(entry_dict: dict[str, Any]) -> str:
     """Convert a lock entry TOML table back to TOML."""
-    markers = _dict_to_inline_table(entry_dict["markers"])
+    markers = json.dumps(entry_dict["markers"])
     tags = f"[{', '.join(map(repr, entry_dict['tags']))}]"
 
     wheels = []
@@ -90,9 +90,6 @@ def generate_lock(
     provider: resolve.WheelProvider, resolution: resolvelib.resolvers.Result
 ) -> str:
     """Generate a lock file entry."""
-    markers = _dict_to_inline_table(provider.markers)
-    tags = f"[{', '.join(map(repr, map(str, provider.tags)))}]"
-
     dependencies = {}  # type: ignore
     seen = set()
     queue = list(resolution.graph.iter_children(None))
@@ -122,7 +119,23 @@ def generate_lock(
         wheel += f"dependencies = {json.dumps(wheel_dependency_names)}"
         wheels.append(wheel)
 
-    return _LOCK_TEMPLATE.format(markers=markers, tags=tags, wheels="\n\n".join(wheels))
+    all_markers = set()
+    tags = set()
+    for id_ in dependencies:
+        criterion = resolution.criteria[id_]
+        for requirement in criterion.iter_requirement():
+            if requirement.req.marker is not None:
+                # TODO strip out 'extras'.
+                all_markers.add(str(requirement.req.marker))
+        candidate = resolution.mapping[id_]
+        file_parts = candidate.file.details["filename"].removesuffix(".whl").split("-")
+        tags.add("-".join(file_parts[-3:]))
+
+    markers = json.dumps(sorted(all_markers))
+
+    return _LOCK_TEMPLATE.format(
+        markers=markers, tags=sorted(tags), wheels="\n\n".join(wheels)
+    )
 
 
 _FILE_TEMPLATE = """\

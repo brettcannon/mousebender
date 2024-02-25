@@ -7,7 +7,7 @@ graph LR
     pydantic
     requests
   end
-  subgraph cp312-cp312-manylinux_2_38_x86_64
+  subgraph cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64
     annotated-types
     certifi
     charset-normalizer

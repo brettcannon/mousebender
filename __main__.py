@@ -269,14 +269,15 @@ def lock(context):
 def install(context):
     with context.lock_file.open("rb") as file:
         lock_file_contents = mousebender.lock.parse(file.read())
-    if (lock_entry := mousebender.install.strict_match(lock_file_contents)) is None:
-        lock_entry = mousebender.install.compatible_match(lock_file_contents)
-        if lock_entry is None:
-            print("No compatible lock entry found 😢")
-            sys.exit(1)
+    found_entries = mousebender.install.find_matches(lock_file_contents)
+    if not found_entries:
+        print("No compatible lock entry found 😢")
+        sys.exit(1)
 
-    for wheel in lock_entry["wheel"]:
-        print(wheel["name"], "@", wheel.get("filename") or wheel["origin"])
+    for count, entry in enumerate(found_entries, start=1):
+        print("Lock entry", count, "of", len(found_entries))
+        for wheel in entry["wheel"]:
+            print(" ", wheel["name"], "@", wheel.get("filename") or wheel["origin"])
 
 
 def graph(context):

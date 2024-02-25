@@ -1,12 +1,12 @@
-file-hashes = { sha256 = "19380a1e2ed182dd01d70029279b95218b525f6372d279b05e806094e5d48e56" }
+file-hashes = { sha256 = "298fb339c2a5ee49e08a817251bfa074d3a88cfb22d935d4882d0532a5504246" }
 version = "1.0"
-created-at = 2024-02-25T02:31:37.738138+00:00
+created-at = 2024-02-25T22:26:07.826679+00:00
 indexes = ["https://pypi.org/simple"]
 dependencies = ["rich"]
 
 [[lock]]
-markers = { python_full_version = '3.12.0', python_version = '3.12' }
-tags = ['py312-none-any', 'py3-none-any', 'py311-none-any', 'py310-none-any', 'py39-none-any', 'py38-none-any', 'py37-none-any', 'py36-none-any', 'py35-none-any', 'py34-none-any', 'py33-none-any', 'py32-none-any', 'py31-none-any', 'py30-none-any']
+markers = []
+tags = ['py3-none-any']
 
 [[lock.wheel]]
 name = "markdown-it-py"
@@ -42,8 +42,8 @@ requires-python = ">=3.7.0"
 
 
 [[lock]]
-markers = { python_full_version = '3.8.0', python_version = '3.8' }
-tags = ['py38-none-any', 'py3-none-any', 'py37-none-any', 'py36-none-any', 'py35-none-any', 'py34-none-any', 'py33-none-any', 'py32-none-any', 'py31-none-any', 'py30-none-any']
+markers = ["python_version < \"3.9\""]
+tags = ['py3-none-any']
 
 [[lock.wheel]]
 name = "markdown-it-py"
@@ -83,9 +83,9 @@ dependencies = ["markdown-it-py", "pygments", "typing-extensions"]
 
 [[lock.wheel]]
 name = "typing-extensions"
-filename = "typing_extensions-4.9.0-py3-none-any.whl"
-origin = "https://files.pythonhosted.org/packages/b7/f4/6a90020cd2d93349b442bfcb657d0dc91eee65491600b2cb1d388bc98e6b/typing_extensions-4.9.0-py3-none-any.whl"
-hashes = { sha256 = 'af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd' }
+filename = "typing_extensions-4.10.0-py3-none-any.whl"
+origin = "https://files.pythonhosted.org/packages/f9/de/dc04a3ea60b22624b51c703a84bbe0184abcd1d0b9bc8074b5d6b7ab90bb/typing_extensions-4.10.0-py3-none-any.whl"
+hashes = { sha256 = '69b1a937c3a517342112fb4c6df7e72fc39a38e7891a5730ed4985b5214b5475' }
 direct = false
 requires-python = ">=3.8"
 dependencies = []

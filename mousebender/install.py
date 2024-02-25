@@ -1,5 +1,4 @@
 """Install packages from a lock file."""
-import platform
 from typing import Any
 
 import packaging.markers
@@ -7,40 +6,24 @@ import packaging.tags
 import packaging.version
 
 
-def strict_match(lock_file_contents: dict[str, Any]) -> dict[str, Any] | None:
+def find_matches(lock_file_contents: dict[str, Any]) -> list[dict[str, Any]]:
     """Find a lock file entry that exactly matches the current environment."""
-    markers = packaging.markers.default_environment()
-    tags = list(map(str, packaging.tags.sys_tags()))
+    # markers = packaging.markers.default_environment()
+    tags = frozenset(packaging.tags.sys_tags())
 
+    matches = []
     for lock_entry in lock_file_contents["lock"]:
-        if lock_entry["markers"] == markers and lock_entry["tags"] == tags:
-            return lock_entry
-    else:
-        return None
+        if not all(
+            packaging.markers.Marker(marker).evaluate()
+            for marker in lock_entry["markers"]
+        ):
+            continue
 
-
-def compatible_match(lock_file_contents: dict[str, Any]) -> dict[str, Any] | None:
-    """Fine a lock file entry that is compatible with the current environment.
-
-    Compatibility is defined as the tags of the lock file entry intersecting
-    the environment's tags and all files being compatible with the running
-    interpreter's Python version.
-    """
-    env_tags = frozenset(packaging.tags.sys_tags())
-    python_version = packaging.version.Version(platform.python_version())
-
-    for lock_entry in lock_file_contents["lock"]:
-        for wheel in lock_entry["wheel"]:
-            requires_python = packaging.specifiers.SpecifierSet(
-                wheel.get("requires-python", "")
-            )
-            if python_version not in requires_python:
-                break
-
-            wheel_tags = packaging.utils.parse_wheel_filename(wheel["filename"])[3]
-            if all(tag not in env_tags for tag in wheel_tags):
+        for tag in lock_entry["tags"]:
+            tag_set = packaging.tags.parse_tag(tag)
+            if not any(triple in tags for triple in tag_set):
                 break
         else:
-            return lock_entry
-    else:
-        return None
+            matches.append(lock_entry)
+
+    return matches
