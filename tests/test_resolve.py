@@ -905,7 +905,10 @@ class TestGetDependencies:
                     "metadata_version": "2.3",
                     "name": "Spam",
                     "version": "1.2.3",
-                    "requires_dist": ["bacon", "eggs; python_version<'3.12'"],
+                    "requires_dist": [
+                        "bacon; python_version>='3.12'",
+                        "eggs; python_version<'3.12'",
+                    ],
                 },
             )
         )
@@ -915,7 +918,11 @@ class TestGetDependencies:
         provider = LocalWheelProvider(markers={"python_full_version": "3.12.0"})
 
         dependencies = provider.get_dependencies(candidate)
-        expected = [resolve.Requirement(packaging.requirements.Requirement("bacon"))]
+        expected = [
+            resolve.Requirement(
+                packaging.requirements.Requirement("bacon; python_version>='3.12'")
+            )
+        ]
         assert dependencies == expected
 
     def test_extra(self):
@@ -943,7 +950,9 @@ class TestGetDependencies:
         dependencies = provider.get_dependencies(candidate)
         expected = [
             resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+            resolve.Requirement(
+                packaging.requirements.Requirement("bacon; extra=='bonus'")
+            ),
         ]
         assert dependencies == expected
 
@@ -977,7 +986,9 @@ class TestGetDependencies:
         dependencies = provider.get_dependencies(candidate)
         expected = [
             resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+            resolve.Requirement(
+                packaging.requirements.Requirement("bacon; extra=='bonus'")
+            ),
         ]
         assert dependencies == expected
 
@@ -1011,8 +1022,12 @@ class TestGetDependencies:
         dependencies = provider.get_dependencies(candidate)
         expected = [
             resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
-            resolve.Requirement(packaging.requirements.Requirement("eggs")),
+            resolve.Requirement(
+                packaging.requirements.Requirement("bacon; extra=='bonus'")
+            ),
+            resolve.Requirement(
+                packaging.requirements.Requirement("eggs; extra=='bonus-bonus'")
+            ),
         ]
         assert dependencies == expected
 
@@ -1044,7 +1059,9 @@ class TestGetDependencies:
         dependencies = provider.get_dependencies(candidate)
         expected = [
             resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+            resolve.Requirement(
+                packaging.requirements.Requirement("bacon; extra=='bonus'")
+            ),
         ]
         assert dependencies == expected
 
@@ -1076,7 +1093,9 @@ class TestGetDependencies:
         dependencies = provider.get_dependencies(candidate)
         expected = [
             resolve.Requirement(packaging.requirements.Requirement("spam==1.2.3")),
-            resolve.Requirement(packaging.requirements.Requirement("bacon")),
+            resolve.Requirement(
+                packaging.requirements.Requirement("bacon; extra=='bonus'")
+            ),
             resolve.Requirement(packaging.requirements.Requirement("eggs")),
         ]
         assert dependencies == expected

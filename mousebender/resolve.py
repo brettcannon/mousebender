@@ -371,7 +371,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
 
         # Since the markers have been evaluated, they are no longer needed.
         # Stripping them out simplifies testing.
-        for requirement in requirements:
-            requirement.req.marker = None
+        # for requirement in requirements:
+        #     requirement.req.marker = None
 
         return requirements
