@@ -156,9 +156,12 @@ def cpython_manylinux_details(version):
 
 
 def generate_lock_entry(dependencies, markers, tags):
+    pkg_requirements = map(packaging.requirements.Requirement, dependencies)
     requirements = map(
         mousebender.resolve.Requirement,
-        map(packaging.requirements.Requirement, dependencies),
+        filter(
+            lambda r: r.marker is None or r.marker.evaluate(markers), pkg_requirements
+        ),
     )
     provider = PyPIProvider(markers=markers, tags=tags)
     reporter = resolvelib.BaseReporter()
