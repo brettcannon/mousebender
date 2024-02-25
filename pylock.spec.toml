@@ -37,8 +37,10 @@ dependencies = ["..."]
 
 # A specific environment's lock entry.
 [[lock]]
-markers = { _ = "..."}  # Inline table of environment markers.
-tags = ["..."]  # Array of supported tag triples in most- to least-preferred order.
+# Array of nvironment markers that must be true for this lock entry to apply to the environment.
+markers = ["..."]
+# Array of tag sets that must be true for this lock entry to apply to the environment.
+tags = ["..."]
 
 # A wheel file that's included in the lock entry (optional).
 [[lock.wheel]]
