@@ -44,6 +44,7 @@ Documentation = "https://mousebender.readthedocs.io/"
 Changelog = "https://github.com/brettcannon/mousebender/releases"
 Repository = "https://github.com/brettcannon/mousebender"
 Issues = "https://github.com/brettcannon/mousebender/issues"
+"Fiscal support" = "https://github.com/sponsors/brettcannon/"
 
 [tool.coverage]
 run.source = ["mousebender/"]
