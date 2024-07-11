@@ -172,80 +172,35 @@ def generate_lock_entry(dependencies, markers, tags):
         print("Resolution (currently) impossible 😢")
         sys.exit(1)
 
+    # XXX return lock-file details
     return mousebender.lock.generate_lock(provider, resolution)
 
 
-def update_lock(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
-
-    lock_entries = []
-    for entry in lock_file_contents["lock"]:
-        print("Updating", entry["tags"][0], "...")
-        tags = map(lambda t: packaging.tags.Tag(*t.split("-")), entry["tags"])
-        lock_entries.append(
-            generate_lock_entry(
-                lock_file_contents["dependencies"], entry["markers"], tags
-            )
-        )
-
-    new_lock_file = mousebender.lock.generate_file_contents(
-        lock_file_contents["dependencies"], ["https://pypi.org/simple"], lock_entries
-    )
-    with context.lock_file.open("wb") as file:
-        file.write(new_lock_file.encode("utf-8"))
-
-
-def lock_entry(context, dependencies):
-    tags = list(packaging.tags.sys_tags())
-    if context.maximize == "compatibility":
-        tags = list(reversed(tags))
-
-    if context.platform == "system":
+def file_lock(platform, dependencies):
+    if platform == "system":
         markers, tags = system_details()
-    elif context.platform.startswith("python"):
+    elif platform.startswith("python"):
         markers, tags = pure_python_details(
-            tuple(map(int, context.platform.removeprefix("python").split(".", 1)))
+            tuple(map(int, platform.removeprefix("python").split(".", 1)))
         )
-    elif context.platform.startswith("cpython") and context.platform.endswith(
+    elif platform.startswith("cpython") and platform.endswith(
         "windows-x64"
     ):
-        version = context.platform.removeprefix("cpython").removesuffix("-windows-x64")
+        version = platform.removeprefix("cpython").removesuffix("-windows-x64")
         markers, tags = cpython_windows_details(tuple(map(int, version.split(".", 1))))
-    elif context.platform.startswith("cpython") and context.platform.endswith(
+    elif platform.startswith("cpython") and platform.endswith(
         "-manylinux2014-x64"
     ):
-        version = context.platform.removeprefix("cpython").removesuffix(
+        version = platform.removeprefix("cpython").removesuffix(
             "-manylinux2014-x64"
         )
         markers, tags = cpython_manylinux_details(
             tuple(map(int, version.split(".", 1)))
         )
     else:
-        raise ValueError(f"Unknown platform: {context.platform}")
+        raise ValueError(f"Unknown platform: {platform}")
 
     return generate_lock_entry(dependencies, markers, tags)
-
-
-def add_lock_entry(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
-
-    dependencies = lock_file_contents["dependencies"]
-
-    contents = list(
-        map(mousebender.lock.lock_entry_dict_to_toml, lock_file_contents["lock"])
-    )
-    contents.append(lock_entry(context, dependencies))
-
-    lock_file = mousebender.lock.generate_file_contents(
-        dependencies, lock_file_contents["indexes"], contents
-    )
-
-    with context.lock_file.open("wb") as file:
-        file.write(lock_file.encode("utf-8"))
-
-    print(lock_file)
 
 
 def lock(context):
@@ -254,10 +209,11 @@ def lock(context):
             pyproject = tomllib.load(file)
         dependencies = pyproject["project"]["dependencies"]
 
-    lock_contents = lock_entry(context, dependencies)
-    lock_file = mousebender.lock.generate_file_contents(
-        context.requirements, ["https://pypi.org/simple"], [lock_contents]
-    )
+    locks = {}
+    for platform in context.platforms:
+        locks[platform] = file_lock(platform, dependencies)
+
+    # XXX create a lock file
 
     if context.lock_file:
         with context.lock_file.open("wb") as file:
@@ -332,49 +288,29 @@ def main(args=sys.argv[1:]):
         "--lock-file", type=pathlib.Path, help="Where to save the lock file"
     )
 
-    add_lock_args = subcommands.add_parser(
-        "add-lock-entry", help="Add a lock entry to a lock file"
-    )
-
-    add_lock_args.add_argument(
-        "lock_file", default=None, type=pathlib.Path, help="The lock file to add to"
-    )
-
-    for subparser in (lock_args, add_lock_args):
-        subparser.add_argument(
-            "--maximize",
-            choices=["speed", "compatibility"],
-            help="What to maximize wheel selection for (speed or compatibility)",
-        )
-        subparser.add_argument(
-            "--platform",
-            choices=[
-                "system",
-                "cpython3.8-manylinux2014-x64",
-                "cpython3.9-manylinux2014-x64",
-                "cpython3.10-manylinux2014-x64",
-                "cpython3.11-manylinux2014-x64",
-                "cpython3.12-manylinux2014-x64",
-                "cpython3.8-windows-x64",
-                "cpython3.9-windows-x64",
-                "cpython3.10-windows-x64",
-                "cpython3.11-windows-x64",
-                "cpython3.12-windows-x64",
-                "python3.8",
-                "python3.9",
-                "python3.10",
-                "python3.11",
-                "python3.12",
-            ],
-            default="system",
-            help="The platform to lock for",
-        )
-
-    update_lock_args = subcommands.add_parser(
-        "update-lock", help="Update the a lock file"
-    )
-    update_lock_args.add_argument(
-        "lock_file", type=pathlib.Path, help="The lock file to update"
+    lock_args.add_argument(
+        "--platform",
+        action="append",
+        choices=[
+            "system",
+            "cpython3.8-manylinux2014-x64",
+            "cpython3.9-manylinux2014-x64",
+            "cpython3.10-manylinux2014-x64",
+            "cpython3.11-manylinux2014-x64",
+            "cpython3.12-manylinux2014-x64",
+            "cpython3.8-windows-x64",
+            "cpython3.9-windows-x64",
+            "cpython3.10-windows-x64",
+            "cpython3.11-windows-x64",
+            "cpython3.12-windows-x64",
+            "python3.8",
+            "python3.9",
+            "python3.10",
+            "python3.11",
+            "python3.12",
+        ],
+        default="system",
+        help="The platform to lock for",
     )
 
     install_args = subcommands.add_parser(
@@ -401,8 +337,6 @@ def main(args=sys.argv[1:]):
     context = parser.parse_args(args)
     dispatch = {
         "lock": lock,
-        "add-lock-entry": add_lock_entry,
-        "update-lock": update_lock,
         "install": install,
         "graph": graph,
     }
