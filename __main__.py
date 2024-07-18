@@ -1,5 +1,6 @@
 # ruff: noqa: ANN001, ANN201, ANN202, D100, D103
 import argparse
+import dataclasses
 import pathlib
 import sys
 
@@ -15,6 +16,31 @@ import mousebender.install
 import mousebender.lock
 import mousebender.resolve
 import mousebender.simple
+
+
+# https://github.com/brettcannon/peps/blob/lock-file/peps/pep-9999.rst
+@dataclasses.dataclass
+class File:
+    name: str
+    hash: str
+    # simple_repo_package_url
+    origin: str | None = None
+    lock: list[str] = dataclasses.field(default_factory=list)
+
+
+@dataclasses.dataclass
+class PackageVersion:
+    name: str
+    version: str
+    # multiple_entries
+    files: list[File]
+    description: str | None = None
+    simple_repo_package_url: str | None = None
+    # marker
+    requires_python: str | None = None
+    dependents: list[str] | None = None
+    dependencies: list[str] | None = None
+    direct: bool = False
 
 
 async def get_metadata_for_file(client, file):
@@ -155,13 +181,38 @@ def cpython_manylinux_details(version):
     return markers, tags
 
 
-def generate_lock_entry(dependencies, markers, tags):
+def calc_dependencies(resolution):
+    dependencies = {}  # type: ignore
+    seen = set()
+    queue = list(resolution.graph.iter_children(None))
+    for distro in queue:
+        if distro in seen:
+            continue
+        seen.add(distro)
+        children = dependencies.setdefault(
+            distro, {"parents": set(), "children": set()}
+        )["children"]
+        for child in resolution.graph.iter_children(distro):
+            children.add(child)
+            parents = dependencies.setdefault(
+                child, {"parents": set(), "children": set()}
+            )["parents"]
+            parents.add(distro)
+            queue.append(child)
+
+    return dependencies
+
+
+def resolve(dependencies, markers, tags):
     pkg_requirements = map(packaging.requirements.Requirement, dependencies)
-    requirements = map(
-        mousebender.resolve.Requirement,
-        filter(
-            lambda r: r.marker is None or r.marker.evaluate(markers), pkg_requirements
-        ),
+    requirements = list(
+        map(
+            mousebender.resolve.Requirement,
+            filter(
+                lambda r: r.marker is None or r.marker.evaluate(markers),
+                pkg_requirements,
+            ),
+        )
     )
     provider = PyPIProvider(markers=markers, tags=tags)
     reporter = resolvelib.BaseReporter()
@@ -172,8 +223,22 @@ def generate_lock_entry(dependencies, markers, tags):
         print("Resolution (currently) impossible 😢")
         sys.exit(1)
 
-    # XXX return lock-file details
-    return mousebender.lock.generate_lock(provider, resolution)
+    return provider, resolution
+
+
+def process_lock(provider, resolution, dependencies):
+    # XXX
+    packages = []
+    wheels = []
+    for id_ in sorted(dependencies):
+        candidate = resolution.mapping[id_]
+        # wheel = XXX(candidate.file)
+        # wheel_dependencies = sorted(dependencies[id_]["children"])
+        # wheel_dependency_names = []
+        # for name, _ in wheel_dependencies:
+        #    wheel_dependency_names.append(name)
+        # wheels.append(wheel)
+    raise NotImplementedError("process_lock")
 
 
 def file_lock(platform, dependencies):
@@ -183,24 +248,20 @@ def file_lock(platform, dependencies):
         markers, tags = pure_python_details(
             tuple(map(int, platform.removeprefix("python").split(".", 1)))
         )
-    elif platform.startswith("cpython") and platform.endswith(
-        "windows-x64"
-    ):
+    elif platform.startswith("cpython") and platform.endswith("windows-x64"):
         version = platform.removeprefix("cpython").removesuffix("-windows-x64")
         markers, tags = cpython_windows_details(tuple(map(int, version.split(".", 1))))
-    elif platform.startswith("cpython") and platform.endswith(
-        "-manylinux2014-x64"
-    ):
-        version = platform.removeprefix("cpython").removesuffix(
-            "-manylinux2014-x64"
-        )
+    elif platform.startswith("cpython") and platform.endswith("-manylinux2014-x64"):
+        version = platform.removeprefix("cpython").removesuffix("-manylinux2014-x64")
         markers, tags = cpython_manylinux_details(
             tuple(map(int, version.split(".", 1)))
         )
     else:
         raise ValueError(f"Unknown platform: {platform}")
 
-    return generate_lock_entry(dependencies, markers, tags)
+    provider, resolution = resolve(dependencies, markers, tags)
+    dependencies = calc_dependencies(resolution)
+    return process_lock(provider, resolution, dependencies)
 
 
 def lock(context):
@@ -210,16 +271,14 @@ def lock(context):
         dependencies = pyproject["project"]["dependencies"]
 
     locks = {}
-    for platform in context.platforms:
+    for platform in context.platform:
         locks[platform] = file_lock(platform, dependencies)
 
+    from pprint import pprint
+
+    pprint(locks)
+
     # XXX create a lock file
-
-    if context.lock_file:
-        with context.lock_file.open("wb") as file:
-            file.write(lock_file.encode("utf-8"))
-
-    print(lock_file)
 
 
 def install(context):
@@ -309,7 +368,7 @@ def main(args=sys.argv[1:]):
             "python3.11",
             "python3.12",
         ],
-        default="system",
+        default=["system"],
         help="The platform to lock for",
     )
 
@@ -335,6 +394,7 @@ def main(args=sys.argv[1:]):
     )
 
     context = parser.parse_args(args)
+    print(context)
     dispatch = {
         "lock": lock,
         "install": install,
