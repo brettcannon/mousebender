@@ -1,4 +1,4 @@
-# ruff: noqa: ANN001, ANN201, ANN202, D100, D103
+# ruff: noqa: ANN001, ANN201, ANN202, D100, D103, D400, D415
 import argparse
 import dataclasses
 import pathlib
@@ -21,6 +21,8 @@ import mousebender.simple
 # https://github.com/brettcannon/peps/blob/lock-file/peps/pep-9999.rst
 @dataclasses.dataclass
 class File:
+    """[[package.file]]"""
+
     name: str
     hash: str
     # simple_repo_package_url
@@ -30,6 +32,8 @@ class File:
 
 @dataclasses.dataclass
 class PackageVersion:
+    """[[package]]"""
+
     name: str
     version: str
     # multiple_entries
