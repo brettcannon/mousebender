@@ -37,7 +37,7 @@ class PackageVersion:
     name: str
     version: str
     # multiple_entries
-    files: list[File]
+    files: list[File] = dataclasses.field(default_factory=list)
     description: str | None = None
     simple_repo_package_url: str | None = None
     # marker
