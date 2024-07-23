@@ -313,6 +313,11 @@ def lock(context):
             package.files[0].lock.append(top_tag)
         locks[top_tag] = packages
 
+    print("version = '1.0'")
+    print("hash-algorithm = 'sha256'")
+    print(f"dependencies = {sorted(dependencies)!r}")
+    print()
+    # XXX [[file-lock]]
     for package in packages:
         print("[[package]]")
         print(package.to_toml().strip())
