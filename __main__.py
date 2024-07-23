@@ -3,6 +3,7 @@ import argparse
 import dataclasses
 import pathlib
 import sys
+import textwrap
 
 import httpx
 import packaging.metadata
@@ -29,6 +30,9 @@ class File:
     origin: str | None = None
     lock: list[str] = dataclasses.field(default_factory=list)
 
+    def to_toml(self):
+        return f"{{name = {self.name!r}, lock = {sorted(self.lock)!r}, origin = {self.origin!r}, hash = {self.hash!r}}}"
+
 
 @dataclasses.dataclass
 class PackageVersion:
@@ -45,6 +49,20 @@ class PackageVersion:
     dependents: list[str] | None = None
     dependencies: list[str] | None = None
     direct: bool = False
+
+    def to_toml(self):
+        return textwrap.dedent(f"""
+            name = {self.name!r}
+            version = {self.version!r}
+            description = {self.description!r}
+            requires-python = {self.requires_python!r}
+            dependents = {self.dependents!r}
+            dependencies = {self.dependencies!r}
+            direct = {str(self.direct).lower()}
+            file = [
+                {",\n".join(file.to_toml() for file in self.files)}
+            ]
+        """)
 
 
 async def get_metadata_for_file(client, file):
@@ -231,18 +249,31 @@ def resolve(dependencies, markers, tags):
 
 
 def process_lock(provider, resolution, dependencies):
-    # XXX
     packages = []
-    wheels = []
     for id_ in sorted(dependencies):
         candidate = resolution.mapping[id_]
-        # wheel = XXX(candidate.file)
-        # wheel_dependencies = sorted(dependencies[id_]["children"])
-        # wheel_dependency_names = []
-        # for name, _ in wheel_dependencies:
-        #    wheel_dependency_names.append(name)
-        # wheels.append(wheel)
-    raise NotImplementedError("process_lock")
+        wheel = candidate.file
+        name = wheel.name
+        version = str(wheel.version)
+        metadata = wheel.metadata
+        file_details = wheel.details
+        wheel_file = File(
+            file_details["filename"],
+            file_details["hashes"]["sha256"],
+            origin=file_details["url"],
+        )
+        package = PackageVersion(name, version)
+        package.description = metadata.summary
+        # Hard-coded
+        package.simple_repo_package_url = f"https://pypi.org/project/{name}/"
+        package.requires_python = str(metadata.requires_python)
+        package.dependencies = sorted(dep[0] for dep in dependencies[id_]["children"])
+        package.dependents = sorted(dep[0] for dep in dependencies[id_]["parents"])
+        package.files.append(wheel_file)
+
+        packages.append(package)
+
+    return packages
 
 
 def file_lock(platform, dependencies):
@@ -262,10 +293,11 @@ def file_lock(platform, dependencies):
         )
     else:
         raise ValueError(f"Unknown platform: {platform}")
-
+    tags = list(tags)
     provider, resolution = resolve(dependencies, markers, tags)
     dependencies = calc_dependencies(resolution)
-    return process_lock(provider, resolution, dependencies)
+    packages = process_lock(provider, resolution, dependencies)
+    return str(tags[0]), packages
 
 
 def lock(context):
@@ -276,11 +308,15 @@ def lock(context):
 
     locks = {}
     for platform in context.platform:
-        locks[platform] = file_lock(platform, dependencies)
+        top_tag, packages = file_lock(platform, dependencies)
+        for package in packages:
+            package.files[0].lock.append(top_tag)
+        locks[top_tag] = packages
 
-    from pprint import pprint
-
-    pprint(locks)
+    for package in packages:
+        print("[[package]]")
+        print(package.to_toml().strip())
+        print()
 
     # XXX create a lock file
 
@@ -398,7 +434,6 @@ def main(args=sys.argv[1:]):
     )
 
     context = parser.parse_args(args)
-    print(context)
     dispatch = {
         "lock": lock,
         "install": install,
