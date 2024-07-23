@@ -1,4 +1,4 @@
-# ruff: noqa: ANN001, ANN201, ANN202, D100, D103, D400, D415
+# ruff: noqa: ANN001, ANN201, ANN202, D100, D102, D103, D400, D415
 import argparse
 import dataclasses
 import pathlib
@@ -71,7 +71,6 @@ async def get_metadata_for_file(client, file):
     response = await client.get(url)
     raw_data = response.content
     if isinstance(file.details.get("core-metadata", True), dict):
-        # TODO If core-metadata is a dict, verify the hash of the data
         pass
     metadata = packaging.metadata.Metadata.from_email(raw_data, validate=False)
     file.metadata = metadata
