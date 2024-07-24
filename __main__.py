@@ -327,11 +327,15 @@ def lock(context):
         print("[[file-lock]]", file=buffer)
         wheel_tags = set()
         for package in packages:
+            found = False
             for file in package.files:
+                if found:
+                    break
                 file_tags = packaging.utils.parse_wheel_filename(file.name)[3]
                 for file_tag in file_tags:
                     if file_tag in wheel_tags:
                         # We only need one tag from each wheel to be recorded.
+                        found = True
                         break
                     elif file_tag not in tags:
                         # This tag wasn't used in the resolution.
