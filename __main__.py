@@ -394,16 +394,12 @@ def lock(context):
         print(buffer.getvalue())
 
 
-def install(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = tomllib.load(file)
-
+def find_packages(lock_file_contents):
     markers = packaging.markers.default_environment()
     tags = frozenset(map(str, packaging.tags.sys_tags()))
 
     for lock_file_header in lock_file_contents["file-lock"]:
         if not frozenset(lock_file_header.get("wheel-tags", [])).issubset(tags):
-            print(f"Skipping {lock_file_header['name']} due to tags mismatch")
             continue
         for marker_name, marker_value in lock_file_header.get(
             "marker-values", {}
@@ -411,7 +407,6 @@ def install(context):
             if not packaging.markers.Marker(
                 f"{marker_name}=='{marker_value}'"
             ).evaluate(markers):
-                print(f"Skipping {lock_file_header['name']} due to marker mismatch")
                 continue
         break
     else:
@@ -419,54 +414,25 @@ def install(context):
         sys.exit(1)
 
     lock_key = lock_file_header["name"]
+    packages = []
+    files = []
     for package in lock_file_contents["package"]:
         for file in package["file"]:
             if lock_key in file["lock"]:
-                print(file["name"])
+                packages.append(package)
+                files.append(file)
+
+    return lock_key, packages, files
 
 
-def graph(context):
-    raise NotImplementedError("graph")
-    # with context.lock_file.open("rb") as file:
-    #     lock_file_contents = mousebender.lock.parse(file.read())
+def install(context):
+    with context.lock_file.open("rb") as file:
+        lock_file_contents = tomllib.load(file)
 
-    # mermaid_lines = []
-    # if context.self_contained:
-    #     mermaid_lines.append("```mermaid")
-    # mermaid_lines.extend(["graph LR", "  subgraph top [Top-level dependencies]"])
+    files = find_packages(lock_file_contents)[2]
 
-    # for top_dep in lock_file_contents["dependencies"]:
-    #     requirement = packaging.requirements.Requirement(top_dep)
-    #     line = f"    {requirement.name}"
-    #     if requirement.name != top_dep:
-    #         line += f"[{top_dep}]"
-    #     mermaid_lines.append(line)
-    # mermaid_lines.append("  end")
-
-    # for entry in lock_file_contents["lock"]:
-    #     nodes = set()
-    #     edges = {}  # type: ignore
-    #     mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
-    #     for wheel in entry["wheel"]:
-    #         name = wheel["name"]
-    #         if name not in nodes:
-    #             mermaid_lines.append(f"    {name}")
-    #             nodes.add(name)
-    #         for dep in wheel["dependencies"]:
-    #             if dep not in nodes:
-    #                 mermaid_lines.append(f"    {dep}")
-    #                 nodes.add(dep)
-    #             edges.setdefault(name, set()).add(dep)
-
-    #     for parent, children in edges.items():
-    #         for child in sorted(children):
-    #             mermaid_lines.append(f"    {parent} --> {child}")
-    #     mermaid_lines.append("  end")
-
-    # if context.self_contained:
-    #     mermaid_lines.append("```")
-
-    # print("\n".join(mermaid_lines))
+    for file in files:
+        print(file["name"])
 
 
 def main(args=sys.argv[1:]):
@@ -511,25 +477,10 @@ def main(args=sys.argv[1:]):
         "lock_file", type=pathlib.Path, help="The lock file to install from"
     )
 
-    # graph_args = subcommands.add_parser(
-    #     "graph",
-    #     help="Generate a visualization of the dependency graph in Mermaid format",
-    # )
-    # graph_args.add_argument(
-    #     "--self-contained",
-    #     action="store_true",
-    #     default=False,
-    #     help="Include the surrounding Markdown to make the graph self-contained",
-    # )
-    # graph_args.add_argument(
-    #     "lock_file", type=pathlib.Path, help="The lock file to visualize"
-    # )
-
     context = parser.parse_args(args)
     dispatch = {
         "lock": lock,
         "install": install,
-        "graph": graph,
     }
     dispatch[context.subcommand](context)
 

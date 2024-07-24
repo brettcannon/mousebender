@@ -40,17 +40,17 @@ file = [
 
 [[package]]
 name = 'charset-normalizer'
-            version = '3.3.2'
-            multiple-entries = false
-            description = 'The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet.'
-            requires-python = '>=3.7.0'
-            dependents = ['requests']
-            dependencies = []
-            direct = false
-            file = [
-                {name = 'charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/ee/fb/14d30eb4956408ee3ae09ad34299131fb383c47df355ddb428a7331cfa1e/charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '90d558489962fd4918143277a773316e56c72da56ec7aa3dc3dbbe20fdfed15b'},
-{name = 'charset_normalizer-3.3.2-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b6/7c/8debebb4f90174074b827c63242c23851bdf00a532489fba57fef3416e40/charset_normalizer-3.3.2-cp312-cp312-win_amd64.whl', hash = '96b02a3dc4381e5494fad39be677abcb5e6634bf7b4fa83a6dd3112607547001'}
-            ]
+version = '3.3.2'
+multiple-entries = false
+description = 'The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet.'
+requires-python = '>=3.7.0'
+dependents = ['requests']
+dependencies = []
+direct = false
+file = [
+    {name = 'charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/ee/fb/14d30eb4956408ee3ae09ad34299131fb383c47df355ddb428a7331cfa1e/charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '90d558489962fd4918143277a773316e56c72da56ec7aa3dc3dbbe20fdfed15b'},
+    {name = 'charset_normalizer-3.3.2-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b6/7c/8debebb4f90174074b827c63242c23851bdf00a532489fba57fef3416e40/charset_normalizer-3.3.2-cp312-cp312-win_amd64.whl', hash = '96b02a3dc4381e5494fad39be677abcb5e6634bf7b4fa83a6dd3112607547001'}
+]
 
 [[package]]
 name = 'hatchling'
@@ -93,17 +93,17 @@ file = [
 
 [[package]]
 name = 'numpy'
-            version = '2.0.1'
-            multiple-entries = false
-            description = 'Fundamental package for array computing in Python'
-            requires-python = '>=3.9'
-            dependents = []
-            dependencies = []
-            direct = false
-            file = [
-                {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
-{name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
-            ]
+version = '2.0.1'
+multiple-entries = false
+description = 'Fundamental package for array computing in Python'
+requires-python = '>=3.9'
+dependents = []
+dependencies = []
+direct = false
+file = [
+    {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
+    {name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
+]
 
 [[package]]
 name = 'packaging'
@@ -159,17 +159,17 @@ file = [
 
 [[package]]
 name = 'pydantic-core'
-            version = '2.20.1'
-            multiple-entries = false
-            description = 'Core functionality for Pydantic validation and serialization'
-            requires-python = '>=3.8'
-            dependents = ['pydantic']
-            dependencies = ['typing-extensions']
-            direct = false
-            file = [
-                {name = 'pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/09/b3/a5a54b47cccd1ab661ed5775235c5e06924753c2d4817737c5667bfa19a8/pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '26dc97754b57d2fd00ac2b24dfa341abffc380b823211994c4efac7f13b9e90e'},
-{name = 'pydantic_core-2.20.1-cp312-none-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/d5/36/e61ad5a46607a469e2786f398cd671ebafcd9fb17f09a2359985c7228df5/pydantic_core-2.20.1-cp312-none-win_amd64.whl', hash = '035ede2e16da7281041f0e626459bcae33ed998cca6a0a007a5ebb73414ac72d'}
-            ]
+version = '2.20.1'
+multiple-entries = false
+description = 'Core functionality for Pydantic validation and serialization'
+requires-python = '>=3.8'
+dependents = ['pydantic']
+dependencies = ['typing-extensions']
+direct = false
+file = [
+    {name = 'pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/09/b3/a5a54b47cccd1ab661ed5775235c5e06924753c2d4817737c5667bfa19a8/pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '26dc97754b57d2fd00ac2b24dfa341abffc380b823211994c4efac7f13b9e90e'},
+    {name = 'pydantic_core-2.20.1-cp312-none-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/d5/36/e61ad5a46607a469e2786f398cd671ebafcd9fb17f09a2359985c7228df5/pydantic_core-2.20.1-cp312-none-win_amd64.whl', hash = '035ede2e16da7281041f0e626459bcae33ed998cca6a0a007a5ebb73414ac72d'}
+]
 
 [[package]]
 name = 'requests'
