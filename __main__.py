@@ -51,19 +51,19 @@ class PackageVersion:
     direct: bool = False
 
     def to_toml(self):
-        return textwrap.dedent(f"""
-            name = {self.name!r}
-            version = {self.version!r}
-            multiple-entries = {str(self.multiple_entries).lower()}
-            description = {self.description!r}
-            requires-python = {self.requires_python!r}
-            dependents = {self.dependents!r}
-            dependencies = {self.dependencies!r}
-            direct = {str(self.direct).lower()}
-            file = [
-                {",\n".join(file.to_toml() for file in self.files)}
-            ]
-        """)
+        return f"""
+name = {self.name!r}
+version = {self.version!r}
+multiple-entries = {str(self.multiple_entries).lower()}
+description = {self.description!r}
+requires-python = {self.requires_python!r}
+dependents = {self.dependents!r}
+dependencies = {self.dependencies!r}
+direct = {str(self.direct).lower()}
+file = [
+    {",\n    ".join(file.to_toml() for file in self.files)}
+]
+"""
 
 
 async def get_metadata_for_file(client, file):
