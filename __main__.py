@@ -7,6 +7,7 @@ import sys
 import textwrap
 
 import httpx
+import packaging.markers
 import packaging.metadata
 import packaging.requirements
 import packaging.utils
@@ -14,8 +15,6 @@ import resolvelib.resolvers
 import tomllib
 import trio
 
-import mousebender.install
-import mousebender.lock
 import mousebender.resolve
 import mousebender.simple
 
@@ -341,10 +340,17 @@ def lock(context):
                     # All the tags are new, so just grab one.
                     wheel_tags.add(file_tag)
         sorted_tags = list(
-            map(str, sorted(wheel_tags, key=lambda tag: tags.index(tag)))
+            map(
+                str,
+                sorted(
+                    filter(tags.__contains__, wheel_tags),
+                    key=lambda tag: tags.index(tag),
+                ),
+            )
         )
         # Being a bit lazy with the name since it isn't critical.
         print(f"name = {top_tag!r}", file=buffer)
+        print("marker-values = {}", file=buffer)
         print(f"wheel-tags = {sorted_tags!r}", file=buffer)
         print(file=buffer)
 
@@ -386,58 +392,77 @@ def lock(context):
 
 def install(context):
     with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
-    if (lock_entry := mousebender.install.strict_match(lock_file_contents)) is None:
-        lock_entry = mousebender.install.compatible_match(lock_file_contents)
-        if lock_entry is None:
-            print("No compatible lock entry found 😢")
-            sys.exit(1)
+        lock_file_contents = tomllib.load(file)
 
-    for wheel in lock_entry["wheel"]:
-        print(wheel["name"], "@", wheel.get("filename") or wheel["origin"])
+    markers = packaging.markers.default_environment()
+    tags = frozenset(map(str, packaging.tags.sys_tags()))
+
+    for lock_file_header in lock_file_contents["file-lock"]:
+        if not frozenset(lock_file_header.get("wheel-tags", [])).issubset(tags):
+            print(f"Skipping {lock_file_header['name']} due to tags mismatch")
+            continue
+        for marker_name, marker_value in lock_file_header.get(
+            "marker-values", {}
+        ).items():
+            if not packaging.markers.Marker(
+                f"{marker_name}=='{marker_value}'"
+            ).evaluate(markers):
+                print(f"Skipping {lock_file_header['name']} due to marker mismatch")
+                continue
+        break
+    else:
+        print("No lock entry found for the current environment 😢")
+        sys.exit(1)
+
+    lock_key = lock_file_header["name"]
+    for package in lock_file_contents["package"]:
+        for file in package["file"]:
+            if lock_key in file["lock"]:
+                print(file["name"])
 
 
 def graph(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
+    raise NotImplementedError("graph")
+    # with context.lock_file.open("rb") as file:
+    #     lock_file_contents = mousebender.lock.parse(file.read())
 
-    mermaid_lines = []
-    if context.self_contained:
-        mermaid_lines.append("```mermaid")
-    mermaid_lines.extend(["graph LR", "  subgraph top [Top-level dependencies]"])
+    # mermaid_lines = []
+    # if context.self_contained:
+    #     mermaid_lines.append("```mermaid")
+    # mermaid_lines.extend(["graph LR", "  subgraph top [Top-level dependencies]"])
 
-    for top_dep in lock_file_contents["dependencies"]:
-        requirement = packaging.requirements.Requirement(top_dep)
-        line = f"    {requirement.name}"
-        if requirement.name != top_dep:
-            line += f"[{top_dep}]"
-        mermaid_lines.append(line)
-    mermaid_lines.append("  end")
+    # for top_dep in lock_file_contents["dependencies"]:
+    #     requirement = packaging.requirements.Requirement(top_dep)
+    #     line = f"    {requirement.name}"
+    #     if requirement.name != top_dep:
+    #         line += f"[{top_dep}]"
+    #     mermaid_lines.append(line)
+    # mermaid_lines.append("  end")
 
-    for entry in lock_file_contents["lock"]:
-        nodes = set()
-        edges = {}  # type: ignore
-        mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
-        for wheel in entry["wheel"]:
-            name = wheel["name"]
-            if name not in nodes:
-                mermaid_lines.append(f"    {name}")
-                nodes.add(name)
-            for dep in wheel["dependencies"]:
-                if dep not in nodes:
-                    mermaid_lines.append(f"    {dep}")
-                    nodes.add(dep)
-                edges.setdefault(name, set()).add(dep)
+    # for entry in lock_file_contents["lock"]:
+    #     nodes = set()
+    #     edges = {}  # type: ignore
+    #     mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
+    #     for wheel in entry["wheel"]:
+    #         name = wheel["name"]
+    #         if name not in nodes:
+    #             mermaid_lines.append(f"    {name}")
+    #             nodes.add(name)
+    #         for dep in wheel["dependencies"]:
+    #             if dep not in nodes:
+    #                 mermaid_lines.append(f"    {dep}")
+    #                 nodes.add(dep)
+    #             edges.setdefault(name, set()).add(dep)
 
-        for parent, children in edges.items():
-            for child in sorted(children):
-                mermaid_lines.append(f"    {parent} --> {child}")
-        mermaid_lines.append("  end")
+    #     for parent, children in edges.items():
+    #         for child in sorted(children):
+    #             mermaid_lines.append(f"    {parent} --> {child}")
+    #     mermaid_lines.append("  end")
 
-    if context.self_contained:
-        mermaid_lines.append("```")
+    # if context.self_contained:
+    #     mermaid_lines.append("```")
 
-    print("\n".join(mermaid_lines))
+    # print("\n".join(mermaid_lines))
 
 
 def main(args=sys.argv[1:]):
@@ -482,19 +507,19 @@ def main(args=sys.argv[1:]):
         "lock_file", type=pathlib.Path, help="The lock file to install from"
     )
 
-    graph_args = subcommands.add_parser(
-        "graph",
-        help="Generate a visualization of the dependency graph in Mermaid format",
-    )
-    graph_args.add_argument(
-        "--self-contained",
-        action="store_true",
-        default=False,
-        help="Include the surrounding Markdown to make the graph self-contained",
-    )
-    graph_args.add_argument(
-        "lock_file", type=pathlib.Path, help="The lock file to visualize"
-    )
+    # graph_args = subcommands.add_parser(
+    #     "graph",
+    #     help="Generate a visualization of the dependency graph in Mermaid format",
+    # )
+    # graph_args.add_argument(
+    #     "--self-contained",
+    #     action="store_true",
+    #     default=False,
+    #     help="Include the surrounding Markdown to make the graph self-contained",
+    # )
+    # graph_args.add_argument(
+    #     "lock_file", type=pathlib.Path, help="The lock file to visualize"
+    # )
 
     context = parser.parse_args(args)
     dispatch = {

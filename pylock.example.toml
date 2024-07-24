@@ -1,0 +1,226 @@
+version = '1.0'
+hash-algorithm = 'sha256'
+dependencies = ['hatchling', 'mousebender', 'numpy', 'pydantic', 'requests']
+
+[[file-lock]]
+name = 'cp312-cp312-manylinux_2_17_x86_64'
+marker-values = {}
+wheel-tags = ['cp312-cp312-manylinux_2_17_x86_64', 'py3-none-any']
+
+[[file-lock]]
+name = 'cp312-cp312-win_amd64'
+marker-values = {}
+wheel-tags = ['cp312-cp312-win_amd64', 'cp312-none-win_amd64', 'py3-none-any']
+
+[[package]]
+name = 'annotated-types'
+version = '0.7.0'
+multiple-entries = false
+description = 'Reusable constraint types to use with typing.Annotated'
+requires-python = '>=3.8'
+dependents = ['pydantic']
+dependencies = []
+direct = false
+file = [
+    {name = 'annotated_types-0.7.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl', hash = '1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53'}
+]
+
+[[package]]
+name = 'certifi'
+version = '2024.7.4'
+multiple-entries = false
+description = "Python package for providing Mozilla's CA Bundle."
+requires-python = '>=3.6'
+dependents = ['requests']
+dependencies = []
+direct = false
+file = [
+    {name = 'certifi-2024.7.4-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/1c/d5/c84e1a17bf61d4df64ca866a1c9a913874b4e9bdc131ec689a0ad013fb36/certifi-2024.7.4-py3-none-any.whl', hash = 'c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90'}
+]
+
+[[package]]
+name = 'charset-normalizer'
+            version = '3.3.2'
+            multiple-entries = false
+            description = 'The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet.'
+            requires-python = '>=3.7.0'
+            dependents = ['requests']
+            dependencies = []
+            direct = false
+            file = [
+                {name = 'charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/ee/fb/14d30eb4956408ee3ae09ad34299131fb383c47df355ddb428a7331cfa1e/charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '90d558489962fd4918143277a773316e56c72da56ec7aa3dc3dbbe20fdfed15b'},
+{name = 'charset_normalizer-3.3.2-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b6/7c/8debebb4f90174074b827c63242c23851bdf00a532489fba57fef3416e40/charset_normalizer-3.3.2-cp312-cp312-win_amd64.whl', hash = '96b02a3dc4381e5494fad39be677abcb5e6634bf7b4fa83a6dd3112607547001'}
+            ]
+
+[[package]]
+name = 'hatchling'
+version = '1.25.0'
+multiple-entries = false
+description = 'Modern, extensible Python build backend'
+requires-python = '>=3.8'
+dependents = []
+dependencies = ['packaging', 'pathspec', 'pluggy', 'trove-classifiers']
+direct = false
+file = [
+    {name = 'hatchling-1.25.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/0c/8b/90e80904fdc24ce33f6fc6f35ebd2232fe731a8528a22008458cf197bc4d/hatchling-1.25.0-py3-none-any.whl', hash = 'b47948e45d4d973034584dd4cb39c14b6a70227cf287ab7ec0ad7983408a882c'}
+]
+
+[[package]]
+name = 'idna'
+version = '3.7'
+multiple-entries = false
+description = 'Internationalized Domain Names in Applications (IDNA)'
+requires-python = '>=3.5'
+dependents = ['requests']
+dependencies = []
+direct = false
+file = [
+    {name = 'idna-3.7-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/e5/3e/741d8c82801c347547f8a2a06aa57dbb1992be9e948df2ea0eda2c8b79e8/idna-3.7-py3-none-any.whl', hash = '82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0'}
+]
+
+[[package]]
+name = 'mousebender'
+version = '2023.2'
+multiple-entries = false
+description = 'A package for implementing various Python packaging standards.'
+requires-python = '>=3.8'
+dependents = []
+dependencies = ['packaging', 'typing-extensions']
+direct = false
+file = [
+    {name = 'mousebender-2023.2-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/db/c1/b0f7859dc59d527cbcade44f81453158f8b782cbeeb8acb5b5b27f1fbdfc/mousebender-2023.2-py3-none-any.whl', hash = 'b14d382f26bad190f9fa6f11716f0c3f16588517739554db90102ad0cf156ac1'}
+]
+
+[[package]]
+name = 'numpy'
+            version = '2.0.1'
+            multiple-entries = false
+            description = 'Fundamental package for array computing in Python'
+            requires-python = '>=3.9'
+            dependents = []
+            dependencies = []
+            direct = false
+            file = [
+                {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
+{name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
+            ]
+
+[[package]]
+name = 'packaging'
+version = '24.1'
+multiple-entries = false
+description = 'Core utilities for Python packages'
+requires-python = '>=3.8'
+dependents = ['hatchling', 'mousebender']
+dependencies = []
+direct = false
+file = [
+    {name = 'packaging-24.1-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl', hash = '5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124'}
+]
+
+[[package]]
+name = 'pathspec'
+version = '0.12.1'
+multiple-entries = false
+description = 'Utility library for gitignore style pattern matching of file paths.'
+requires-python = '>=3.8'
+dependents = ['hatchling']
+dependencies = []
+direct = false
+file = [
+    {name = 'pathspec-0.12.1-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl', hash = 'a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08'}
+]
+
+[[package]]
+name = 'pluggy'
+version = '1.5.0'
+multiple-entries = false
+description = 'plugin and hook calling mechanisms for python'
+requires-python = '>=3.8'
+dependents = ['hatchling']
+dependencies = []
+direct = false
+file = [
+    {name = 'pluggy-1.5.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl', hash = '44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669'}
+]
+
+[[package]]
+name = 'pydantic'
+version = '2.8.2'
+multiple-entries = false
+description = 'Data validation using Python type hints'
+requires-python = '>=3.8'
+dependents = []
+dependencies = ['annotated-types', 'pydantic-core', 'typing-extensions']
+direct = false
+file = [
+    {name = 'pydantic-2.8.2-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/1f/fa/b7f815b8c9ad021c07f88875b601222ef5e70619391ade4a49234d12d278/pydantic-2.8.2-py3-none-any.whl', hash = '73ee9fddd406dc318b885c7a2eab8a6472b68b8fb5ba8150949fc3db939f23c8'}
+]
+
+[[package]]
+name = 'pydantic-core'
+            version = '2.20.1'
+            multiple-entries = false
+            description = 'Core functionality for Pydantic validation and serialization'
+            requires-python = '>=3.8'
+            dependents = ['pydantic']
+            dependencies = ['typing-extensions']
+            direct = false
+            file = [
+                {name = 'pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/09/b3/a5a54b47cccd1ab661ed5775235c5e06924753c2d4817737c5667bfa19a8/pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '26dc97754b57d2fd00ac2b24dfa341abffc380b823211994c4efac7f13b9e90e'},
+{name = 'pydantic_core-2.20.1-cp312-none-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/d5/36/e61ad5a46607a469e2786f398cd671ebafcd9fb17f09a2359985c7228df5/pydantic_core-2.20.1-cp312-none-win_amd64.whl', hash = '035ede2e16da7281041f0e626459bcae33ed998cca6a0a007a5ebb73414ac72d'}
+            ]
+
+[[package]]
+name = 'requests'
+version = '2.32.3'
+multiple-entries = false
+description = 'Python HTTP for Humans.'
+requires-python = '>=3.8'
+dependents = []
+dependencies = ['certifi', 'charset-normalizer', 'idna', 'urllib3']
+direct = false
+file = [
+    {name = 'requests-2.32.3-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl', hash = '70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6'}
+]
+
+[[package]]
+name = 'trove-classifiers'
+version = '2024.7.2'
+multiple-entries = false
+description = 'Canonical source for classifiers on PyPI (pypi.org).'
+requires-python = 'None'
+dependents = ['hatchling']
+dependencies = []
+direct = false
+file = [
+    {name = 'trove_classifiers-2024.7.2-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/0f/b0/09794439a62a7dc18bffdbf145aaf50297fd994890b11da27a13e376b947/trove_classifiers-2024.7.2-py3-none-any.whl', hash = 'ccc57a33717644df4daca018e7ec3ef57a835c48e96a1e71fc07eb7edac67af6'}
+]
+
+[[package]]
+name = 'typing-extensions'
+version = '4.12.2'
+multiple-entries = false
+description = 'Backported and Experimental Type Hints for Python 3.8+'
+requires-python = '>=3.8'
+dependents = ['mousebender', 'pydantic', 'pydantic-core']
+dependencies = []
+direct = false
+file = [
+    {name = 'typing_extensions-4.12.2-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/26/9f/ad63fc0248c5379346306f8668cda6e2e2e9c95e01216d2b8ffd9ff037d0/typing_extensions-4.12.2-py3-none-any.whl', hash = '04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d'}
+]
+
+[[package]]
+name = 'urllib3'
+version = '2.2.2'
+multiple-entries = false
+description = 'HTTP library with thread-safe connection pooling, file post, and more.'
+requires-python = '>=3.8'
+dependents = ['requests']
+dependencies = []
+direct = false
+file = [
+    {name = 'urllib3-2.2.2-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/ca/1c/89ffc63a9605b583d5df2be791a27bc1a42b7c32bab68d3c8f2f73a98cd4/urllib3-2.2.2-py3-none-any.whl', hash = 'a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472'}
+]
+
+
