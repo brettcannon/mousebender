@@ -60,8 +60,8 @@ requires-python = {self.requires_python!r}
 dependents = {self.dependents!r}
 dependencies = {self.dependencies!r}
 direct = {str(self.direct).lower()}
-file = [
-    {",\n    ".join(file.to_toml() for file in self.files)}
+files = [
+    {",\n    ".join(file.to_toml() for file in sorted(self.files, key=lambda file: file.name))}
 ]
 """
 
@@ -323,7 +323,7 @@ def lock(context):
     print(f"dependencies = {sorted(dependencies)!r}", file=buffer)
     print(file=buffer)
 
-    for top_tag, (tags, packages) in locks.items():
+    for top_tag, (tags, packages) in sorted(locks.items(), key=lambda item: item[0]):
         print("[[file-lock]]", file=buffer)
         wheel_tags = set()
         for package in packages:
@@ -417,7 +417,7 @@ def find_packages(lock_file_contents):
     packages = []
     files = []
     for package in lock_file_contents["package"]:
-        for file in package["file"]:
+        for file in package["files"]:
             if lock_key in file["lock"]:
                 packages.append(package)
                 files.append(file)
