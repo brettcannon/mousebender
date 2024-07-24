@@ -1,6 +1,7 @@
 # ruff: noqa: ANN001, ANN201, ANN202, D100, D102, D103, D400, D415
 import argparse
 import dataclasses
+import io
 import pathlib
 import sys
 import textwrap
@@ -40,7 +41,7 @@ class PackageVersion:
 
     name: str
     version: str
-    # multiple_entries
+    multiple_entries: bool = False
     files: list[File] = dataclasses.field(default_factory=list)
     description: str | None = None
     simple_repo_package_url: str | None = None
@@ -54,6 +55,7 @@ class PackageVersion:
         return textwrap.dedent(f"""
             name = {self.name!r}
             version = {self.version!r}
+            multiple-entries = {str(self.multiple_entries).lower()}
             description = {self.description!r}
             requires-python = {self.requires_python!r}
             dependents = {self.dependents!r}
@@ -296,7 +298,7 @@ def file_lock(platform, dependencies):
     provider, resolution = resolve(dependencies, markers, tags)
     dependencies = calc_dependencies(resolution)
     packages = process_lock(provider, resolution, dependencies)
-    return str(tags[0]), packages
+    return tags, packages
 
 
 def lock(context):
@@ -306,23 +308,80 @@ def lock(context):
         dependencies = pyproject["project"]["dependencies"]
 
     locks = {}
-    for platform in context.platform:
-        top_tag, packages = file_lock(platform, dependencies)
+    for platform in context.platform or ["system"]:
+        tags, packages = file_lock(platform, dependencies)
+        top_tag = str(tags[0])
         for package in packages:
             package.files[0].lock.append(top_tag)
-        locks[top_tag] = packages
+        locks[top_tag] = tags, packages
 
-    print("version = '1.0'")
-    print("hash-algorithm = 'sha256'")
-    print(f"dependencies = {sorted(dependencies)!r}")
-    print()
-    # XXX [[file-lock]]
-    for package in packages:
-        print("[[package]]")
-        print(package.to_toml().strip())
-        print()
+    # XXX ambiguity/subset, ignoring the same result (i.e. pure Python in all cases)
 
-    # XXX create a lock file
+    buffer = io.StringIO()
+
+    print("version = '1.0'", file=buffer)
+    print("hash-algorithm = 'sha256'", file=buffer)
+    print(f"dependencies = {sorted(dependencies)!r}", file=buffer)
+    print(file=buffer)
+
+    for top_tag, (tags, packages) in locks.items():
+        print("[[file-lock]]", file=buffer)
+        wheel_tags = set()
+        for package in packages:
+            for file in package.files:
+                file_tags = packaging.utils.parse_wheel_filename(file.name)[3]
+                for file_tag in file_tags:
+                    if file_tag in wheel_tags:
+                        # We only need one tag from each wheel to be recorded.
+                        break
+                    elif file_tag not in tags:
+                        # This tag wasn't used in the resolution.
+                        continue
+                else:
+                    # All the tags are new, so just grab one.
+                    wheel_tags.add(file_tag)
+        sorted_tags = list(
+            map(str, sorted(wheel_tags, key=lambda tag: tags.index(tag)))
+        )
+        # Being a bit lazy with the name since it isn't critical.
+        print(f"name = {top_tag!r}", file=buffer)
+        print(f"wheel-tags = {sorted_tags!r}", file=buffer)
+        print(file=buffer)
+
+    packages = {}
+    for _, platform_packages in locks.values():
+        for package in platform_packages:
+            key = package.name, package.version
+            if key not in packages:
+                packages[key] = package
+            else:
+                for file in package.files:
+                    for other_file in packages[key].files:
+                        if file.name == other_file.name:
+                            other_file.lock.extend(file.lock)
+                            break
+                    else:
+                        packages[key].files.extend(package.files)
+
+    seen_once = set()
+    seen_multiple = set()
+    for package in packages.values():
+        if package.name in seen_once:
+            seen_multiple.add(package.name)
+        seen_once.add((package.name, package.version))
+
+    for package in packages.values():
+        if package.name in seen_multiple:
+            package.multiple_entries = True
+        print("[[package]]", file=buffer)
+        print(package.to_toml().strip(), file=buffer)
+        print(file=buffer)
+
+    if context.lock_file:
+        with context.lock_file.open("w") as file:
+            file.write(buffer.getvalue())
+    else:
+        print(buffer.getvalue())
 
 
 def install(context):
@@ -412,7 +471,7 @@ def main(args=sys.argv[1:]):
             "python3.11",
             "python3.12",
         ],
-        default=["system"],
+        default=[],
         help="The platform to lock for",
     )
 
