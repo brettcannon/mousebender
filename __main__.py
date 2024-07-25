@@ -327,31 +327,16 @@ def lock(context):
         print("[[file-lock]]", file=buffer)
         wheel_tags = set()
         for package in packages:
-            found = False
             for file in package.files:
-                if found:
-                    break
                 file_tags = packaging.utils.parse_wheel_filename(file.name)[3]
-                for file_tag in file_tags:
-                    if file_tag in wheel_tags:
-                        # We only need one tag from each wheel to be recorded.
-                        found = True
-                        break
-                    elif file_tag not in tags:
-                        # This tag wasn't used in the resolution.
-                        continue
-                else:
-                    # All the tags are new, so just grab one.
-                    wheel_tags.add(file_tag)
-        sorted_tags = list(
-            map(
-                str,
-                sorted(
-                    filter(tags.__contains__, wheel_tags),
-                    key=lambda tag: tags.index(tag),
-                ),
-            )
-        )
+                usable_tags = filter(tags.__contains__, file_tags)
+                unseen_tags = (tag for tag in usable_tags if tag not in wheel_tags)
+                try:
+                    wheel_tags.add(sorted(unseen_tags, key=tags.index, reverse=True)[0])
+                except IndexError:
+                    # No new tags to record.
+                    pass
+        sorted_tags = list(map(str, sorted(wheel_tags, key=tags.index)))
         # Being a bit lazy with the name since it isn't critical.
         print(f"name = {top_tag!r}", file=buffer)
         print("marker-values = {}", file=buffer)
