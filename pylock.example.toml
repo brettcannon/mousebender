@@ -1,6 +1,6 @@
 version = '1.0'
 hash-algorithm = 'sha256'
-dependencies = ['hatchling', 'mousebender', 'numpy<2', 'pydantic', 'requests', 'trio']
+dependencies = ['hatchling', 'mousebender', 'numpy', 'pydantic', 'requests', 'trio']
 
 [[file-lock]]
 name = 'cp312-cp312-manylinux_2_17_x86_64'
@@ -119,7 +119,7 @@ files = [
 
 [[package]]
 name = 'numpy'
-version = '1.26.4'
+version = '2.0.1'
 multiple-entries = false
 description = 'Fundamental package for array computing in Python'
 requires-python = '>=3.9'
@@ -127,8 +127,8 @@ dependents = []
 dependencies = []
 direct = false
 files = [
-    {name = 'numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/0f/50/de23fde84e45f5c4fda2488c759b69990fd4512387a8632860f3ac9cd225/numpy-1.26.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '675d61ffbfa78604709862923189bad94014bef562cc35cf61d3a07bba02a7ed'},
-    {name = 'numpy-1.26.4-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/16/2e/86f24451c2d530c88daf997cb8d6ac622c1d40d19f5a031ed68a4b73a374/numpy-1.26.4-cp312-cp312-win_amd64.whl', hash = '08beddf13648eb95f8d867350f6a018a4be2e5ad54c8d8caed89ebca558b2818'}
+    {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
+    {name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
 ]
 
 [[package]]
