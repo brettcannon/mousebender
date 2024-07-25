@@ -1,6 +1,6 @@
 version = '1.0'
 hash-algorithm = 'sha256'
-dependencies = ['hatchling', 'mousebender', 'numpy', 'pydantic', 'requests']
+dependencies = ['hatchling', 'mousebender', 'numpy', 'pydantic', 'requests', 'trio']
 
 [[file-lock]]
 name = 'cp312-cp312-manylinux_2_17_x86_64'
@@ -26,6 +26,19 @@ files = [
 ]
 
 [[package]]
+name = 'attrs'
+version = '23.2.0'
+multiple-entries = false
+description = 'Classes Without Boilerplate'
+requires-python = '>=3.7'
+dependents = ['outcome', 'trio']
+dependencies = []
+direct = false
+files = [
+    {name = 'attrs-23.2.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/e0/44/827b2a91a5816512fcaf3cc4ebc465ccd5d598c45cefa6703fcf4a79018f/attrs-23.2.0-py3-none-any.whl', hash = '99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1'}
+]
+
+[[package]]
 name = 'certifi'
 version = '2024.7.4'
 multiple-entries = false
@@ -36,6 +49,19 @@ dependencies = []
 direct = false
 files = [
     {name = 'certifi-2024.7.4-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/1c/d5/c84e1a17bf61d4df64ca866a1c9a913874b4e9bdc131ec689a0ad013fb36/certifi-2024.7.4-py3-none-any.whl', hash = 'c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90'}
+]
+
+[[package]]
+name = 'cffi'
+version = '1.16.0'
+multiple-entries = false
+description = 'Foreign Function Interface for Python calling C code.'
+requires-python = '>=3.8'
+dependents = ['trio']
+dependencies = ['pycparser']
+direct = false
+files = [
+    {name = 'cffi-1.16.0-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/e9/63/e285470a4880a4f36edabe4810057bd4b562c6ddcc165eacf9c3c7210b40/cffi-1.16.0-cp312-cp312-win_amd64.whl', hash = '68678abf380b42ce21a5f2abde8efee05c114c2fdb2e9eef2efdb0257fba1235'}
 ]
 
 [[package]]
@@ -71,7 +97,7 @@ version = '3.7'
 multiple-entries = false
 description = 'Internationalized Domain Names in Applications (IDNA)'
 requires-python = '>=3.5'
-dependents = ['requests']
+dependents = ['requests', 'trio']
 dependencies = []
 direct = false
 files = [
@@ -103,6 +129,19 @@ direct = false
 files = [
     {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
     {name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
+]
+
+[[package]]
+name = 'outcome'
+version = '1.3.0.post0'
+multiple-entries = false
+description = 'Capture the outcome of Python function calls.'
+requires-python = '>=3.7'
+dependents = ['trio']
+dependencies = ['attrs']
+direct = false
+files = [
+    {name = 'outcome-1.3.0.post0-py2.py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/55/8b/5ab7257531a5d830fc8000c476e63c935488d74609b50f9384a643ec0a62/outcome-1.3.0.post0-py2.py3-none-any.whl', hash = 'e771c5ce06d1415e356078d3bdd68523f284b4ce5419828922b6871e65eda82b'}
 ]
 
 [[package]]
@@ -145,6 +184,19 @@ files = [
 ]
 
 [[package]]
+name = 'pycparser'
+version = '2.22'
+multiple-entries = false
+description = 'C parser in Python'
+requires-python = '>=3.8'
+dependents = ['cffi']
+dependencies = []
+direct = false
+files = [
+    {name = 'pycparser-2.22-py3-none-any.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/13/a3/a812df4e2dd5696d1f351d58b8fe16a405b234ad2886a0dab9183fb78109/pycparser-2.22-py3-none-any.whl', hash = 'c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc'}
+]
+
+[[package]]
 name = 'pydantic'
 version = '2.8.2'
 multiple-entries = false
@@ -182,6 +234,45 @@ dependencies = ['certifi', 'charset-normalizer', 'idna', 'urllib3']
 direct = false
 files = [
     {name = 'requests-2.32.3-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl', hash = '70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6'}
+]
+
+[[package]]
+name = 'sniffio'
+version = '1.3.1'
+multiple-entries = false
+description = 'Sniff out which async library your code is running under'
+requires-python = '>=3.7'
+dependents = ['trio']
+dependencies = []
+direct = false
+files = [
+    {name = 'sniffio-1.3.1-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl', hash = '2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2'}
+]
+
+[[package]]
+name = 'sortedcontainers'
+version = '2.4.0'
+multiple-entries = false
+description = 'Sorted Containers -- Sorted List, Sorted Dict, Sorted Set'
+requires-python = 'None'
+dependents = ['trio']
+dependencies = []
+direct = false
+files = [
+    {name = 'sortedcontainers-2.4.0-py2.py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl', hash = 'a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0'}
+]
+
+[[package]]
+name = 'trio'
+version = '0.26.0'
+multiple-entries = false
+description = 'A friendly Python library for async concurrency and I/O'
+requires-python = '>=3.8'
+dependents = []
+dependencies = ['attrs', 'idna', 'outcome', 'sniffio', 'sortedcontainers']
+direct = false
+files = [
+    {name = 'trio-0.26.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/77/34/461280cc615614a9e434c6e23373371a2436f71d045303cadabb1d775eba/trio-0.26.0-py3-none-any.whl', hash = 'bb9c1b259591af941fccfbabbdc65bc7ed764bd2db76428454c894cd5e3d2032'}
 ]
 
 [[package]]
