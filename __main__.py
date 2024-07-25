@@ -4,13 +4,13 @@ import dataclasses
 import io
 import pathlib
 import sys
-import textwrap
 
 import httpx
 import packaging.markers
 import packaging.metadata
 import packaging.requirements
 import packaging.utils
+import packaging.version
 import resolvelib.resolvers
 import tomllib
 import trio
@@ -380,7 +380,10 @@ def lock(context):
             seen_multiple.add(package.name)
         seen_once.add((package.name, package.version))
 
-    for package in packages.values():
+    for package in sorted(
+        packages.values(),
+        key=lambda package: (package.name, packaging.version.Version(package.version)),
+    ):
         if package.name in seen_multiple:
             package.multiple_entries = True
         print("[[package]]", file=buffer)
