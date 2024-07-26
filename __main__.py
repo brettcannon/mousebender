@@ -324,7 +324,7 @@ def lock(context):
     print(file=buffer)
 
     for top_tag, (tags, packages) in sorted(locks.items(), key=lambda item: item[0]):
-        print("[[file-lock]]", file=buffer)
+        print("[[file-locks]]", file=buffer)
         wheel_tags = set()
         for package in packages:
             for file in package.files:
@@ -371,7 +371,7 @@ def lock(context):
     ):
         if package.name in seen_multiple:
             package.multiple_entries = True
-        print("[[package]]", file=buffer)
+        print("[[packages]]", file=buffer)
         print(package.to_toml().strip(), file=buffer)
         print(file=buffer)
 
@@ -386,7 +386,7 @@ def find_packages(lock_file_contents):
     markers = packaging.markers.default_environment()
     tags = frozenset(map(str, packaging.tags.sys_tags()))
 
-    for lock_file_header in lock_file_contents["file-lock"]:
+    for lock_file_header in lock_file_contents["file-locks"]:
         if not frozenset(lock_file_header.get("wheel-tags", [])).issubset(tags):
             continue
         for marker_name, marker_value in lock_file_header.get(
@@ -404,7 +404,7 @@ def find_packages(lock_file_contents):
     lock_key = lock_file_header["name"]
     packages = []
     files = []
-    for package in lock_file_contents["package"]:
+    for package in lock_file_contents["packages"]:
         for file in package["files"]:
             if lock_key in file["lock"]:
                 packages.append(package)
