@@ -1,4 +1,5 @@
 """An API for wheel-based requirement resolution."""
+
 from __future__ import annotations
 
 import abc
@@ -359,7 +360,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             )
             requirements.append(Requirement(req))
 
-        for req in candidate.file.metadata.requires_dist:
+        for req in candidate.file.metadata.requires_dist or []:
             if req.marker is None:
                 requirements.append(Requirement(req))
             elif req.marker.evaluate(self.markers):
