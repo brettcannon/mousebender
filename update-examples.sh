@@ -5,3 +5,7 @@ py . lock --platform cpython3.12-manylinux2014-x64 --platform cpython3.12-window
 
 echo "Install from $LOCK_FILE_PATH ..."
 py . install $LOCK_FILE_PATH
+
+PEP_EXAMPLE_PATH=pylock.pep.toml
+echo "Generate PEP 751 example in $PEP_EXAMPLE_PATH ..."
+py . lock --platform cpython3.12-manylinux2014-x64 --platform cpython3.12-windows-x64 cattrs numpy > $PEP_EXAMPLE_PATH

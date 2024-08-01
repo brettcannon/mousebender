@@ -1,0 +1,55 @@
+version = '1.0'
+hash-algorithm = 'sha256'
+dependencies = ['cattrs', 'numpy']
+
+[[file-locks]]
+name = 'cp312-cp312-manylinux_2_17_x86_64'
+marker-values = {}
+wheel-tags = ['cp312-cp312-manylinux_2_17_x86_64', 'py3-none-any']
+
+[[file-locks]]
+name = 'cp312-cp312-win_amd64'
+marker-values = {}
+wheel-tags = ['cp312-cp312-win_amd64', 'py3-none-any']
+
+[[packages]]
+name = 'attrs'
+version = '23.2.0'
+multiple-entries = false
+description = 'Classes Without Boilerplate'
+requires-python = '>=3.7'
+dependents = ['cattrs']
+dependencies = []
+direct = false
+files = [
+    {name = 'attrs-23.2.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/e0/44/827b2a91a5816512fcaf3cc4ebc465ccd5d598c45cefa6703fcf4a79018f/attrs-23.2.0-py3-none-any.whl', hash = '99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1'}
+]
+
+[[packages]]
+name = 'cattrs'
+version = '23.2.3'
+multiple-entries = false
+description = 'Composable complex class support for attrs and dataclasses.'
+requires-python = '>=3.8'
+dependents = []
+dependencies = ['attrs']
+direct = false
+files = [
+    {name = 'cattrs-23.2.3-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b3/0d/cd4a4071c7f38385dc5ba91286723b4d1090b87815db48216212c6c6c30e/cattrs-23.2.3-py3-none-any.whl', hash = '0341994d94971052e9ee70662542699a3162ea1e0c62f7ce1b4a57f563685108'}
+]
+
+[[packages]]
+name = 'numpy'
+version = '2.0.1'
+multiple-entries = false
+description = 'Fundamental package for array computing in Python'
+requires-python = '>=3.9'
+dependents = []
+dependencies = []
+direct = false
+files = [
+    {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
+    {name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
+]
+
+
