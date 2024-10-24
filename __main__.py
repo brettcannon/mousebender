@@ -41,7 +41,8 @@ class Requirement:
             parts.append(f"version = {str(self.version)!r}")
         if self.marker:
             parts.append(f"marker = {str(self.marker)!r}")
-        # XXX feature
+        if self.feature:
+            parts.append(f"feature = {self.feature!r}")
         return f"{{ {", ".join(parts)} }}"
 
 
@@ -283,9 +284,25 @@ def flatten_graph(resolution):
             name = packaging.utils.canonicalize_name(req.name)
             extras = frozenset(map(packaging.utils.canonicalize_name, req.extras))
             version = req.specifier
-            marker = req.marker
-            # XXX feature
-            requirements.append(Requirement(name, extras, version, marker))
+            feature = None
+            if req.marker:
+                # Hack to set 'feature'.
+                for index, req_marker in enumerate(req.marker._markers):
+                    lhs = req_marker[0]
+                    if (
+                        isinstance(lhs, packaging._parser.Variable)
+                        and lhs.value == "extra"
+                    ):
+                        feature = req_marker[2].value
+                        del req.marker._markers[index]
+                        if (
+                            req.marker._markers
+                            and req.marker._markers[index - 1] == "and"
+                        ):
+                            del req.marker._markers[index - 1]
+                        break
+            marker = req.marker if getattr(req.marker, "_markers", None) else None
+            requirements.append(Requirement(name, extras, version, marker, feature))
         name = candidate.identifier[0]
         version = candidate.file.version
         groups = ["Default"]  # Hard-coded
@@ -340,10 +357,8 @@ def lock(context):
                 locks[key] = package
             else:
                 for new_wheel in package.wheels:
-                    found = False
                     for seen_wheel in locks[key].wheels:
                         if new_wheel.tags == seen_wheel.tags:
-                            found = True
                             break
                     else:
                         locks[key].wheels.append(new_wheel)
