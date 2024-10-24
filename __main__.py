@@ -1,6 +1,7 @@
 # ruff: noqa: ANN001, ANN201, ANN202, D100, D102, D103, D400, D415
 import argparse
 import dataclasses
+import datetime
 import io
 import pathlib
 import sys
@@ -9,6 +10,7 @@ import httpx
 import packaging.markers
 import packaging.metadata
 import packaging.requirements
+import packaging.specifiers
 import packaging.utils
 import packaging.version
 import resolvelib.resolvers
@@ -19,49 +21,84 @@ import mousebender.resolve
 import mousebender.simple
 
 
-# https://github.com/brettcannon/peps/blob/lock-file/peps/pep-9999.rst
 @dataclasses.dataclass
-class File:
-    """[[package.file]]"""
+class Requirement:
+    """[[groups.requirements]], [[packages.dependencies]]"""
 
-    name: str
-    hash: str
-    # simple_repo_package_url
-    origin: str | None = None
-    lock: list[str] = dataclasses.field(default_factory=list)
+    name: packaging.utils.NormalizedName
+    extras: frozenset[packaging.utils.NormalizedName] = dataclasses.field(
+        default_factory=frozenset
+    )
+    version: packaging.specifiers.SpecifierSet | None = None
+    marker: packaging.markers.Marker | None = None
+    feature: str | None = None
 
     def to_toml(self):
-        return f"{{name = {self.name!r}, lock = {sorted(self.lock)!r}, origin = {self.origin!r}, hash = {self.hash!r}}}"
+        parts = [f"name = {self.name!r}"]
+        if self.extras:
+            parts.append(f"extras = {list(self.extras)!r}")
+        if self.version:
+            parts.append(f"version = {str(self.version)!r}")
+        if self.marker:
+            parts.append(f"marker = {str(self.marker)!r}")
+        # XXX feature
+        return f"{{ {", ".join(parts)} }}"
+
+
+@dataclasses.dataclass
+class WheelFile:
+    """[[packages.wheels]]"""
+
+    tags: frozenset[str]
+    build: str
+    url: str
+    hash: str
+    upload_time: datetime.datetime | None = None
+    size: int | None = None
+
+    def to_toml(self):
+        tags = list(map(str, self.tags))
+        parts = [f"tags = {tags!r}"]
+        if self.build:
+            parts.append(f"build = {self.build!r}")
+        if self.url:
+            parts.append(f"url = {self.url!r}")
+        parts.append(f"hash = {self.hash!r}")
+        if self.upload_time:
+            parts.append(f"upload_time = {self.upload_time.isoformat()}")
+        if self.size:
+            parts.append(f"size = {self.size!r}")
+        return f"{{ {", ".join(parts)} }}"
 
 
 @dataclasses.dataclass
 class PackageVersion:
-    """[[package]]"""
+    """[[packages]]"""
 
     name: str
-    version: str
-    multiple_entries: bool = False
-    files: list[File] = dataclasses.field(default_factory=list)
-    description: str | None = None
-    simple_repo_package_url: str | None = None
-    # marker
-    requires_python: str | None = None
-    dependents: list[str] | None = None
-    dependencies: list[str] | None = None
+    version: packaging.version.Version
+    groups: list[str] = dataclasses.field(default_factory=list)
+    index_url: str = ""
     direct: bool = False
+    requires_python: packaging.specifiers.SpecifierSet | None = None
+    dependencies: list[Requirement] = dataclasses.field(default_factory=list)
+    editable: bool = False
+    wheels: list[WheelFile] = dataclasses.field(default_factory=list)
 
     def to_toml(self):
         return f"""
 name = {self.name!r}
-version = {self.version!r}
-multiple-entries = {str(self.multiple_entries).lower()}
-description = {self.description!r}
-requires-python = {self.requires_python!r}
-dependents = {self.dependents!r}
-dependencies = {self.dependencies!r}
+version = {str(self.version)!r}
+groups = {list(self.groups)!r}
+index_url = {self.index_url!r}
 direct = {str(self.direct).lower()}
-files = [
-    {",\n    ".join(file.to_toml() for file in sorted(self.files, key=lambda file: file.name))}
+requires_python = {str(self.requires_python)!r}
+dependencies = [
+  {",\n  ".join(r.to_toml() for r in self.dependencies)}
+]
+editable = {str(self.editable).lower()}
+wheels = [
+  {",\n  ".join(w.to_toml() for w in self.wheels)}
 ]
 """
 
@@ -117,7 +154,7 @@ class PyPIProvider(mousebender.resolve.WheelProvider):
         elif not has_metadata:
             print(f"😨 {name} has **no** wheels w/ metadata", file=sys.stderr)
         elif len(has_metadata) < len(wheels):
-            print(f"😬 {name} has *some* wheels w/o metadata", file=sys.stderr)
+            print(f"😬 {name} only has **some** wheels w/ metadata", file=sys.stderr)
 
         return map(mousebender.resolve.WheelFile, has_metadata)
 
@@ -203,28 +240,6 @@ def cpython_manylinux_details(version):
     return markers, tags
 
 
-def calc_dependencies(resolution):
-    dependencies = {}  # type: ignore
-    seen = set()
-    queue = list(resolution.graph.iter_children(None))
-    for distro in queue:
-        if distro in seen:
-            continue
-        seen.add(distro)
-        children = dependencies.setdefault(
-            distro, {"parents": set(), "children": set()}
-        )["children"]
-        for child in resolution.graph.iter_children(distro):
-            children.add(child)
-            parents = dependencies.setdefault(
-                child, {"parents": set(), "children": set()}
-            )["parents"]
-            parents.add(distro)
-            queue.append(child)
-
-    return dependencies
-
-
 def resolve(dependencies, markers, tags):
     pkg_requirements = map(packaging.requirements.Requirement, dependencies)
     requirements = list(
@@ -248,32 +263,47 @@ def resolve(dependencies, markers, tags):
     return provider, resolution
 
 
-def process_lock(provider, resolution, dependencies):
-    packages = []
-    for id_ in sorted(dependencies):
-        candidate = resolution.mapping[id_]
-        wheel = candidate.file
-        name = wheel.name
-        version = str(wheel.version)
-        metadata = wheel.metadata
-        file_details = wheel.details
-        wheel_file = File(
-            file_details["filename"],
-            file_details["hashes"]["sha256"],
-            origin=file_details["url"],
+def flatten_graph(resolution):
+    """Take the dependency graph and return the collection of nodes/packages."""
+    # for id_ in resolution.graph.iter_children(None):
+    for candidate in resolution.mapping.values():
+        # candidate = resolution.mapping[id_]
+        resolved_wheel_file = candidate.file
+        tags = resolved_wheel_file.wheel.tags
+        build_tag = resolved_wheel_file.wheel.build_tag
+        url: str = resolved_wheel_file.details["url"]
+        hash_: str = resolved_wheel_file.details["hashes"]["sha256"]
+        if upload_time := resolved_wheel_file.details.get("upload-time"):
+            upload_time = datetime.datetime.fromisoformat(upload_time)
+        size: int | None = resolved_wheel_file.details.get("size")
+        locked_wheel = WheelFile(tags, build_tag, url, hash_, upload_time, size)
+        # requirement
+        requirements = []
+        for req in candidate.file.metadata.requires_dist or []:
+            name = packaging.utils.canonicalize_name(req.name)
+            extras = frozenset(map(packaging.utils.canonicalize_name, req.extras))
+            version = req.specifier
+            marker = req.marker
+            # XXX feature
+            requirements.append(Requirement(name, extras, version, marker))
+        name = candidate.identifier[0]
+        version = candidate.file.version
+        groups = ["Default"]  # Hard-coded
+        index_url = f"https://pypi.org/simple/{name}"  # Hard-coded
+        direct = False  # Hard-coded
+        requires_python = candidate.file.metadata.requires_python
+        editable = False  # Hard-coded
+        yield PackageVersion(
+            name,
+            version,
+            groups,
+            index_url,
+            direct,
+            requires_python,
+            requirements,
+            editable,
+            [locked_wheel],
         )
-        package = PackageVersion(name, version)
-        package.description = metadata.summary
-        # Hard-coded
-        package.simple_repo_package_url = f"https://pypi.org/project/{name}/"
-        package.requires_python = str(metadata.requires_python)
-        package.dependencies = sorted(dep[0] for dep in dependencies[id_]["children"])
-        package.dependents = sorted(dep[0] for dep in dependencies[id_]["parents"])
-        package.files.append(wheel_file)
-
-        packages.append(package)
-
-    return packages
 
 
 def file_lock(platform, dependencies):
@@ -294,83 +324,46 @@ def file_lock(platform, dependencies):
     else:
         raise ValueError(f"Unknown platform: {platform}")
     tags = list(tags)
-    provider, resolution = resolve(dependencies, markers, tags)
-    dependencies = calc_dependencies(resolution)
-    packages = process_lock(provider, resolution, dependencies)
-    return tags, packages
+    _, resolution = resolve(dependencies, markers, tags)
+    return flatten_graph(resolution)
 
 
 def lock(context):
-    if not (dependencies := context.requirements):
-        with open("pyproject.toml", "rb") as file:
-            pyproject = tomllib.load(file)
-        dependencies = pyproject["project"]["dependencies"]
+    dependencies = context.requirements
 
     locks = {}
     for platform in context.platform or ["system"]:
-        tags, packages = file_lock(platform, dependencies)
-        top_tag = str(tags[0])
+        packages = file_lock(platform, dependencies)
         for package in packages:
-            package.files[0].lock.append(top_tag)
-        locks[top_tag] = tags, packages
-
-    # XXX ambiguity/subset, ignoring the same result (i.e. pure Python in all cases)
+            key = package.name, package.version
+            if key not in locks:
+                locks[key] = package
+            else:
+                for new_wheel in package.wheels:
+                    found = False
+                    for seen_wheel in locks[key].wheels:
+                        if new_wheel.tags == seen_wheel.tags:
+                            found = True
+                            break
+                    else:
+                        locks[key].wheels.append(new_wheel)
 
     buffer = io.StringIO()
 
     print("version = '1.0'", file=buffer)
     print("hash-algorithm = 'sha256'", file=buffer)
-    print(f"dependencies = {sorted(dependencies)!r}", file=buffer)
     print(file=buffer)
 
-    for top_tag, (tags, packages) in sorted(locks.items(), key=lambda item: item[0]):
-        print("[[file-locks]]", file=buffer)
-        wheel_tags = set()
-        for package in packages:
-            for file in package.files:
-                file_tags = packaging.utils.parse_wheel_filename(file.name)[3]
-                usable_tags = filter(tags.__contains__, file_tags)
-                unseen_tags = (tag for tag in usable_tags if tag not in wheel_tags)
-                try:
-                    wheel_tags.add(sorted(unseen_tags, key=tags.index, reverse=True)[0])
-                except IndexError:
-                    # No new tags to record.
-                    pass
-        sorted_tags = list(map(str, sorted(wheel_tags, key=tags.index)))
-        # Being a bit lazy with the name since it isn't critical.
-        print(f"name = {top_tag!r}", file=buffer)
-        print("marker-values = {}", file=buffer)
-        print(f"wheel-tags = {sorted_tags!r}", file=buffer)
-        print(file=buffer)
-
-    packages = {}
-    for _, platform_packages in locks.values():
-        for package in platform_packages:
-            key = package.name, package.version
-            if key not in packages:
-                packages[key] = package
-            else:
-                for file in package.files:
-                    for other_file in packages[key].files:
-                        if file.name == other_file.name:
-                            other_file.lock.extend(file.lock)
-                            break
-                    else:
-                        packages[key].files.extend(package.files)
-
-    seen_once = set()
-    seen_multiple = set()
-    for package in packages.values():
-        if package.name in seen_once:
-            seen_multiple.add(package.name)
-        seen_once.add((package.name, package.version))
+    print("[locker]", file=buffer)
+    print("name = 'mousebender'", file=buffer)
+    print("version = 'pep'", file=buffer)
+    print(f"run = {{ module = 'mousebender', args = {sys.argv[1:]!r} }}", file=buffer)
+    print(file=buffer)
 
     for package in sorted(
-        packages.values(),
-        key=lambda package: (package.name, packaging.version.Version(package.version)),
+        locks.values(),
+        key=lambda package: (package.name, package.version),
     ):
-        if package.name in seen_multiple:
-            package.multiple_entries = True
         print("[[packages]]", file=buffer)
         print(package.to_toml().strip(), file=buffer)
         print(file=buffer)
@@ -383,34 +376,8 @@ def lock(context):
 
 
 def find_packages(lock_file_contents):
-    markers = packaging.markers.default_environment()
-    tags = frozenset(map(str, packaging.tags.sys_tags()))
-
-    for lock_file_header in lock_file_contents["file-locks"]:
-        if not frozenset(lock_file_header.get("wheel-tags", [])).issubset(tags):
-            continue
-        for marker_name, marker_value in lock_file_header.get(
-            "marker-values", {}
-        ).items():
-            if not packaging.markers.Marker(
-                f"{marker_name}=='{marker_value}'"
-            ).evaluate(markers):
-                continue
-        break
-    else:
-        print("No lock entry found for the current environment 😢")
-        sys.exit(1)
-
-    lock_key = lock_file_header["name"]
-    packages = []
-    files = []
-    for package in lock_file_contents["packages"]:
-        for file in package["files"]:
-            if lock_key in file["lock"]:
-                packages.append(package)
-                files.append(file)
-
-    return lock_key, packages, files
+    # XXX install
+    raise NotImplementedError
 
 
 def install(context):
