@@ -33,6 +33,32 @@ class Requirement:
     marker: packaging.markers.Marker | None = None
     feature: str | None = None
 
+    @classmethod
+    def from_requirement(cls, requirement):
+        name = packaging.utils.canonicalize_name(requirement.name)
+        extras = frozenset(map(packaging.utils.canonicalize_name, requirement.extras))
+        version = requirement.specifier
+        feature = None
+        if requirement.marker:
+            # Hack to set 'feature'.
+            for index, req_marker in enumerate(requirement.marker._markers):
+                lhs = req_marker[0]
+                if isinstance(lhs, packaging._parser.Variable) and lhs.value == "extra":
+                    feature = req_marker[2].value
+                    del requirement.marker._markers[index]
+                    if (
+                        requirement.marker._markers
+                        and requirement.marker._markers[index - 1] == "and"
+                    ):
+                        del requirement.marker._markers[index - 1]
+                    break
+        marker = (
+            requirement.marker
+            if getattr(requirement.marker, "_markers", None)
+            else None
+        )
+        return cls(name, extras, version, marker, feature)
+
     def to_toml(self):
         parts = [f"name = {self.name!r}"]
         if self.extras:
@@ -281,28 +307,7 @@ def flatten_graph(resolution):
         # requirement
         requirements = []
         for req in candidate.file.metadata.requires_dist or []:
-            name = packaging.utils.canonicalize_name(req.name)
-            extras = frozenset(map(packaging.utils.canonicalize_name, req.extras))
-            version = req.specifier
-            feature = None
-            if req.marker:
-                # Hack to set 'feature'.
-                for index, req_marker in enumerate(req.marker._markers):
-                    lhs = req_marker[0]
-                    if (
-                        isinstance(lhs, packaging._parser.Variable)
-                        and lhs.value == "extra"
-                    ):
-                        feature = req_marker[2].value
-                        del req.marker._markers[index]
-                        if (
-                            req.marker._markers
-                            and req.marker._markers[index - 1] == "and"
-                        ):
-                            del req.marker._markers[index - 1]
-                        break
-            marker = req.marker if getattr(req.marker, "_markers", None) else None
-            requirements.append(Requirement(name, extras, version, marker, feature))
+            requirements.append(Requirement.from_requirement(req))
         name = candidate.identifier[0]
         version = candidate.file.version
         groups = ["Default"]  # Hard-coded
@@ -373,6 +378,15 @@ def lock(context):
     print("name = 'mousebender'", file=buffer)
     print("version = 'pep'", file=buffer)
     print(f"run = {{ module = 'mousebender', args = {sys.argv[1:]!r} }}", file=buffer)
+    print(file=buffer)
+
+    print("[[groups]]", file=buffer)
+    print("name = 'Default'", file=buffer)
+    print("requirements = [", file=buffer)
+    for dep in dependencies:
+        req = Requirement.from_requirement(packaging.requirements.Requirement(dep))
+        print(f"  {req.to_toml()},", file=buffer)
+    print("]", file=buffer)
     print(file=buffer)
 
     for package in sorted(
