@@ -1,55 +1,112 @@
 version = '1.0'
 hash-algorithm = 'sha256'
-dependencies = ['cattrs', 'numpy']
 
-[[file-locks]]
-name = 'cp312-cp312-manylinux_2_17_x86_64'
-marker-values = {}
-wheel-tags = ['cp312-cp312-manylinux_2_17_x86_64', 'py3-none-any']
+[locker]
+name = 'mousebender'
+version = 'pep'
+run = { module = 'mousebender', args = ['lock', '--platform', 'cpython3.12-manylinux2014-x64', '--platform', 'cpython3.12-windows-x64', 'cattrs', 'numpy'] }
 
-[[file-locks]]
-name = 'cp312-cp312-win_amd64'
-marker-values = {}
-wheel-tags = ['cp312-cp312-win_amd64', 'py3-none-any']
+[[groups]]
+name = 'Default'
+requirements = [
+  { name = 'cattrs' },
+  { name = 'numpy' },
+]
 
 [[packages]]
 name = 'attrs'
-version = '23.2.0'
-multiple-entries = false
-description = 'Classes Without Boilerplate'
-requires-python = '>=3.7'
-dependents = ['cattrs']
-dependencies = []
+version = '24.2.0'
+groups = ['Default']
+index_url = 'https://pypi.org/simple/attrs'
 direct = false
-files = [
-    {name = 'attrs-23.2.0-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/e0/44/827b2a91a5816512fcaf3cc4ebc465ccd5d598c45cefa6703fcf4a79018f/attrs-23.2.0-py3-none-any.whl', hash = '99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1'}
+requires_python = '>=3.7'
+dependencies = [
+  { name = 'importlib-metadata', marker = 'python_version < "3.8"' },
+  { name = 'cloudpickle', marker = 'platform_python_implementation == "CPython"', feature = 'benchmark' },
+  { name = 'hypothesis', feature = 'benchmark' },
+  { name = 'mypy', version = '>=1.11.1', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9"', feature = 'benchmark' },
+  { name = 'pympler', feature = 'benchmark' },
+  { name = 'pytest-codspeed', feature = 'benchmark' },
+  { name = 'pytest-mypy-plugins', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9" and python_version < "3.13"', feature = 'benchmark' },
+  { name = 'pytest-xdist', extras = ['psutil'], feature = 'benchmark' },
+  { name = 'pytest', version = '>=4.3.0', feature = 'benchmark' },
+  { name = 'cloudpickle', marker = 'platform_python_implementation == "CPython"', feature = 'cov' },
+  { name = 'coverage', extras = ['toml'], version = '>=5.3', feature = 'cov' },
+  { name = 'hypothesis', feature = 'cov' },
+  { name = 'mypy', version = '>=1.11.1', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9"', feature = 'cov' },
+  { name = 'pympler', feature = 'cov' },
+  { name = 'pytest-mypy-plugins', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9" and python_version < "3.13"', feature = 'cov' },
+  { name = 'pytest-xdist', extras = ['psutil'], feature = 'cov' },
+  { name = 'pytest', version = '>=4.3.0', feature = 'cov' },
+  { name = 'cloudpickle', marker = 'platform_python_implementation == "CPython"', feature = 'dev' },
+  { name = 'hypothesis', feature = 'dev' },
+  { name = 'mypy', version = '>=1.11.1', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9"', feature = 'dev' },
+  { name = 'pre-commit', feature = 'dev' },
+  { name = 'pympler', feature = 'dev' },
+  { name = 'pytest-mypy-plugins', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9" and python_version < "3.13"', feature = 'dev' },
+  { name = 'pytest-xdist', extras = ['psutil'], feature = 'dev' },
+  { name = 'pytest', version = '>=4.3.0', feature = 'dev' },
+  { name = 'cogapp', feature = 'docs' },
+  { name = 'furo', feature = 'docs' },
+  { name = 'myst-parser', feature = 'docs' },
+  { name = 'sphinx', feature = 'docs' },
+  { name = 'sphinx-notfound-page', feature = 'docs' },
+  { name = 'sphinxcontrib-towncrier', feature = 'docs' },
+  { name = 'towncrier', version = '<24.7', feature = 'docs' },
+  { name = 'cloudpickle', marker = 'platform_python_implementation == "CPython"', feature = 'tests' },
+  { name = 'hypothesis', feature = 'tests' },
+  { name = 'mypy', version = '>=1.11.1', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9"', feature = 'tests' },
+  { name = 'pympler', feature = 'tests' },
+  { name = 'pytest-mypy-plugins', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9" and python_version < "3.13"', feature = 'tests' },
+  { name = 'pytest-xdist', extras = ['psutil'], feature = 'tests' },
+  { name = 'pytest', version = '>=4.3.0', feature = 'tests' },
+  { name = 'mypy', version = '>=1.11.1', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9"', feature = 'tests-mypy' },
+  { name = 'pytest-mypy-plugins', marker = 'platform_python_implementation == "CPython" and python_version >= "3.9" and python_version < "3.13"', feature = 'tests-mypy' }
+]
+editable = false
+wheels = [
+  { tags = ['py3-none-any'], url = 'https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl', hash = '81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2', upload_time = 2024-08-06T14:37:36.958006+00:00, size = 63001 }
 ]
 
 [[packages]]
 name = 'cattrs'
-version = '23.2.3'
-multiple-entries = false
-description = 'Composable complex class support for attrs and dataclasses.'
-requires-python = '>=3.8'
-dependents = []
-dependencies = ['attrs']
+version = '24.1.2'
+groups = ['Default']
+index_url = 'https://pypi.org/simple/cattrs'
 direct = false
-files = [
-    {name = 'cattrs-23.2.3-py3-none-any.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64', 'cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b3/0d/cd4a4071c7f38385dc5ba91286723b4d1090b87815db48216212c6c6c30e/cattrs-23.2.3-py3-none-any.whl', hash = '0341994d94971052e9ee70662542699a3162ea1e0c62f7ce1b4a57f563685108'}
+requires_python = '>=3.8'
+dependencies = [
+  { name = 'attrs', version = '>=23.1.0' },
+  { name = 'exceptiongroup', version = '>=1.1.1', marker = 'python_version < "3.11"' },
+  { name = 'typing-extensions', version = '!=4.6.3,>=4.1.0', marker = 'python_version < "3.11"' },
+  { name = 'pymongo', version = '>=4.4.0', feature = 'bson' },
+  { name = 'cbor2', version = '>=5.4.6', feature = 'cbor2' },
+  { name = 'msgpack', version = '>=1.0.5', feature = 'msgpack' },
+  { name = 'msgspec', version = '>=0.18.5', marker = 'implementation_name == "cpython"', feature = 'msgspec' },
+  { name = 'orjson', version = '>=3.9.2', marker = 'implementation_name == "cpython"', feature = 'orjson' },
+  { name = 'pyyaml', version = '>=6.0', feature = 'pyyaml' },
+  { name = 'tomlkit', version = '>=0.11.8', feature = 'tomlkit' },
+  { name = 'ujson', version = '>=5.7.0', feature = 'ujson' }
+]
+editable = false
+wheels = [
+  { tags = ['py3-none-any'], url = 'https://files.pythonhosted.org/packages/c8/d5/867e75361fc45f6de75fe277dd085627a9db5ebb511a87f27dc1396b5351/cattrs-24.1.2-py3-none-any.whl', hash = '67c7495b760168d931a10233f979b28dc04daf853b30752246f4f8471c6d68d0', upload_time = 2024-09-22T14:58:34.812643+00:00, size = 66446 }
 ]
 
 [[packages]]
 name = 'numpy'
-version = '2.0.1'
-multiple-entries = false
-description = 'Fundamental package for array computing in Python'
-requires-python = '>=3.9'
-dependents = []
-dependencies = []
+version = '2.1.2'
+groups = ['Default']
+index_url = 'https://pypi.org/simple/numpy'
 direct = false
-files = [
-    {name = 'numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', lock = ['cp312-cp312-manylinux_2_17_x86_64'], origin = 'https://files.pythonhosted.org/packages/2c/f3/61eeef119beb37decb58e7cb29940f19a1464b8608f2cab8a8616aba75fd/numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a'},
-    {name = 'numpy-2.0.1-cp312-cp312-win_amd64.whl', lock = ['cp312-cp312-win_amd64'], origin = 'https://files.pythonhosted.org/packages/b5/59/f6ad30785a6578ad85ed9c2785f271b39c3e5b6412c66e810d2c60934c9f/numpy-2.0.1-cp312-cp312-win_amd64.whl', hash = 'bb2124fdc6e62baae159ebcfa368708867eb56806804d005860b6007388df171'}
+requires_python = '>=3.10'
+dependencies = [
+  
+]
+editable = false
+wheels = [
+  { tags = ['cp312-cp312-manylinux2014_x86_64', 'cp312-cp312-manylinux_2_17_x86_64'], url = 'https://files.pythonhosted.org/packages/9b/b4/e3c7e6fab0f77fff6194afa173d1f2342073d91b1d3b4b30b17c3fb4407a/numpy-2.1.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', hash = '6d95f286b8244b3649b477ac066c6906fbb2905f8ac19b170e2175d3d799f4df', upload_time = 2024-10-05T18:36:20.729642+00:00, size = 16041825 },
+  { tags = ['cp312-cp312-win_amd64'], url = 'https://files.pythonhosted.org/packages/4c/79/73735a6a5dad6059c085f240a4e74c9270feccd2bc66e4d31b5ca01d329c/numpy-2.1.2-cp312-cp312-win_amd64.whl', hash = '456e3b11cb79ac9946c822a56346ec80275eaf2950314b249b512896c0d2505e', upload_time = 2024-10-05T18:37:38.159022+00:00, size = 12568254 }
 ]
 
 
