@@ -12,6 +12,7 @@ import packaging.markers
 import packaging.metadata
 import packaging.requirements
 import packaging.specifiers
+import packaging.tags
 import packaging.utils
 import packaging.version
 import resolvelib.resolvers
@@ -20,6 +21,8 @@ import trio
 
 import mousebender.resolve
 import mousebender.simple
+
+GROUP_NAME = "Default"
 
 
 @dataclasses.dataclass
@@ -382,7 +385,7 @@ def lock(context):
     print(file=buffer)
 
     print("[[groups]]", file=buffer)
-    print("name = 'Default'", file=buffer)
+    print(f"name = '{GROUP_NAME}'", file=buffer)
     print("requirements = [", file=buffer)
     for dep in dependencies:
         req = Requirement.from_requirement(packaging.requirements.Requirement(dep))
@@ -409,11 +412,7 @@ def install(context):
     with context.lock_file.open("rb") as file:
         lock_file_contents = tomllib.load(file)
 
-    # XXX selected groups
-
-    packages = choose_packages(lock_file_contents, selected_groups)
-
-    # XXX
+    return install_packages(lock_file_contents)
 
 
 class UnsatisfiableError(Exception):
@@ -422,6 +421,27 @@ class UnsatisfiableError(Exception):
 
 class AmbiguityError(Exception):
     """Raised when a requirement has multiple solutions."""
+
+
+def install_packages(lock_file_contents):
+    # Hard-coded out of laziness.
+    packages = choose_packages(lock_file_contents, (GROUP_NAME, frozenset()))
+
+    for package in packages:
+        tags = list(packaging.tags.sys_tags())
+        for tag in tags:  # Prioritize by tag order.
+            tag_str = str(tag)
+            for wheel in package["wheels"]:
+                if tag_str in wheel["tags"]:
+                    break
+            else:
+                continue
+            break
+        else:
+            raise UnsatisfiableError(
+                f"No wheel for {package['name']} {package['version']}"
+            )
+        print(f"Installing {package['name']} {package['version']} ({tag_str})")
 
 
 def choose_packages(lock_file_data, *selected_groups):
@@ -434,7 +454,7 @@ def choose_packages(lock_file_data, *selected_groups):
     available_packages = {}  # The packages in the selected groups.
     for pkg in lock_file_data["packages"]:
         if frozenset(pkg["groups"]) & group_names:
-            available_packages.set_default(pkg["name"], []).append(pkg)
+            available_packages.setdefault(pkg["name"], []).append(pkg)
     selected_packages = {}  # The package versions that have been selected.
     handled_extras = {}  # The extras that have been handled.
     requirements = []  # A stack of requirements to satisfy.
@@ -534,7 +554,12 @@ def dependencies(package, requirement):
 
     The extras from the requirement will extend the base requirements as needed.
     """
-    ...  # XXX Gather non-extra dependencies, then add in appropriate extras
+    applicable_deps = []
+    extras = frozenset(requirement.get("extras", []))
+    for dep in package["dependencies"]:
+        if "feature" not in dep or dep["feature"] in extras:
+            applicable_deps.append(dep)
+    return applicable_deps
 
 
 def main(args=sys.argv[1:]):
