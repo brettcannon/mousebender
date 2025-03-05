@@ -364,7 +364,9 @@ def lock(context):
         print(package.to_toml().strip(), file=buffer)
         print(file=buffer)
 
-    # tool
+    print("[tool.mousebender]", file=buffer)
+    print(f"command = {sys.argv!r}", file=buffer)
+    print(f"run-on = {datetime.datetime.now().isoformat()}", file=buffer)
 
     if context.lock_file:
         with context.lock_file.open("w") as file:
