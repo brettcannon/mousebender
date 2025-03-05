@@ -6,6 +6,7 @@ import io
 import operator
 import pathlib
 import sys
+import tomllib
 
 import httpx
 import packaging.markers
@@ -16,90 +17,33 @@ import packaging.tags
 import packaging.utils
 import packaging.version
 import resolvelib.resolvers
-import tomllib
 import trio
 
 import mousebender.resolve
 import mousebender.simple
-
-GROUP_NAME = "Default"
-
-
-@dataclasses.dataclass
-class Requirement:
-    """[[groups.requirements]], [[packages.dependencies]]"""
-
-    name: packaging.utils.NormalizedName
-    extras: frozenset[packaging.utils.NormalizedName] = dataclasses.field(
-        default_factory=frozenset
-    )
-    version: packaging.specifiers.SpecifierSet | None = None
-    marker: packaging.markers.Marker | None = None
-    feature: str | None = None
-
-    @classmethod
-    def from_requirement(cls, requirement):
-        name = packaging.utils.canonicalize_name(requirement.name)
-        extras = frozenset(map(packaging.utils.canonicalize_name, requirement.extras))
-        version = requirement.specifier
-        feature = None
-        if requirement.marker:
-            # Hack to set 'feature'.
-            for index, req_marker in enumerate(requirement.marker._markers):
-                lhs = req_marker[0]
-                if isinstance(lhs, packaging._parser.Variable) and lhs.value == "extra":
-                    feature = req_marker[2].value
-                    del requirement.marker._markers[index]
-                    if (
-                        requirement.marker._markers
-                        and requirement.marker._markers[index - 1] == "and"
-                    ):
-                        del requirement.marker._markers[index - 1]
-                    break
-        marker = (
-            requirement.marker
-            if getattr(requirement.marker, "_markers", None)
-            else None
-        )
-        return cls(name, extras, version, marker, feature)
-
-    def to_toml(self):
-        parts = [f"name = {self.name!r}"]
-        if self.extras:
-            parts.append(f"extras = {list(self.extras)!r}")
-        if self.version:
-            parts.append(f"version = {str(self.version)!r}")
-        if self.marker:
-            parts.append(f"marker = {str(self.marker)!r}")
-        if self.feature:
-            parts.append(f"feature = {self.feature!r}")
-        return f"{{ {", ".join(parts)} }}"
 
 
 @dataclasses.dataclass
 class WheelFile:
     """[[packages.wheels]]"""
 
-    tags: frozenset[str]
-    build: str
+    name: str
     url: str
-    hash: str
     upload_time: datetime.datetime | None = None
+    # path
     size: int | None = None
+    hashes: dict[str, str] = dataclasses.field(default_factory=dict)
 
     def to_toml(self):
-        tags = list(map(str, self.tags))
-        parts = [f"tags = {tags!r}"]
-        if self.build:
-            parts.append(f"build = {self.build!r}")
-        if self.url:
-            parts.append(f"url = {self.url!r}")
-        parts.append(f"hash = {self.hash!r}")
+        parts = []
+        parts.append(f"name = {self.name!r}")
         if self.upload_time:
-            parts.append(f"upload_time = {self.upload_time.isoformat()}")
+            parts.append(f"upload-time = {self.upload_time.isoformat()}")
+        parts.append(f"url = {self.url!r}")
         if self.size:
             parts.append(f"size = {self.size!r}")
-        return f"{{ {", ".join(parts)} }}"
+        parts.append(f"hashes = {self.hashes!r}")
+        return "".join(["{", ", ".join(parts), "}"])
 
 
 @dataclasses.dataclass
@@ -108,30 +52,43 @@ class PackageVersion:
 
     name: str
     version: packaging.version.Version
-    groups: list[str] = dataclasses.field(default_factory=list)
-    index_url: str = ""
-    direct: bool = False
+    marker: packaging.markers.Marker | None = None
     requires_python: packaging.specifiers.SpecifierSet | None = None
-    dependencies: list[Requirement] = dataclasses.field(default_factory=list)
-    editable: bool = False
+    dependencies: list[packaging.requirements.Requirement] = dataclasses.field(
+        default_factory=list
+    )
+    # vcs
+    # directory
+    # archive
+    index: str | None = None
+    # XXX sdist
     wheels: list[WheelFile] = dataclasses.field(default_factory=list)
+    # XXX attestation-identities
+    tool: dict = dataclasses.field(default_factory=dict)
 
     def to_toml(self):
-        return f"""
-name = {self.name!r}
-version = {str(self.version)!r}
-groups = {list(self.groups)!r}
-index_url = {self.index_url!r}
-direct = {str(self.direct).lower()}
-requires_python = {str(self.requires_python)!r}
-dependencies = [
-  {",\n  ".join(r.to_toml() for r in self.dependencies)}
-]
-editable = {str(self.editable).lower()}
-wheels = [
-  {",\n  ".join(w.to_toml() for w in self.wheels)}
-]
-"""
+        parts = []
+        parts.append(f"name = {self.name!r}")
+        parts.append(f"version = {str(self.version)!r}")
+        if self.marker:
+            parts.append(f"marker = {str(self.marker)!r}")
+        if self.requires_python:
+            parts.append(f"requires-python = {str(self.requires_python)!r}")
+        if self.dependencies:
+            deps = ["dependencies = ["]
+            for dep in self.dependencies:
+                deps.append(f"    {{name = {dep.name!r}}},")
+            deps.append("]")
+            parts.append("\n".join(deps))
+        if self.wheels:
+            wheels = ["wheels = ["]
+            for wheel in self.wheels:
+                wheels.append(f"  {wheel.to_toml()},")
+            wheels.append("]")
+            parts.append("\n".join(wheels))
+        if self.tool:
+            raise NotImplementedError("[tool] table not implemented")
+        return "\n".join(parts)
 
 
 async def get_metadata_for_file(client, file):
@@ -300,35 +257,32 @@ def flatten_graph(resolution):
     for candidate in resolution.mapping.values():
         # candidate = resolution.mapping[id_]
         resolved_wheel_file = candidate.file
-        tags = resolved_wheel_file.wheel.tags
-        build_tag = resolved_wheel_file.wheel.build_tag
+        name = resolved_wheel_file.details["filename"]
         url: str = resolved_wheel_file.details["url"]
-        hash_: str = resolved_wheel_file.details["hashes"]["sha256"]
+        hashes = resolved_wheel_file.details["hashes"]
         if upload_time := resolved_wheel_file.details.get("upload-time"):
             upload_time = datetime.datetime.fromisoformat(upload_time)
         size: int | None = resolved_wheel_file.details.get("size")
-        locked_wheel = WheelFile(tags, build_tag, url, hash_, upload_time, size)
-        # requirement
+        locked_wheel = WheelFile(
+            name, url, upload_time=upload_time, size=size, hashes=hashes
+        )
         requirements = []
         for req in candidate.file.metadata.requires_dist or []:
-            requirements.append(Requirement.from_requirement(req))
+            if not req.marker:  # XXX Hack
+                requirements.append(req)
         name = candidate.identifier[0]
         version = candidate.file.version
-        groups = ["Default"]  # Hard-coded
-        index_url = f"https://pypi.org/simple/{name}"  # Hard-coded
-        direct = False  # Hard-coded
         requires_python = candidate.file.metadata.requires_python
-        editable = False  # Hard-coded
+        index = f"https://pypi.org/simple/{name}"  # Hard-coded
         yield PackageVersion(
             name,
             version,
-            groups,
-            index_url,
-            direct,
-            requires_python,
-            requirements,
-            editable,
-            [locked_wheel],
+            # XXX markers
+            index=index,
+            requires_python=requires_python,
+            dependencies=requirements,
+            wheels=[locked_wheel],
+            # XXX attestation_identities
         )
 
 
@@ -374,23 +328,12 @@ def lock(context):
 
     buffer = io.StringIO()
 
-    print("version = '1.0'", file=buffer)
-    print("hash-algorithm = 'sha256'", file=buffer)
-    print(file=buffer)
-
-    print("[locker]", file=buffer)
-    print("name = 'mousebender'", file=buffer)
-    print("version = 'pep'", file=buffer)
-    print(f"run = {{ module = 'mousebender', args = {sys.argv[1:]!r} }}", file=buffer)
-    print(file=buffer)
-
-    print("[[groups]]", file=buffer)
-    print(f"name = '{GROUP_NAME}'", file=buffer)
-    print("requirements = [", file=buffer)
-    for dep in dependencies:
-        req = Requirement.from_requirement(packaging.requirements.Requirement(dep))
-        print(f"  {req.to_toml()},", file=buffer)
-    print("]", file=buffer)
+    print("lock-version = '1.0'", file=buffer)
+    # XXX environments
+    # XXX requires-python
+    # XXX extras
+    # XXX dependency-groups
+    print("created-by = 'mousebender'", file=buffer)
     print(file=buffer)
 
     for package in sorted(
@@ -400,6 +343,8 @@ def lock(context):
         print("[[packages]]", file=buffer)
         print(package.to_toml().strip(), file=buffer)
         print(file=buffer)
+
+    # tool
 
     if context.lock_file:
         with context.lock_file.open("w") as file:
@@ -582,16 +527,19 @@ def main(args=sys.argv[1:]):
             "cpython3.10-manylinux2014-x64",
             "cpython3.11-manylinux2014-x64",
             "cpython3.12-manylinux2014-x64",
+            "cpython3.13-manylinux2014-x64",
             "cpython3.8-windows-x64",
             "cpython3.9-windows-x64",
             "cpython3.10-windows-x64",
             "cpython3.11-windows-x64",
             "cpython3.12-windows-x64",
+            "cpython3.13-windows-x64",
             "python3.8",
             "python3.9",
             "python3.10",
             "python3.11",
             "python3.12",
+            "python3.13",
         ],
         default=[],
         help="The platform to lock for",
@@ -616,3 +564,4 @@ if __name__ == "__main__":
     main()
     # py . lock numpy mousebender hatchling requests pydantic
     # trio
+    # py . lock --platform cpython3.12-windows-x64 --platform cpython3.12-manylinux2014-x64 cattrs numpy
