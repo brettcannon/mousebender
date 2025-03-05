@@ -42,7 +42,9 @@ class WheelFile:
         parts.append(f"url = {self.url!r}")
         if self.size:
             parts.append(f"size = {self.size!r}")
-        parts.append(f"hashes = {self.hashes!r}")
+        parts.append(
+            f"hashes = {{{', '.join([f'{k} = {v!r}' for k, v in self.hashes.items()])}}}"
+        )
         return "".join(["{", ", ".join(parts), "}"])
 
 
@@ -286,7 +288,7 @@ def flatten_graph(resolution):
         )
 
 
-def file_lock(platform, dependencies):
+def platform_details(platform):
     if platform == "system":
         markers, tags = system_details()
     elif platform.startswith("python"):
@@ -303,7 +305,11 @@ def file_lock(platform, dependencies):
         )
     else:
         raise ValueError(f"Unknown platform: {platform}")
-    tags = list(tags)
+
+    return markers, list(tags)
+
+
+def file_lock(markers, tags, dependencies):
     _, resolution = resolve(dependencies, markers, tags)
     return flatten_graph(resolution)
 
@@ -312,8 +318,11 @@ def lock(context):
     dependencies = context.requirements
 
     locks = {}
+    environments = []
+    versions = []
     for platform in context.platform or ["system"]:
-        packages = file_lock(platform, dependencies)
+        markers, tags = platform_details(platform)
+        packages = file_lock(markers, tags, dependencies)
         for package in packages:
             key = package.name, package.version
             if key not in locks:
@@ -321,16 +330,28 @@ def lock(context):
             else:
                 for new_wheel in package.wheels:
                     for seen_wheel in locks[key].wheels:
-                        if new_wheel.tags == seen_wheel.tags:
+                        if new_wheel.name == seen_wheel.name:
                             break
-                    else:
-                        locks[key].wheels.append(new_wheel)
+                        else:
+                            locks[key].wheels.append(new_wheel)
+        # XXX Hacks upon hacks ...
+        first_tag = tags[0]
+        interpreter = first_tag.interpreter
+        minor_version = int(interpreter.removeprefix("cp3"))
+        versions.append((3, minor_version))
+        platform = first_tag.platform
+        if "manylinux" in platform:
+            environments.append("sys_platform == 'linux'")
+        elif "win" in platform:
+            environments.append("sys_platform == 'win32'")
 
     buffer = io.StringIO()
 
     print("lock-version = '1.0'", file=buffer)
-    # XXX environments
-    # XXX requires-python
+    if environments:
+        print(f"""environments = ["{'", "'.join(environments)}"]""", file=buffer)
+    versions.sort(reverse=True)
+    print(f"""requires-python = '==3.{versions[0][1]}'""", file=buffer)
     # XXX extras
     # XXX dependency-groups
     print("created-by = 'mousebender'", file=buffer)
