@@ -9,7 +9,7 @@ All sessions prefixed with `check_` are non-destructive.
 # ///
 import nox  # type: ignore[import]
 
-python_versions = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python_versions = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
 
 @nox.session(python=python_versions)
