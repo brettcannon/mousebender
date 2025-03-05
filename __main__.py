@@ -410,7 +410,29 @@ def install_packages(lock_file_contents):
     for package in lock_file_contents["packages"]:
         if marker := package.get("marker"):
             if not packaging.markers.Marker(marker).evaluate():
+                raise ValueError("This environment is not supported by this lock file")
+
+    install = []
+    tags = list(packaging.tags.sys_tags())
+    for package in lock_file_contents["packages"]:
+        if marker := package.get("marker"):
+            if not packaging.markers.Marker(marker).evaluate():
                 continue
+        if requires_python := package.get("requires-python"):
+            if python_supported(requires_python):
+                raise ValueError(f"Python version not supported for {package['name']}")
+        # XXX vcs
+        # XXX directory
+        # XXX archive
+        # XXX sdist
+        wheel_tags = {}
+        for wheel in package.get("wheels", []):
+            for wheel_tag in packaging.utils.parse_wheel_filename(wheel["name"])[-1]:
+                wheel_tags[wheel_tag] = wheel
+        for tag in tags:
+            if wheel := wheel_tags.get(tag):
+                install.append(wheel)
+                break
         if requires_python := package.get("requires-python"):
             if python_supported(requires_python):
                 raise ValueError(f"Python version not supported for {package['name']}")
