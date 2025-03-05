@@ -6,10 +6,11 @@ responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
 This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
-:pep:`691`, :pep:`700`, and :pep:`714` of the
+:pep:`691`, :pep:`700`, :pep:`714`, and :pep:`740` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
 """
+
 from __future__ import annotations
 
 import html
@@ -70,6 +71,7 @@ class UnsupportedMIMEType(Exception):
 
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 _Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
+_Meta_1_3 = TypedDict("_Meta_1_3", {"api-version": Literal["1.3"]})
 
 
 class ProjectIndex_1_0(TypedDict):
@@ -86,7 +88,14 @@ class ProjectIndex_1_1(TypedDict):
     projects: List[Dict[Literal["name"], str]]
 
 
-ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1]
+class ProjectIndex_1_3(TypedDict):
+    """A :class:`~typing.TypedDict` for a project index (:pep:`740`)."""
+
+    meta: _Meta_1_3
+    projects: List[Dict[Literal["name"], str]]
+
+
+ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1, ProjectIndex_1_3]
 
 
 _HashesDict: TypeAlias = Dict[str, str]
@@ -123,7 +132,7 @@ _OptionalProjectFileDetails_1_1 = TypedDict(
         # PEP 700
         "upload-time": str,
         # PEP 714
-        "core-metadata": Union[bool, _HashesDict],  # PEP 714
+        "core-metadata": Union[bool, _HashesDict],
     },
     total=False,
 )
@@ -139,7 +148,37 @@ class ProjectFileDetails_1_1(_OptionalProjectFileDetails_1_1):
     size: int
 
 
-ProjectFileDetails: TypeAlias = Union[ProjectFileDetails_1_0, ProjectFileDetails_1_1]
+_OptionalProjectFileDetails_1_3 = TypedDict(
+    "_OptionalProjectFileDetails_1_3",
+    {
+        "requires-python": str,
+        "dist-info-metadata": Union[bool, _HashesDict],  # Deprecated by PEP 714
+        "gpg-sig": bool,
+        "yanked": Union[bool, str],
+        # PEP 700
+        "upload-time": str,
+        # PEP 714
+        "core-metadata": Union[bool, _HashesDict],
+        # PEP 740
+        "provenance": str,
+    },
+    total=False,
+)
+
+
+class ProjectFileDetails_1_3(_OptionalProjectFileDetails_1_3):
+    """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_3`."""
+
+    filename: str
+    url: str
+    hashes: _HashesDict
+    # PEP 700
+    size: int
+
+
+ProjectFileDetails: TypeAlias = Union[
+    ProjectFileDetails_1_0, ProjectFileDetails_1_1, ProjectFileDetails_1_3
+]
 
 
 class ProjectDetails_1_0(TypedDict):
@@ -160,7 +199,19 @@ class ProjectDetails_1_1(TypedDict):
     versions: List[str]
 
 
-ProjectDetails: TypeAlias = Union[ProjectDetails_1_0, ProjectDetails_1_1]
+class ProjectDetails_1_3(TypedDict):
+    """A :class:`~typing.TypedDict` for a project details response (:pep:`740`)."""
+
+    meta: _Meta_1_3
+    name: packaging.utils.NormalizedName
+    files: list[ProjectFileDetails_1_3]
+    # PEP 700
+    versions: List[str]
+
+
+ProjectDetails: TypeAlias = Union[
+    ProjectDetails_1_0, ProjectDetails_1_1, ProjectDetails_1_3
+]
 
 
 def _check_version(tag: str, attrs: Dict[str, Optional[str]]) -> None:
@@ -254,8 +305,8 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
         # link. This exposes the Requires-Python metadata field ...
         # In the attribute value, < and > have to be HTML encoded as &lt; and
         # &gt;, respectively.
-        if "data-requires-python" in attrs and attrs["data-requires-python"]:
-            requires_python_data = html.unescape(attrs["data-requires-python"])
+        if requires_python := attrs.get("data-requires-python"):
+            requires_python_data = html.unescape(requires_python)
             args["requires-python"] = requires_python_data
         # PEP 503:
         # A repository MAY include a data-gpg-sig attribute on a file link with

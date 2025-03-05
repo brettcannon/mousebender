@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "mousebender"
-version = "2023.2"
+version = "2025.0"
 authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
@@ -54,11 +54,11 @@ report.fail_under = 100
 [tool.isort]
 profile = "black"
 
-[tool.ruff]
+[tool.ruff.lint]
 select = ["E", "F", "W", "D", "B", "A", "ANN", "RUF", "I"]
-ignore = ["E501", "D203", "D213", "ANN101"]
+ignore = ["E501", "D203", "D213"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "ANN"]
 "noxfile.py" = ["ANN", "A001"]
 "docs/conf.py" = ["D100"]

@@ -3,9 +3,13 @@
 All sessions prefixed with `check_` are non-destructive.
 
 """
+
+# /// script
+# dependencies = ["nox"]
+# ///
 import nox  # type: ignore[import]
 
-python_versions = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python_versions = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
 
 @nox.session(python=python_versions)
@@ -51,7 +55,7 @@ def check_format(session):
 def check_code(session):
     """Lint the code."""
     session.install("ruff>=0.0.132")
-    session.run("ruff", "mousebender", "tests")
+    session.run("ruff", "check", "mousebender", "tests")
 
 
 @nox.session
@@ -66,3 +70,7 @@ def build(session):
     """Build the wheel and sdist."""
     session.install("flit")
     session.run("flit", "build")
+
+
+if __name__ == "__main__":
+    nox.main()

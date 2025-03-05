@@ -1,4 +1,5 @@
 """Tests for mousebender.simple."""
+
 import json
 import warnings
 from typing import Dict, Union
