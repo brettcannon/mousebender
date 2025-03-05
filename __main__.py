@@ -3,7 +3,6 @@ import argparse
 import dataclasses
 import datetime
 import io
-import operator
 import pathlib
 import sys
 import tomllib
@@ -389,143 +388,49 @@ class AmbiguityError(Exception):
     """Raised when a requirement has multiple solutions."""
 
 
+def python_supported(requires_python):
+    version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    return version not in packaging.specifiers.SpecifierSet(requires_python)
+
+
 def install_packages(lock_file_contents):
-    # Hard-coded out of laziness.
-    packages = choose_packages(lock_file_contents, (GROUP_NAME, frozenset()))
-
-    for package in packages:
-        tags = list(packaging.tags.sys_tags())
-        for tag in tags:  # Prioritize by tag order.
-            tag_str = str(tag)
-            for wheel in package["wheels"]:
-                if tag_str in wheel["tags"]:
-                    break
-            else:
-                continue
-            break
+    assert lock_file_contents["lock-version"] == "1.0"
+    if requires_python := lock_file_contents.get("requires-python"):
+        if python_supported(requires_python):
+            raise ValueError(f"Python version not supported by this lock file")
+    if environments := lock_file_contents.get("environments"):
+        for marker in environments:
+            if packaging.markers.Marker(marker).evaluate():
+                break
         else:
-            raise UnsatisfiableError(
-                f"No wheel for {package['name']} {package['version']}"
-            )
-        print(f"Installing {package['name']} {package['version']} ({tag_str})")
+            raise ValueError("This environment is not supported by this lock file")
 
-
-def choose_packages(lock_file_data, *selected_groups):
-    """Select the package versions that should be installed based on the requested groups.
-
-    'selected_groups' is a sequence of two-item tuples, representing a group name and
-    optionally any requested extras if the group is a project.
-    """
-    group_names = frozenset(operator.itemgetter(0)(group) for group in selected_groups)
-    available_packages = {}  # The packages in the selected groups.
-    for pkg in lock_file_data["packages"]:
-        if frozenset(pkg["groups"]) & group_names:
-            available_packages.setdefault(pkg["name"], []).append(pkg)
-    selected_packages = {}  # The package versions that have been selected.
-    handled_extras = {}  # The extras that have been handled.
-    requirements = []  # A stack of requirements to satisfy.
-
-    # First, get our starting list of requirements.
-    for group in selected_groups:
-        requirements.extend(gather_requirements(lock_file_data, group))
-
-    # Next, go through the requirements and try to find a **single** package version
-    # that satisfies each requirement.
-    while requirements:
-        req = requirements.pop()
-        # Ignore requirements whose markers disqualify it.
-        if not applies_to_env(req):
-            continue
-        name = req["name"]
-        if pkg := selected_packages.get(name):
-            # Safety check that the cross-section of groups doesn't cause issues.
-            # It somewhat assumes the locker didn't mess up such that there would be
-            # ambiguity by what package version was initially selected.
-            if not version_satisfies(req, pkg):
-                raise UnsatisfiableError(
-                    f"requirement {req!r} not satisfied by "
-                    f"{selected_packages[req['name']]!r}"
-                )
-            if "extras" not in req:
+    install = []
+    tags = list(packaging.tags.sys_tags())
+    for package in lock_file_contents["packages"]:
+        if marker := package.get("marker"):
+            if not packaging.markers.Marker(marker).evaluate():
                 continue
-            needed_extras = req["extras"]
-            if not (extras := handled_extras.set_default(name, set())).difference(
-                needed_extras
-            ):
-                continue
-            # This isn't optimal as we may tread over the same extras multiple times,
-            # but eventually the maximum set of extras for the package will be handled
-            # and thus the above guard will short-circuit adding any more requirements.
-            extras.update(needed_extras)
+        if requires_python := package.get("requires-python"):
+            if python_supported(requires_python):
+                raise ValueError(f"Python version not supported for {package['name']}")
+        # XXX vcs
+        # XXX directory
+        # XXX archive
+        # XXX sdist
+        wheel_tags = {}
+        for wheel in package.get("wheels", []):
+            for wheel_tag in packaging.utils.parse_wheel_filename(wheel["name"])[-1]:
+                wheel_tags[wheel_tag] = wheel
+        for tag in tags:
+            if wheel := wheel_tags.get(tag):
+                install.append(wheel)
+                break
         else:
-            # Raises UnsatisfiableError or AmbiguityError if no suitable, single package
-            # version is found.
-            pkg = compatible_package_version(req, available_packages[req["name"]])
-            selected_packages[name] = pkg
-        requirements.extend(dependencies(pkg, req))
+            raise UnsatisfiableError(f"No wheel for {package['name']}")
 
-    return selected_packages.values()
-
-
-def gather_requirements(locked_file_data, group):
-    """Return a collection of all requirements for a group."""
-    # Hard-coded to support `groups.requirements` out of laziness.
-    group_name, _extras = group
-    for group in locked_file_data["groups"]:
-        if group["name"] == group_name:
-            return group["requirements"]
-    else:
-        raise ValueError(f"Group {group_name!r} not found in lock file")
-
-
-def applies_to_env(requirement):
-    """Check if the requirement applies to the current environment."""
-    try:
-        markers = requirement["marker"]
-    except KeyError:
-        return True
-    else:
-        return packaging.markers.Marker(markers).evaluate()
-
-
-def version_satisfies(requirement, package):
-    """Check if the package version satisfies the requirement."""
-    try:
-        raw_specifier = requirement["version"]
-    except KeyError:
-        return True
-    else:
-        specifier = packaging.specifiers.SpecifierSet(raw_specifier)
-        return specifier.contains(package["version"], prereleases=True)
-
-
-def compatible_package_version(requirement, available_packages):
-    """Return the package version that satisfies the requirement.
-
-    If no package version can satisfy the requirement, raise UnsatisfiableError. If
-    multiple package versions can satisfy the requirement, raise AmbiguityError.
-    """
-    possible_packages = [
-        pkg for pkg in available_packages if version_satisfies(requirement, pkg)
-    ]
-    if not possible_packages:
-        raise UnsatisfiableError(f"No package version satisfies {requirement!r}")
-    elif len(possible_packages) > 1:
-        raise AmbiguityError(f"Multiple package versions satisfy {requirement!r}")
-    return possible_packages[0]
-
-
-def dependencies(package, requirement):
-    """Return the dependencies of the package.
-
-    The extras from the requirement will extend the base requirements as needed.
-    """
-    applicable_deps = []
-    extras = frozenset(requirement.get("extras", []))
-    for dep in package["dependencies"]:
-        if "feature" not in dep or dep["feature"] in extras:
-            applicable_deps.append(dep)
-    return applicable_deps
+    for file in install:
+        print(file["name"])
 
 
 def main(args=sys.argv[1:]):
