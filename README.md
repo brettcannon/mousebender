@@ -11,7 +11,7 @@ Produce/consume dependency lock files for Python
 
 This project hopes to (eventually) provide a way to create reproducible installations for a virtual environment from a lock file -- or a version-pinned dependency list if "lock file" means `flock` to you -- derived from a `pyproject.toml` file. That will require defining a lock file format for wheel files as well as being able to perform installations based on that lock file. The ultimate goal is for that lock file format to become a standard (see [PEP 665](https://peps.python.org/pep-0665/) which was an initial attempt at this).
 
-Or put another way, this project wants to work towards a standard for what [pip-tools](https://pypi.org/project/pip-tools/) and [pip requirements files](https://pip.pypa.io/en/stable/reference/requirements-file-format/)
+Or put another way, this project wants to work towards a standard for what [pip-tools](https://pypi.org/project/pip-tools/) and [pip requirements files](https://pip.pypa.io/en/stable/reference/requirements-file-format/) do.
 
 To achieve this goal, this project will need to be able to:
 
