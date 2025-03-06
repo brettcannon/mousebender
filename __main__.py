@@ -64,7 +64,7 @@ class PackageVersion:
     index: str | None = None
     # XXX sdist
     wheels: list[WheelFile] = dataclasses.field(default_factory=list)
-    # XXX attestation-identities
+    attestation_identities: list[dict] = dataclasses.field(default_factory=list)
     tool: dict = dataclasses.field(default_factory=dict)
 
     def to_toml(self):
@@ -87,6 +87,11 @@ class PackageVersion:
                 wheels.append(f"  {wheel.to_toml()},")
             wheels.append("]")
             parts.append("\n".join(wheels))
+        if self.attestation_identities:
+            for publisher in self.attestation_identities:
+                parts.append("[[packages.attestation-identities]]")
+                for key, value in sorted(publisher.items()):
+                    parts.append(f"{key} = {value!r}")
         if self.tool:
             raise NotImplementedError("[tool] table not implemented")
         return "\n".join(parts)
@@ -253,7 +258,7 @@ def resolve(dependencies, markers, tags):
 
 
 def flatten_graph(resolution):
-    """Take the dependency graph and return the collection of nodes/packages."""
+    """Take the dependency graph and return the collection of packages."""
     # for id_ in resolution.graph.iter_children(None):
     for candidate in resolution.mapping.values():
         # candidate = resolution.mapping[id_]
@@ -274,7 +279,12 @@ def flatten_graph(resolution):
         name = candidate.identifier[0]
         version = candidate.file.version
         requires_python = candidate.file.metadata.requires_python
-        index = f"https://pypi.org/simple/{name}"  # Hard-coded
+        index = f"https://pypi.org/simple/{name}"  # Hack; hard-coded.
+        attestation_identities = []
+        if provenance_url := resolved_wheel_file.details.get("provenance"):
+            provenance_data = httpx.get(provenance_url).json()
+            for bundle in provenance_data["attestation_bundles"]:
+                attestation_identities.append(bundle["publisher"])
         yield PackageVersion(
             name,
             version,
@@ -283,7 +293,7 @@ def flatten_graph(resolution):
             requires_python=requires_python,
             dependencies=requirements,
             wheels=[locked_wheel],
-            # XXX attestation_identities
+            attestation_identities=attestation_identities,
         )
 
 
@@ -333,6 +343,9 @@ def lock(context):
                             break
                         else:
                             locks[key].wheels.append(new_wheel)
+                for publisher in package.attestation_identities:
+                    if publisher not in locks[key].attestation_identities:
+                        locks[key].attestation_identities.append(publisher)
         # XXX Hacks upon hacks ...
         first_tag = tags[0]
         interpreter = first_tag.interpreter
