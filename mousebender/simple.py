@@ -72,16 +72,22 @@ class UnsupportedMIMEType(Exception):
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 _Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
 _Meta_1_3 = TypedDict("_Meta_1_3", {"api-version": Literal["1.3"]})
-_Meta_1_4 = TypedDict(
-    "_Meta_1_4",
+_Meta_1_4 = TypedDict("_Meta_1_4", {"api-version": Literal["1.4"]})
+
+# PEP 792: Project status markers
+ProjectStatus = Literal["active", "archived", "deprecated", "suspended", "quarantined", "reserved"]
+
+_OptionalMeta_1_4 = TypedDict(
+    "_OptionalMeta_1_4",
     {
-        "api-version": Literal["1.4"],
-        # PEP 792
-        "project-status": str,
+        "project-status": ProjectStatus,
         "project-status-reason": str,
     },
     total=False,
 )
+
+class Meta_1_4(_Meta_1_4, _OptionalMeta_1_4):
+    """Meta information for API version 1.4 with optional PEP 792 status markers."""
 
 
 class ProjectIndex_1_0(TypedDict):
@@ -233,7 +239,7 @@ class ProjectDetails_1_3(TypedDict):
 class ProjectDetails_1_4(TypedDict):
     """A :class:`~typing.TypedDict` for a project details response (:pep:`792`)."""
 
-    meta: _Meta_1_4
+    meta: Meta_1_4
     name: packaging.utils.NormalizedName
     files: list[ProjectFileDetails_1_4]
     # PEP 700
@@ -256,7 +262,7 @@ def _check_version(tag: str, attrs: Dict[str, Optional[str]]) -> None:
         major_version, minor_version = map(int, version.split("."))
         if major_version != 1:
             raise UnsupportedAPIVersion(version)
-        elif minor_version > 4:
+        elif minor_version > 1:
             warnings.warn(APIVersionWarning(version), stacklevel=7)
 
 
@@ -302,9 +308,6 @@ def from_project_index_html(html: str) -> ProjectIndex_1_0:
 class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     def __init__(self) -> None:
         self.archive_links: List[Dict[str, Any]] = []
-        # PEP 792: Track project status markers
-        self.project_status: Optional[str] = None
-        self.project_status_reason: Optional[str] = None
         super().__init__()
 
     def handle_starttag(
@@ -312,25 +315,6 @@ class _ArchiveLinkHTMLParser(html.parser.HTMLParser):
     ) -> None:
         attrs = dict(attrs_list)
         _check_version(tag, attrs)
-        
-        # PEP 792: Handle project status meta tags
-        if (
-            tag == "meta"
-            and attrs.get("name") == "pypi:project-status"
-            and "content" in attrs
-            and attrs["content"]
-        ):
-            self.project_status = attrs["content"]
-            return
-        elif (
-            tag == "meta"
-            and attrs.get("name") == "pypi:project-status-reason"
-            and "content" in attrs
-            and attrs["content"]
-        ):
-            self.project_status_reason = attrs["content"]
-            return
-        
         if tag != "a":
             return
         # PEP 503:
@@ -413,13 +397,11 @@ def create_project_url(base_url: str, project_name: str) -> str:
     return "".join([base_url, packaging.utils.canonicalize_name(project_name), "/"])
 
 
-def from_project_details_html(html: str, name: str) -> ProjectDetails:
-    """Convert the HTML response for a project details page to a :pep:`691` or :pep:`792` response.
+def from_project_details_html(html: str, name: str) -> ProjectDetails_1_0:
+    """Convert the HTML response for a project details page to a :pep:`691` response.
 
     Due to HTML project details pages lacking the name of the project, it must
     be specified via the *name* parameter to fill in the JSON data.
-    
-    Returns a ProjectDetails_1_4 if status markers are present, otherwise ProjectDetails_1_0.
     """
     parser = _ArchiveLinkHTMLParser()
     parser.feed(html)
@@ -444,30 +426,11 @@ def from_project_details_html(html: str, name: str) -> ProjectDetails:
             if key in archive_link:
                 details[key] = archive_link[key]  # type: ignore[literal-required]
         files.append(details)
-    
-    # PEP 792: Return appropriate version based on presence of status markers
-    if parser.project_status is not None or parser.project_status_reason is not None:
-        meta: _Meta_1_4 = {"api-version": "1.4"}
-        if parser.project_status is not None:
-            meta["project-status"] = parser.project_status
-        if parser.project_status_reason is not None:
-            meta["project-status-reason"] = parser.project_status_reason
-        
-        # Convert files to 1.4 format - but since we parsed as 1.0, they don't have versions
-        # We need to return 1.0 compatible format if no version info is available
-        result: ProjectDetails_1_4 = {
-            "meta": meta,
-            "name": packaging.utils.canonicalize_name(name),
-            "files": files,  # type: ignore[typeddict-item]
-            "versions": [],  # We don't extract versions from HTML, so empty list
-        }
-        return result
-    else:
-        return {
-            "meta": {"api-version": "1.0"},
-            "name": packaging.utils.canonicalize_name(name),
-            "files": files,
-        }
+    return {
+        "meta": {"api-version": "1.0"},
+        "name": packaging.utils.canonicalize_name(name),
+        "files": files,
+    }
 
 
 def parse_project_index(data: str, content_type: str) -> ProjectIndex:

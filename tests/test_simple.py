@@ -335,7 +335,7 @@ class TestProjectDetailsParsing:
 
 
 class TestPEP629Versioning:
-    @pytest.mark.parametrize(["version"], [("",), ("1.0",), ("1.1",), ("1.4",)])
+    @pytest.mark.parametrize(["version"], [("",), ("1.0",), ("1.1",)])
     def test_supported_versions(self, version):
         if not version:
             meta_tag = ""
@@ -368,7 +368,7 @@ class TestPEP629Versioning:
         with pytest.raises(simple.UnsupportedAPIVersion):
             simple.from_project_index_html(index_html)
 
-    @pytest.mark.parametrize(["minor_version"], [("5",), ("10",)])
+    @pytest.mark.parametrize(["minor_version"], [("2",), ("10",)])
     def test_unsupported_minor_version(self, minor_version):
         meta_tag = f'<meta name="pypi:repository-version" content="1.{minor_version}">'
         details_html = (
@@ -409,125 +409,6 @@ class TestPEP658Metadata:
         assert len(details["files"]) == 1
         assert details["files"][0]["core-metadata"] == {"sha256": "abcdef"}
         assert details["files"][0]["dist-info-metadata"] == {"sha256": "abcdef"}
-
-
-class TestPEP792StatusMarkers:
-    """Tests for PEP 792 project status markers."""
-
-    def test_no_status_markers(self):
-        """Test HTML without status markers returns 1.0 format."""
-        html = '<a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>'
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.0"
-        assert "project-status" not in details["meta"]
-        assert "project-status-reason" not in details["meta"]
-
-    def test_status_marker_only(self):
-        """Test HTML with only project-status meta tag."""
-        html = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta name="pypi:project-status" content="archived">
-</head>
-<body>
-    <a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>
-</body>
-</html>'''
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.4"
-        assert details["meta"]["project-status"] == "archived"
-        assert "project-status-reason" not in details["meta"]
-        # Should have versions field for 1.4 format
-        assert "versions" in details
-
-    def test_status_reason_only(self):
-        """Test HTML with only project-status-reason meta tag."""
-        html = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta name="pypi:project-status-reason" content="No longer maintained">
-</head>
-<body>
-    <a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>
-</body>
-</html>'''
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.4"
-        assert "project-status" not in details["meta"]
-        assert details["meta"]["project-status-reason"] == "No longer maintained"
-        # Should have versions field for 1.4 format
-        assert "versions" in details
-
-    def test_both_status_markers(self):
-        """Test HTML with both status and reason meta tags."""
-        html = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta name="pypi:project-status" content="deprecated">
-    <meta name="pypi:project-status-reason" content="Use new-package instead">
-</head>
-<body>
-    <a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>
-</body>
-</html>'''
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.4"
-        assert details["meta"]["project-status"] == "deprecated"
-        assert details["meta"]["project-status-reason"] == "Use new-package instead"
-        # Should have versions field for 1.4 format
-        assert "versions" in details
-
-    @pytest.mark.parametrize(
-        "status",
-        ["active", "archived", "deprecated", "suspended", "quarantined", "reserved"]
-    )
-    def test_valid_status_values(self, status):
-        """Test various valid status marker values."""
-        html = f'''<!DOCTYPE html>
-<html>
-<head>
-    <meta name="pypi:project-status" content="{status}">
-</head>
-<body>
-    <a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>
-</body>
-</html>'''
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.4"
-        assert details["meta"]["project-status"] == status
-
-    def test_empty_status_markers_ignored(self):
-        """Test that empty status markers are ignored."""
-        html = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta name="pypi:project-status" content="">
-    <meta name="pypi:project-status-reason" content="">
-</head>
-<body>
-    <a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>
-</body>
-</html>'''
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.0"
-        assert "project-status" not in details["meta"]
-        assert "project-status-reason" not in details["meta"]
-
-    def test_status_markers_with_repository_version(self):
-        """Test status markers work with repository version meta tag."""
-        html = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta name="pypi:repository-version" content="1.4">
-    <meta name="pypi:project-status" content="active">
-</head>
-<body>
-    <a href="spam-1.2.3-py3.none.any.whl">spam-1.2.3-py3.none.any.whl</a>
-</body>
-</html>'''
-        details = simple.from_project_details_html(html, "test_project")
-        assert details["meta"]["api-version"] == "1.4"
-        assert details["meta"]["project-status"] == "active"
 
 
 class TestParseProjectIndex:
