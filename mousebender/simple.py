@@ -9,6 +9,9 @@ This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
 :pep:`691`, :pep:`700`, :pep:`714`, :pep:`740`, and :pep:`792` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
+Note: :pep:`792` support is provided for JSON API responses only. HTML parsing
+always returns version 1.0 format.
+
 """
 
 from __future__ import annotations
