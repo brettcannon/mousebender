@@ -6,7 +6,7 @@ responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
 This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
-:pep:`691`, :pep:`700`, :pep:`714`, and :pep:`740` of the
+:pep:`691`, :pep:`700`, :pep:`714`, :pep:`740`, and :pep:`792` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
 """
@@ -72,6 +72,7 @@ class UnsupportedMIMEType(Exception):
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 _Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
 _Meta_1_3 = TypedDict("_Meta_1_3", {"api-version": Literal["1.3"]})
+_Meta_1_4 = TypedDict("_Meta_1_4", {"api-version": Literal["1.4"]})
 
 
 class ProjectIndex_1_0(TypedDict):
@@ -95,10 +96,22 @@ class ProjectIndex_1_3(TypedDict):
     projects: List[Dict[Literal["name"], str]]
 
 
-ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1, ProjectIndex_1_3]
+class ProjectIndex_1_4(TypedDict):
+    """A :class:`~typing.TypedDict` for a project index (:pep:`792`)."""
+
+    meta: _Meta_1_4
+    projects: List[Dict[Literal["name"], str]]
+
+
+ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1, ProjectIndex_1_3, ProjectIndex_1_4]
 
 
 _HashesDict: TypeAlias = Dict[str, str]
+
+# PEP 792
+class ProjectStatus(TypedDict):
+    """A :class:`~typing.TypedDict` for project status markers (:pep:`792`)."""
+    status: str
 
 _OptionalProjectFileDetails_1_0 = TypedDict(
     "_OptionalProjectFileDetails_1_0",
@@ -176,8 +189,36 @@ class ProjectFileDetails_1_3(_OptionalProjectFileDetails_1_3):
     size: int
 
 
+_OptionalProjectFileDetails_1_4 = TypedDict(
+    "_OptionalProjectFileDetails_1_4",
+    {
+        "requires-python": str,
+        "dist-info-metadata": Union[bool, _HashesDict],  # Deprecated by PEP 714
+        "gpg-sig": bool,
+        "yanked": Union[bool, str],
+        # PEP 700
+        "upload-time": str,
+        # PEP 714
+        "core-metadata": Union[bool, _HashesDict],
+        # PEP 740
+        "provenance": str,
+    },
+    total=False,
+)
+
+
+class ProjectFileDetails_1_4(_OptionalProjectFileDetails_1_4):
+    """A :class:`~typing.TypedDict` for the ``files`` key of :class:`ProjectDetails_1_4`."""
+
+    filename: str
+    url: str
+    hashes: _HashesDict
+    # PEP 700
+    size: int
+
+
 ProjectFileDetails: TypeAlias = Union[
-    ProjectFileDetails_1_0, ProjectFileDetails_1_1, ProjectFileDetails_1_3
+    ProjectFileDetails_1_0, ProjectFileDetails_1_1, ProjectFileDetails_1_3, ProjectFileDetails_1_4
 ]
 
 
@@ -209,8 +250,20 @@ class ProjectDetails_1_3(TypedDict):
     versions: List[str]
 
 
+ProjectDetails_1_4 = TypedDict(
+    "ProjectDetails_1_4", 
+    {
+        "meta": _Meta_1_4,
+        "name": packaging.utils.NormalizedName,
+        "files": list[ProjectFileDetails_1_4],
+        "versions": List[str],  # PEP 700
+        "project-status": ProjectStatus,  # PEP 792
+    }
+)
+
+
 ProjectDetails: TypeAlias = Union[
-    ProjectDetails_1_0, ProjectDetails_1_1, ProjectDetails_1_3
+    ProjectDetails_1_0, ProjectDetails_1_1, ProjectDetails_1_3, ProjectDetails_1_4
 ]
 
 
@@ -225,7 +278,7 @@ def _check_version(tag: str, attrs: Dict[str, Optional[str]]) -> None:
         major_version, minor_version = map(int, version.split("."))
         if major_version != 1:
             raise UnsupportedAPIVersion(version)
-        elif minor_version > 1:
+        elif minor_version > 4:
             warnings.warn(APIVersionWarning(version), stacklevel=7)
 
 

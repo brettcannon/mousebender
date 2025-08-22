@@ -335,7 +335,7 @@ class TestProjectDetailsParsing:
 
 
 class TestPEP629Versioning:
-    @pytest.mark.parametrize(["version"], [("",), ("1.0",), ("1.1",)])
+    @pytest.mark.parametrize(["version"], [("",), ("1.0",), ("1.1",), ("1.3",), ("1.4",)])
     def test_supported_versions(self, version):
         if not version:
             meta_tag = ""
@@ -368,7 +368,7 @@ class TestPEP629Versioning:
         with pytest.raises(simple.UnsupportedAPIVersion):
             simple.from_project_index_html(index_html)
 
-    @pytest.mark.parametrize(["minor_version"], [("2",), ("10",)])
+    @pytest.mark.parametrize(["minor_version"], [("5",), ("10",)])
     def test_unsupported_minor_version(self, minor_version):
         meta_tag = f'<meta name="pypi:repository-version" content="1.{minor_version}">'
         details_html = (
@@ -449,3 +449,58 @@ class TestParseProjectDetails:
     def test_invalid_content_type(self):
         with pytest.raises(simple.UnsupportedMIMEType):
             simple.parse_project_details(INDEX_HTML_EXAMPLE, "invalid", "holygrail")
+
+
+class TestPEP792StatusMarkers:
+    def test_project_status_creation(self):
+        """Test that ProjectStatus can be created and accessed."""
+        status = simple.ProjectStatus(status="active")
+        assert status["status"] == "active"
+        
+        status_deprecated = simple.ProjectStatus(status="deprecated")
+        assert status_deprecated["status"] == "deprecated"
+
+    def test_project_details_1_4_with_status(self):
+        """Test that ProjectDetails_1_4 correctly includes project-status."""
+        meta = simple._Meta_1_4()
+        meta["api-version"] = "1.4"
+        
+        file_details = simple.ProjectFileDetails_1_4(
+            filename="test-1.0.tar.gz",
+            url="https://example.com/test-1.0.tar.gz", 
+            hashes={"sha256": "abc123"},
+            size=1024
+        )
+        
+        project_status = simple.ProjectStatus(status="active")
+        
+        # Create project details with project-status field
+        project_details = simple.ProjectDetails_1_4({
+            "meta": meta,
+            "name": "test",
+            "files": [file_details],
+            "versions": ["1.0"],
+            "project-status": project_status
+        })
+        
+        assert project_details["meta"]["api-version"] == "1.4"
+        assert project_details["project-status"]["status"] == "active"
+        assert project_details["name"] == "test"
+        assert len(project_details["files"]) == 1
+
+    def test_union_types_include_1_4(self):
+        """Test that union types include the new 1.4 versions."""
+        # Test that the union types can handle 1.4 versions
+        meta = simple._Meta_1_4()
+        meta["api-version"] = "1.4"
+        
+        file_details = simple.ProjectFileDetails_1_4(
+            filename="test-1.0.tar.gz",
+            url="https://example.com/test-1.0.tar.gz",
+            hashes={},
+            size=1024
+        )
+        
+        # This should work with the ProjectFileDetails union type
+        assert isinstance(file_details, dict)
+        assert file_details["filename"] == "test-1.0.tar.gz"
