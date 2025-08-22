@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "mousebender"
-version = "2025.0"
+version = "2025.1"
 authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
@@ -20,7 +20,7 @@ classifiers = [
 ]
 dynamic = ["description"]
 
-dependencies = ["packaging >= 20.9", "typing-extensions"]
+dependencies = ["packaging >= 20.9", "typing-extensions>=4.6.0"]
 
 [project.optional-dependencies]
 
