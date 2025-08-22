@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 """Utilities to help with Simple repository API responses.
 
 This module helps with the JSON-based Simple repository API by providing
@@ -6,11 +7,10 @@ responses, functions are provided to convert the HTML to the equivalent JSON
 response.
 
 This module implements :pep:`503`, :pep:`592`, :pep:`629`, :pep:`658`,
-:pep:`691`, :pep:`700`, :pep:`714`, and :pep:`740` of the
+:pep:`691`, :pep:`700`, :pep:`714`, :pep:`740`, and :pep:`792` of the
 :external:ref:`Simple repository API <simple-repository-api>`.
 
 """
-
 from __future__ import annotations
 
 import html
@@ -24,6 +24,9 @@ import packaging.utils
 
 # Python < 3.10
 from typing_extensions import TypeAlias
+
+# Python < 3.11
+from typing_extensions import NotRequired
 
 ACCEPT_JSON_LATEST = "application/vnd.pypi.simple.latest+json"
 """The ``Accept`` header value for the latest version of the JSON API.
@@ -72,6 +75,7 @@ class UnsupportedMIMEType(Exception):
 _Meta_1_0 = TypedDict("_Meta_1_0", {"api-version": Literal["1.0"]})
 _Meta_1_1 = TypedDict("_Meta_1_1", {"api-version": Literal["1.1"]})
 _Meta_1_3 = TypedDict("_Meta_1_3", {"api-version": Literal["1.3"]})
+_Meta_1_4 = TypedDict("_Meta_1_4", {"api-version": Literal["1.4"]})
 
 
 class ProjectIndex_1_0(TypedDict):
@@ -95,7 +99,16 @@ class ProjectIndex_1_3(TypedDict):
     projects: List[Dict[Literal["name"], str]]
 
 
-ProjectIndex: TypeAlias = Union[ProjectIndex_1_0, ProjectIndex_1_1, ProjectIndex_1_3]
+class ProjectIndex_1_4(TypedDict):
+    """A :class:`~typing.TypedDict` for a project index (:pep:`792`)."""
+
+    meta: _Meta_1_4
+    projects: List[Dict[Literal["name"], str]]
+
+
+ProjectIndex: TypeAlias = Union[
+    ProjectIndex_1_0, ProjectIndex_1_1, ProjectIndex_1_3, ProjectIndex_1_4
+]
 
 
 _HashesDict: TypeAlias = Dict[str, str]
@@ -209,8 +222,30 @@ class ProjectDetails_1_3(TypedDict):
     versions: List[str]
 
 
+_ProjectStatus = Literal["active", "archived", "quarantined", "deprecated"]
+_Meta_1_4_Project = TypedDict(
+    "_Meta_1_4_Project",
+    {
+        "api-version": Literal["1.4"],
+        # PEP 792
+        "project-status": NotRequired[_ProjectStatus],
+        "project-status-reason": NotRequired[str],
+    },
+)
+
+
+class ProjectDetails_1_4(TypedDict):
+    """A :class:`~typing.TypedDict` for a project details response (:pep:`792`)."""
+
+    meta: _Meta_1_4_Project
+    name: packaging.utils.NormalizedName
+    files: list[ProjectFileDetails_1_3]
+    # PEP 700
+    versions: List[str]
+
+
 ProjectDetails: TypeAlias = Union[
-    ProjectDetails_1_0, ProjectDetails_1_1, ProjectDetails_1_3
+    ProjectDetails_1_0, ProjectDetails_1_1, ProjectDetails_1_3, ProjectDetails_1_4
 ]
 
 

@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "mousebender"
-version = "2025.0"
+version = "2025.1"
 authors = [
     { name = "Brett Cannon", email = "brett@python.org" },
     { name = "Derek Keeler", email = "derek@suchcool.ca" },
@@ -13,14 +13,16 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
-keywords = ["packaging", "Simple Repository API", "PEP 503", "PEP 592", "PEP 658", "PEP 691"]
+keywords = ["packaging", "Simple Repository API",
+            "PEP 503", "PEP 592", "PEP 658", "PEP 691", "PEP 700",
+            "PEP 714", "PEP 740", "PEP 792"]
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "License :: OSI Approved :: BSD License",
 ]
 dynamic = ["description"]
 
-dependencies = ["packaging >= 20.9", "typing-extensions"]
+dependencies = ["packaging >= 20.9", "typing-extensions>=4.6.0"]
 
 [project.optional-dependencies]
 
