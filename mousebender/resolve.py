@@ -99,7 +99,12 @@ class WheelFile(ProjectFile):
         if not any(tag in provider.tags for tag in self.wheel.tags):
             return False
         elif requires_python_details := self.details.get("requires-python"):
-            requires_python = packaging.specifiers.SpecifierSet(requires_python_details)
+            try:
+                requires_python = packaging.specifiers.SpecifierSet(
+                    requires_python_details
+                )
+            except packaging.specifiers.InvalidSpecifier:
+                return False
             if provider.python_version not in requires_python:
                 return False
 
@@ -244,7 +249,7 @@ class WheelProvider(resolvelib.AbstractProvider, abc.ABC):
             and self._is_satisfied_by_file(candidate.file, requirement)
         )
 
-    # This exists as method so that subclasses can e.g. prefer older versions.
+    # This exists as a method so that subclasses can e.g. prefer older versions.
     # Override for sdists.
     def candidate_sort_key(self, candidate: Candidate) -> tuple:
         """Provide a sort key for a candidate.

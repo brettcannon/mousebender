@@ -1,20 +1,100 @@
-# ruff: noqa: ANN001, ANN201, ANN202, D100, D103
+# ruff: noqa: ANN001, ANN201, ANN202, D100, D102, D103, D400, D415
 import argparse
+import dataclasses
+import datetime
+import io
 import pathlib
 import sys
+import tomllib
 
 import httpx
+import packaging.markers
 import packaging.metadata
 import packaging.requirements
+import packaging.specifiers
+import packaging.tags
 import packaging.utils
+import packaging.version
 import resolvelib.resolvers
-import tomllib
 import trio
 
-import mousebender.install
-import mousebender.lock
 import mousebender.resolve
 import mousebender.simple
+
+
+@dataclasses.dataclass
+class WheelFile:
+    """[[packages.wheels]]"""
+
+    name: str
+    url: str
+    upload_time: datetime.datetime | None = None
+    # path
+    size: int | None = None
+    hashes: dict[str, str] = dataclasses.field(default_factory=dict)
+
+    def to_toml(self):
+        parts = []
+        parts.append(f"name = {self.name!r}")
+        if self.upload_time:
+            parts.append(f"upload-time = {self.upload_time.isoformat()}")
+        parts.append(f"url = {self.url!r}")
+        if self.size:
+            parts.append(f"size = {self.size!r}")
+        parts.append(
+            f"hashes = {{{', '.join([f'{k} = {v!r}' for k, v in self.hashes.items()])}}}"
+        )
+        return "".join(["{", ", ".join(parts), "}"])
+
+
+@dataclasses.dataclass
+class PackageVersion:
+    """[[packages]]"""
+
+    name: str
+    version: packaging.version.Version
+    marker: packaging.markers.Marker | None = None
+    requires_python: packaging.specifiers.SpecifierSet | None = None
+    dependencies: list[packaging.requirements.Requirement] = dataclasses.field(
+        default_factory=list
+    )
+    # vcs
+    # directory
+    # archive
+    index: str | None = None
+    # XXX sdist
+    wheels: list[WheelFile] = dataclasses.field(default_factory=list)
+    attestation_identities: list[dict] = dataclasses.field(default_factory=list)
+    tool: dict = dataclasses.field(default_factory=dict)
+
+    def to_toml(self):
+        parts = []
+        parts.append(f"name = {self.name!r}")
+        parts.append(f"version = {str(self.version)!r}")
+        if self.marker:
+            parts.append(f"marker = {str(self.marker)!r}")
+        if self.requires_python:
+            parts.append(f"requires-python = {str(self.requires_python)!r}")
+        if self.dependencies:
+            deps = ["dependencies = ["]
+            for dep in self.dependencies:
+                deps.append(f"    {{name = {dep.name!r}}},")
+            deps.append("]")
+            parts.append("\n".join(deps))
+        if self.wheels:
+            wheels = ["wheels = ["]
+            for wheel in self.wheels:
+                wheels.append(f"  {wheel.to_toml()},")
+            wheels.append("]")
+            parts.append("\n".join(wheels))
+        if self.attestation_identities:
+            for publisher in self.attestation_identities:
+                parts.append("[[packages.attestation-identities]]")
+                for key, value in sorted(publisher.items()):
+                    parts.append(f"{key} = {value!r}")
+        if self.tool:
+            raise NotImplementedError("[tool] table not implemented")
+        return "\n".join(parts)
 
 
 async def get_metadata_for_file(client, file):
@@ -23,7 +103,6 @@ async def get_metadata_for_file(client, file):
     response = await client.get(url)
     raw_data = response.content
     if isinstance(file.details.get("core-metadata", True), dict):
-        # TODO If core-metadata is a dict, verify the hash of the data
         pass
     metadata = packaging.metadata.Metadata.from_email(raw_data, validate=False)
     file.metadata = metadata
@@ -69,7 +148,7 @@ class PyPIProvider(mousebender.resolve.WheelProvider):
         elif not has_metadata:
             print(f"😨 {name} has **no** wheels w/ metadata", file=sys.stderr)
         elif len(has_metadata) < len(wheels):
-            print(f"😬 {name} has *some* wheels w/o metadata", file=sys.stderr)
+            print(f"😬 {name} only has **some** wheels w/ metadata", file=sys.stderr)
 
         return map(mousebender.resolve.WheelFile, has_metadata)
 
@@ -155,13 +234,16 @@ def cpython_manylinux_details(version):
     return markers, tags
 
 
-def generate_lock_entry(dependencies, markers, tags):
+def resolve(dependencies, markers, tags):
     pkg_requirements = map(packaging.requirements.Requirement, dependencies)
-    requirements = map(
-        mousebender.resolve.Requirement,
-        filter(
-            lambda r: r.marker is None or r.marker.evaluate(markers), pkg_requirements
-        ),
+    requirements = list(
+        map(
+            mousebender.resolve.Requirement,
+            filter(
+                lambda r: r.marker is None or r.marker.evaluate(markers),
+                pkg_requirements,
+            ),
+        )
     )
     provider = PyPIProvider(markers=markers, tags=tags)
     reporter = resolvelib.BaseReporter()
@@ -172,154 +254,205 @@ def generate_lock_entry(dependencies, markers, tags):
         print("Resolution (currently) impossible 😢")
         sys.exit(1)
 
-    return mousebender.lock.generate_lock(provider, resolution)
+    return provider, resolution
 
 
-def update_lock(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
-
-    lock_entries = []
-    for entry in lock_file_contents["lock"]:
-        print("Updating", entry["tags"][0], "...")
-        tags = map(lambda t: packaging.tags.Tag(*t.split("-")), entry["tags"])
-        lock_entries.append(
-            generate_lock_entry(
-                lock_file_contents["dependencies"], entry["markers"], tags
-            )
+def flatten_graph(resolution):
+    """Take the dependency graph and return the collection of packages."""
+    # for id_ in resolution.graph.iter_children(None):
+    for candidate in resolution.mapping.values():
+        # candidate = resolution.mapping[id_]
+        resolved_wheel_file = candidate.file
+        name = resolved_wheel_file.details["filename"]
+        url: str = resolved_wheel_file.details["url"]
+        hashes = resolved_wheel_file.details["hashes"]
+        if upload_time := resolved_wheel_file.details.get("upload-time"):
+            upload_time = datetime.datetime.fromisoformat(upload_time)
+        size: int | None = resolved_wheel_file.details.get("size")
+        locked_wheel = WheelFile(
+            name, url, upload_time=upload_time, size=size, hashes=hashes
+        )
+        requirements = []
+        for req in candidate.file.metadata.requires_dist or []:
+            if not req.marker:  # XXX Hack
+                requirements.append(req)
+        name = candidate.identifier[0]
+        version = candidate.file.version
+        requires_python = candidate.file.metadata.requires_python
+        index = f"https://pypi.org/simple/{name}"  # Hack; hard-coded.
+        attestation_identities = []
+        if provenance_url := resolved_wheel_file.details.get("provenance"):
+            provenance_data = httpx.get(provenance_url).json()
+            for bundle in provenance_data["attestation_bundles"]:
+                attestation_identities.append(bundle["publisher"])
+        yield PackageVersion(
+            name,
+            version,
+            # XXX markers
+            index=index,
+            requires_python=requires_python,
+            dependencies=requirements,
+            wheels=[locked_wheel],
+            attestation_identities=attestation_identities,
         )
 
-    new_lock_file = mousebender.lock.generate_file_contents(
-        lock_file_contents["dependencies"], ["https://pypi.org/simple"], lock_entries
-    )
-    with context.lock_file.open("wb") as file:
-        file.write(new_lock_file.encode("utf-8"))
 
-
-def lock_entry(context, dependencies):
-    tags = list(packaging.tags.sys_tags())
-    if context.maximize == "compatibility":
-        tags = list(reversed(tags))
-
-    if context.platform == "system":
+def platform_details(platform):
+    if platform == "system":
         markers, tags = system_details()
-    elif context.platform.startswith("python"):
+    elif platform.startswith("python"):
         markers, tags = pure_python_details(
-            tuple(map(int, context.platform.removeprefix("python").split(".", 1)))
+            tuple(map(int, platform.removeprefix("python").split(".", 1)))
         )
-    elif context.platform.startswith("cpython") and context.platform.endswith(
-        "windows-x64"
-    ):
-        version = context.platform.removeprefix("cpython").removesuffix("-windows-x64")
+    elif platform.startswith("cpython") and platform.endswith("windows-x64"):
+        version = platform.removeprefix("cpython").removesuffix("-windows-x64")
         markers, tags = cpython_windows_details(tuple(map(int, version.split(".", 1))))
-    elif context.platform.startswith("cpython") and context.platform.endswith(
-        "-manylinux2014-x64"
-    ):
-        version = context.platform.removeprefix("cpython").removesuffix(
-            "-manylinux2014-x64"
-        )
+    elif platform.startswith("cpython") and platform.endswith("-manylinux2014-x64"):
+        version = platform.removeprefix("cpython").removesuffix("-manylinux2014-x64")
         markers, tags = cpython_manylinux_details(
             tuple(map(int, version.split(".", 1)))
         )
     else:
-        raise ValueError(f"Unknown platform: {context.platform}")
+        raise ValueError(f"Unknown platform: {platform}")
 
-    return generate_lock_entry(dependencies, markers, tags)
+    return markers, list(tags)
 
 
-def add_lock_entry(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
-
-    dependencies = lock_file_contents["dependencies"]
-
-    contents = list(
-        map(mousebender.lock.lock_entry_dict_to_toml, lock_file_contents["lock"])
-    )
-    contents.append(lock_entry(context, dependencies))
-
-    lock_file = mousebender.lock.generate_file_contents(
-        dependencies, lock_file_contents["indexes"], contents
-    )
-
-    with context.lock_file.open("wb") as file:
-        file.write(lock_file.encode("utf-8"))
-
-    print(lock_file)
+def file_lock(markers, tags, dependencies):
+    _, resolution = resolve(dependencies, markers, tags)
+    return flatten_graph(resolution)
 
 
 def lock(context):
-    if not (dependencies := context.requirements):
-        with open("pyproject.toml", "rb") as file:
-            pyproject = tomllib.load(file)
-        dependencies = pyproject["project"]["dependencies"]
+    dependencies = context.requirements
 
-    lock_contents = lock_entry(context, dependencies)
-    lock_file = mousebender.lock.generate_file_contents(
-        context.requirements, ["https://pypi.org/simple"], [lock_contents]
-    )
+    locks = {}
+    environments = []
+    versions = []
+    for platform in context.platform or ["system"]:
+        markers, tags = platform_details(platform)
+        packages = file_lock(markers, tags, dependencies)
+        for package in packages:
+            key = package.name, package.version
+            if key not in locks:
+                locks[key] = package
+            else:
+                for new_wheel in package.wheels:
+                    for seen_wheel in locks[key].wheels:
+                        if new_wheel.name == seen_wheel.name:
+                            break
+                        else:
+                            locks[key].wheels.append(new_wheel)
+                for publisher in package.attestation_identities:
+                    if publisher not in locks[key].attestation_identities:
+                        locks[key].attestation_identities.append(publisher)
+        # XXX Hacks upon hacks ...
+        first_tag = tags[0]
+        interpreter = first_tag.interpreter
+        minor_version = int(interpreter.removeprefix("cp3"))
+        versions.append((3, minor_version))
+        platform = first_tag.platform
+        if "manylinux" in platform:
+            environments.append("sys_platform == 'linux'")
+        elif "win" in platform:
+            environments.append("sys_platform == 'win32'")
+
+    buffer = io.StringIO()
+
+    print("lock-version = '1.0'", file=buffer)
+    if environments:
+        print(f"""environments = ["{'", "'.join(environments)}"]""", file=buffer)
+    versions.sort(reverse=True)
+    print(f"""requires-python = '==3.{versions[0][1]}'""", file=buffer)
+    # XXX extras
+    # XXX dependency-groups
+    print("created-by = 'mousebender'", file=buffer)
+    print(file=buffer)
+
+    for package in sorted(
+        locks.values(),
+        key=lambda package: (package.name, package.version),
+    ):
+        print("[[packages]]", file=buffer)
+        print(package.to_toml().strip(), file=buffer)
+        print(file=buffer)
+
+    print("[tool.mousebender]", file=buffer)
+    print(f"command = {sys.argv!r}", file=buffer)
+    print(f"run-on = {datetime.datetime.now().isoformat()}", file=buffer)
 
     if context.lock_file:
-        with context.lock_file.open("wb") as file:
-            file.write(lock_file.encode("utf-8"))
-
-    print(lock_file)
+        with context.lock_file.open("w") as file:
+            file.write(buffer.getvalue())
+    else:
+        print(buffer.getvalue())
 
 
 def install(context):
     with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
-    if (lock_entry := mousebender.install.strict_match(lock_file_contents)) is None:
-        lock_entry = mousebender.install.compatible_match(lock_file_contents)
-        if lock_entry is None:
-            print("No compatible lock entry found 😢")
-            sys.exit(1)
+        lock_file_contents = tomllib.load(file)
 
-    for wheel in lock_entry["wheel"]:
-        print(wheel["name"], "@", wheel.get("filename") or wheel["origin"])
+    return install_packages(lock_file_contents)
 
 
-def graph(context):
-    with context.lock_file.open("rb") as file:
-        lock_file_contents = mousebender.lock.parse(file.read())
+class UnsatisfiableError(Exception):
+    """Raised when a requirement cannot be satisfied."""
 
-    mermaid_lines = []
-    if context.self_contained:
-        mermaid_lines.append("```mermaid")
-    mermaid_lines.extend(["graph LR", "  subgraph top [Top-level dependencies]"])
 
-    for top_dep in lock_file_contents["dependencies"]:
-        requirement = packaging.requirements.Requirement(top_dep)
-        line = f"    {requirement.name}"
-        if requirement.name != top_dep:
-            line += f"[{top_dep}]"
-        mermaid_lines.append(line)
-    mermaid_lines.append("  end")
+class AmbiguityError(Exception):
+    """Raised when a requirement has multiple solutions."""
 
-    for entry in lock_file_contents["lock"]:
-        nodes = set()
-        edges = {}  # type: ignore
-        mermaid_lines.append(f"  subgraph {entry['tags'][0]}")
-        for wheel in entry["wheel"]:
-            name = wheel["name"]
-            if name not in nodes:
-                mermaid_lines.append(f"    {name}")
-                nodes.add(name)
-            for dep in wheel["dependencies"]:
-                if dep not in nodes:
-                    mermaid_lines.append(f"    {dep}")
-                    nodes.add(dep)
-                edges.setdefault(name, set()).add(dep)
 
-        for parent, children in edges.items():
-            for child in sorted(children):
-                mermaid_lines.append(f"    {parent} --> {child}")
-        mermaid_lines.append("  end")
+def python_supported(requires_python):
+    version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    return version not in packaging.specifiers.SpecifierSet(requires_python)
 
-    if context.self_contained:
-        mermaid_lines.append("```")
 
-    print("\n".join(mermaid_lines))
+def install_packages(lock_file_contents):
+    assert lock_file_contents["lock-version"] == "1.0"
+    if requires_python := lock_file_contents.get("requires-python"):
+        if python_supported(requires_python):
+            raise ValueError("Python version not supported by this lock file")
+    if environments := lock_file_contents.get("environments"):
+        for marker in environments:
+            if packaging.markers.Marker(marker).evaluate():
+                break
+        else:
+            raise ValueError("This environment is not supported by this lock file")
+
+    install = []
+    tags = list(packaging.tags.sys_tags())
+    for package in lock_file_contents["packages"]:
+        if marker := package.get("marker"):
+            if not packaging.markers.Marker(marker).evaluate():
+                raise ValueError("This environment is not supported by this lock file")
+
+    install = []
+    tags = list(packaging.tags.sys_tags())
+    for package in lock_file_contents["packages"]:
+        if marker := package.get("marker"):
+            if not packaging.markers.Marker(marker).evaluate():
+                continue
+        if requires_python := package.get("requires-python"):
+            if python_supported(requires_python):
+                raise ValueError(f"Python version not supported for {package['name']}")
+        # XXX vcs
+        # XXX directory
+        # XXX archive
+        # XXX sdist
+        wheel_tags = {}
+        for wheel in package.get("wheels", []):
+            for wheel_tag in packaging.utils.parse_wheel_filename(wheel["name"])[-1]:
+                wheel_tags[wheel_tag] = wheel
+        for tag in tags:
+            if wheel := wheel_tags.get(tag):
+                install.append(wheel)
+                break
+        else:
+            raise UnsatisfiableError(f"No wheel for {package['name']}")
+
+    for file in install:
+        print(file["name"])
 
 
 def main(args=sys.argv[1:]):
@@ -332,49 +465,32 @@ def main(args=sys.argv[1:]):
         "--lock-file", type=pathlib.Path, help="Where to save the lock file"
     )
 
-    add_lock_args = subcommands.add_parser(
-        "add-lock-entry", help="Add a lock entry to a lock file"
-    )
-
-    add_lock_args.add_argument(
-        "lock_file", default=None, type=pathlib.Path, help="The lock file to add to"
-    )
-
-    for subparser in (lock_args, add_lock_args):
-        subparser.add_argument(
-            "--maximize",
-            choices=["speed", "compatibility"],
-            help="What to maximize wheel selection for (speed or compatibility)",
-        )
-        subparser.add_argument(
-            "--platform",
-            choices=[
-                "system",
-                "cpython3.8-manylinux2014-x64",
-                "cpython3.9-manylinux2014-x64",
-                "cpython3.10-manylinux2014-x64",
-                "cpython3.11-manylinux2014-x64",
-                "cpython3.12-manylinux2014-x64",
-                "cpython3.8-windows-x64",
-                "cpython3.9-windows-x64",
-                "cpython3.10-windows-x64",
-                "cpython3.11-windows-x64",
-                "cpython3.12-windows-x64",
-                "python3.8",
-                "python3.9",
-                "python3.10",
-                "python3.11",
-                "python3.12",
-            ],
-            default="system",
-            help="The platform to lock for",
-        )
-
-    update_lock_args = subcommands.add_parser(
-        "update-lock", help="Update the a lock file"
-    )
-    update_lock_args.add_argument(
-        "lock_file", type=pathlib.Path, help="The lock file to update"
+    lock_args.add_argument(
+        "--platform",
+        action="append",
+        choices=[
+            "system",
+            "cpython3.8-manylinux2014-x64",
+            "cpython3.9-manylinux2014-x64",
+            "cpython3.10-manylinux2014-x64",
+            "cpython3.11-manylinux2014-x64",
+            "cpython3.12-manylinux2014-x64",
+            "cpython3.13-manylinux2014-x64",
+            "cpython3.8-windows-x64",
+            "cpython3.9-windows-x64",
+            "cpython3.10-windows-x64",
+            "cpython3.11-windows-x64",
+            "cpython3.12-windows-x64",
+            "cpython3.13-windows-x64",
+            "python3.8",
+            "python3.9",
+            "python3.10",
+            "python3.11",
+            "python3.12",
+            "python3.13",
+        ],
+        default=[],
+        help="The platform to lock for",
     )
 
     install_args = subcommands.add_parser(
@@ -384,27 +500,10 @@ def main(args=sys.argv[1:]):
         "lock_file", type=pathlib.Path, help="The lock file to install from"
     )
 
-    graph_args = subcommands.add_parser(
-        "graph",
-        help="Generate a visualization of the dependency graph in Mermaid format",
-    )
-    graph_args.add_argument(
-        "--self-contained",
-        action="store_true",
-        default=False,
-        help="Include the surrounding Markdown to make the graph self-contained",
-    )
-    graph_args.add_argument(
-        "lock_file", type=pathlib.Path, help="The lock file to visualize"
-    )
-
     context = parser.parse_args(args)
     dispatch = {
         "lock": lock,
-        "add-lock-entry": add_lock_entry,
-        "update-lock": update_lock,
         "install": install,
-        "graph": graph,
     }
     dispatch[context.subcommand](context)
 
@@ -413,3 +512,4 @@ if __name__ == "__main__":
     main()
     # py . lock numpy mousebender hatchling requests pydantic
     # trio
+    # py . lock --platform cpython3.12-windows-x64 --platform cpython3.12-manylinux2014-x64 cattrs numpy
