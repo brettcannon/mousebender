@@ -40,7 +40,9 @@ def format(session, check=False):
     """Format the code."""
     tool = "black"
     session.install(tool)
-    args = ["--check"] if check else []
+    args = ["--target-version", "py" + python_versions[0].replace(".", "")]
+    if check:
+        args.append("--check")
     args.append(".")
     session.run(tool, *args)
 
