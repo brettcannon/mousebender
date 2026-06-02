@@ -2,6 +2,8 @@ name: Release
 
 on: ["workflow_dispatch"]
 
+permissions: {}
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
